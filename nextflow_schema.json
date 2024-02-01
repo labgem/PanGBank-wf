@@ -49,7 +49,7 @@
             "default": "",
             "properties": {
                 "min_genomes": {
-                    "type": "number",
+                    "type": "integer",
                     "description": "Minimum number of genomes required to build a pangenome.",
                     "default": 15
                 }

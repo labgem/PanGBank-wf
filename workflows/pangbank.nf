@@ -41,7 +41,7 @@ WorkflowPangbank.initialise(params, log)
 // MODULE: Local modules
 //
 include { PARSE_GENOMES_AND_TAXONOMY                      } from '../modules/local/parse_genomes_and_taxonomy'
-
+include { PPANGGOLIN                                      } from '../modules/local/ppanggolin'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -80,6 +80,32 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
 
     ch_versions.view { "VERSIONS: ${it}" }
+
+    ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
+                                                .map { create_ppanggo_input_channel(it) }
+
+
+    PPANGGOLIN(ppanggo_inputs_meta)
+
+    // PARSE_GENOMES_AND_TAXONOMY.out
+    //                             .flatten //.map { create_fastq_channel(it) }
+    //                             .view { "transformed channel: ${it}" }
+
+}
+
+def create_ppanggo_input_channel(input_file) {
+    // create meta map
+    def meta = [:]
+
+    meta.species = input_file.getSimpleName()
+    meta.genomes_count = input_file.countLines()
+
+    input_meta = [ meta, input_file ]
+
+    return input_meta
+}
+
+
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
@@ -121,7 +147,9 @@ workflow PANGBANK {
     //     ch_multiqc_logo.toList()
     // )
     // multiqc_report = MULTIQC.out.report.toList()
-}
+// }
+
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

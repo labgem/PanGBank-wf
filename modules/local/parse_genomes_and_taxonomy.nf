@@ -12,11 +12,12 @@ process PARSE_GENOMES_AND_TAXONOMY {
     val min_genomes
 
     output:
-    // path '*.csv'       , emit: csv
+    path "ppanggolin_input_files/*.tsv"       , emit: ppanggo_inputs
+    path "species_summary.tsv"
     path "versions.yml", emit: versions
 
-    // when:
-    // task.ext.when == null || task.ext.when
+    when:
+    task.ext.when == null || task.ext.when
 
     script: // This script is bundled with the pipeline, in labgem/pangbank/bin/
     """
