@@ -8,7 +8,7 @@ process PPANGGOLIN {
         'biocontainers/ppanggolin:2.0.2--py39hf95cd2a_0' }"
 
     input:
-    tuple val(meta), path(genome_file)
+    tuple val(meta), path(genome_file), path("genomes/*")
 
     output:
     // path 'ppanggolin_input_files/*.tsv'       , emit: ppanggo_inputs

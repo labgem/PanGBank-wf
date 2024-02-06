@@ -83,7 +83,7 @@ workflow PANGBANK {
 
     ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
-
+                                                //.view { "transformed channel: ${it}" }
 
     PPANGGOLIN(ppanggo_inputs_meta)
 
@@ -96,11 +96,26 @@ workflow PANGBANK {
 def create_ppanggo_input_channel(input_file) {
     // create meta map
     def meta = [:]
+    def genome_files = []
 
     meta.species = input_file.getSimpleName()
     meta.genomes_count = input_file.countLines()
 
-    input_meta = [ meta, input_file ]
+    // need to extract the genome files and add them to the channel
+    // in order that the files are correctly mounted when using docker
+    // is also the opportunity to check that they exists
+    input_file.eachLine { line ->
+        def genome_file = file(line.split('\t')[1])
+
+        if (!genome_file.exists()) {
+            exit 1, "ERROR: Please check input genomes -> Genome file does not exist!\n${genome_file}"
+        }
+
+        genome_files.add(file(genome_file))
+    }
+
+
+    input_meta = [ meta, input_file, genome_files]
 
     return input_meta
 }
