@@ -6,7 +6,7 @@ process PPANGGOLIN {
 
     queue { meta.genomes_count > 5000 ? '"xlarge,xxlarge"' : 'normal' }
     time { meta.genomes_count > 5000 ? '5-00:00:00' : '23:50:00' }
-    clusterOptions { meta.genomes_count > 5000 ? '6-23:50:00' : '23:50:00'  }
+    // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
 
     // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
     cpus { meta.genomes_count > 5000 ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
@@ -36,8 +36,9 @@ process PPANGGOLIN {
 
     script:
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
+    def tmpdir = meta.genomes_count > 5000 ?  "/env/cns/bigtmp2" : "/tmp/"
     """
-    ppanggolin all $input --output ppanggolin_results --no_flat_files  --cpu $task.cpus --tmpdir .
+    ppanggolin all $input --output ppanggolin_results --no_flat_files  --cpu $task.cpus --tmpdir $tmpdir
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
