@@ -4,13 +4,19 @@ process PPANGGOLIN {
 
     // A dynamic label would be perfect here but does not work.. https://github.com/nextflow-io/nextflow/issues/894
 
-    memory { "${2 + meta.genomes_count / 10} GB" }
-    queue { meta.genomes_count > 100 ? 'long' : 'short' }
-    time { meta.genomes_count > 100 ? '12h' : '20min' }
-    cpus { "${Math.round(2 + meta.genomes_count / 10)}" }
+    queue { meta.genomes_count > 5000 ? '"xlarge,xxlarge"' : 'normal' }
+    time { meta.genomes_count > 5000 ? '5-00:00:00' : '23:50:00' }
+    clusterOptions { meta.genomes_count > 5000 ? '6-23:50:00' : '23:50:00'  }
+
+    // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
+    cpus { meta.genomes_count > 5000 ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
+
+    // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
+    memory { meta.genomes_count > 5000 ?  "${16*30}GB" : "${(meta.genomes_count / 312)*8}GB" }
     // memory { meta.genomes_count > 30 ? '1 GB' : '3 GB' }
+
     // tag { meta.genomes_count > 30 ? 'BIG' : 'SMALL' }
-    tag { 5 + meta.genomes_count / 10}
+    tag { "${meta.species} - ${meta.genomes_count} - ${(meta.genomes_count / 312)*8} GB - ${Math.round(Math.ceil(meta.genomes_count / 312))} cpus" }
 
     conda "bioconda::ppanggolin>=2.0.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -22,7 +28,7 @@ process PPANGGOLIN {
 
 
     output:
-    // path 'ppanggolin_input_files/*.tsv'       , emit: ppanggo_inputs
+    path 'ppanggolin_results/pangenome.h5'       , emit: pangenome
     path "versions.yml", emit: versions
 
     when:
