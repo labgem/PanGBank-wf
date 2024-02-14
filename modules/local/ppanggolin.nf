@@ -4,7 +4,7 @@ process PPANGGOLIN {
 
     // A dynamic label would be perfect here but does not work.. https://github.com/nextflow-io/nextflow/issues/894
 
-    queue { meta.genomes_count > 5000 ? '"xlarge,xxlarge"' : 'normal' }
+    queue { meta.genomes_count > 5000 ? 'xlarge,xxlarge' : 'normal' }
     time { meta.genomes_count > 5000 ? '5-00:00:00' : '23:50:00' }
     // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
 
@@ -28,7 +28,10 @@ process PPANGGOLIN {
 
 
     output:
-    path 'ppanggolin_results/pangenome.h5'       , emit: pangenome
+    tuple  val(meta), path("${meta.species}/pangenome.h5")       , emit: pangenome
+    // tuple  val(meta), path("${meta.species}/info.yaml")          , emit: pangenome_info
+
+    path "${meta.species}.yaml"                                  , emit: pangenome_info
     path "versions.yml", emit: versions
 
     when:
@@ -38,12 +41,15 @@ process PPANGGOLIN {
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
     def tmpdir = meta.genomes_count > 5000 ?  "/env/cns/bigtmp2" : "/tmp/"
     """
-    ppanggolin all $input --output ppanggolin_results --no_flat_files  --cpu $task.cpus --tmpdir $tmpdir
+    ppanggolin all $input --output ${meta.species} --no_flat_files  --cpu $task.cpus --tmpdir . # ${tmpdir}/${meta.species}/
+
+    ppanggolin info -p ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         ppanggolin: \$(ppanggolin --version | sed 's/ppanggolin //g')
     END_VERSIONS
     """
+
 }
 

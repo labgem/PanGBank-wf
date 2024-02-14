@@ -42,6 +42,7 @@ WorkflowPangbank.initialise(params, log)
 //
 include { PARSE_GENOMES_AND_TAXONOMY                      } from '../modules/local/parse_genomes_and_taxonomy'
 include { PPANGGOLIN                                      } from '../modules/local/ppanggolin'
+include { GATHER_PANGENOME_INFO                           } from '../modules/local/gather_pangenome_infos'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -79,17 +80,15 @@ workflow PANGBANK {
 
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
 
-    ch_versions.view { "VERSIONS: ${it}" }
-
     ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
-                                                //.view { "transformed channel: ${it}" }
 
     PPANGGOLIN(ppanggo_inputs_meta)
 
-    // PARSE_GENOMES_AND_TAXONOMY.out
-    //                             .flatten //.map { create_fastq_channel(it) }
-    //                             .view { "transformed channel: ${it}" }
+
+    pangenome_infos = PPANGGOLIN.out.pangenome_info.collect()
+
+    GATHER_PANGENOME_INFO(pangenome_infos)
 
 }
 
