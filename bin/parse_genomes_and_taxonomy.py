@@ -55,6 +55,40 @@ def parse_genome_files(genomes_paths_file):
     return acc_to_genome_file
 
 
+def parse_genome_files(genomes_paths_file):
+    """ """
+    files_not_found = []
+
+    acc_to_genome_file = {}
+    accession_count = 0
+
+    with open(genomes_paths_file) as fl:
+        for i, line in enumerate(fl):
+            if not line:
+                continue
+
+            genome_file = Path(line.strip().split()[1])
+            name = line.strip().split()[0]
+
+            if not genome_file.is_file():
+                files_not_found.append((i + 1, name, genome_file))
+
+
+            accession_count += 1
+            acc_to_genome_file[name] = genome_file
+
+
+    assert accession_count == len(acc_to_genome_file), "Some genome names are duplicated in the genome path file."
+
+
+    if files_not_found:
+        for line, acc, genome_file in files_not_found:
+            logging.error(f"Genome file '{genome_file}' at line {line} of the genome path file '{genomes_paths_file}' was not found!")
+        sys.exit(2)
+
+    return acc_to_genome_file
+
+
 def parse_taxonomy_file(taxonomy_file):
     """ """
 
@@ -146,7 +180,9 @@ def parse_args(argv=None):
         "--genomes",
         type=Path,
         required=True,
-        help="Path to a text file containing input genome paths.",
+        help="Path to a TSV file containing input genome paths."
+        "The file is expected to have two columns: the first column containing genome accessions, "
+        "and the second column containing the path to genome file.",
     )
     parser.add_argument(
         "--taxonomy",
