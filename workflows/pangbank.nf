@@ -94,6 +94,9 @@ workflow PANGBANK {
 }
 
 def create_ppanggo_input_channel(input_file) {
+
+    // def annotation_exts = [".gbff", ".gff", ".gb"];
+    // def fasta_exts = [".fna", ".fasta", ".fa"];
     // create meta map
     def meta = [:]
     def genome_files = []
@@ -114,6 +117,24 @@ def create_ppanggo_input_channel(input_file) {
         genome_files.add(file(genome_file))
     }
 
+
+    // Getting the extension of the first genome file
+
+    extension_patern = ~/.*(\.[a-yA-Y]+)(\.gz)?$/ // A-Y to exclude Z to not cacth gz if exists.
+    genome_extension = (genome_files[0] =~ extension_patern)[0][1].toLowerCase()
+
+    if (params.annotation_extensions.contains(genome_extension)){
+        meta.file_type = "annotation"
+    } else if (params.fasta_extensions.contains(genome_extension) ) {
+        meta.file_type = "fasta"
+    }
+    else {
+        exit 1, """
+        ERROR: Please check input genomes -> Genome file (${genome_files[0]}) does have an unexpected extension: $genome_extension
+        Possible value for annotation files: $annotation_exts\
+        Fasta files: $fasta_exts
+        """
+    }
 
     input_meta = [ meta, input_file, genome_files]
 
