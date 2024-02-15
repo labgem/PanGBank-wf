@@ -18,6 +18,7 @@ lint:
   nextflow_config:
   - manifest.name
   - manifest.homePage
+  - params.input
 repository_type: pipeline
 template:
   prefix: labgem

@@ -52,6 +52,16 @@
                     "type": "integer",
                     "description": "Minimum number of genomes required to build a pangenome.",
                     "default": 15
+                },
+                "annotation_extensions": {
+                    "type": "string",
+                    "description": "Expected extension for annotation files given as input",
+                    "default": "['.gbff', '.gff', '.gb']"
+                },
+                "fasta_extensions": {
+                    "type": "string",
+                    "description": "Expected extension for fasta files given as input",
+                    "default": "['.fna', '.fasta', '.fa']"
                 }
             }
         },
