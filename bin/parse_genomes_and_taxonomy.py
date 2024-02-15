@@ -73,13 +73,10 @@ def parse_genome_files(genomes_paths_file):
             if not genome_file.is_file():
                 files_not_found.append((i + 1, name, genome_file))
 
-
             accession_count += 1
             acc_to_genome_file[name] = genome_file
 
-
     assert accession_count == len(acc_to_genome_file), "Some genome names are duplicated in the genome path file."
-
 
     if files_not_found:
         for line, acc, genome_file in files_not_found:

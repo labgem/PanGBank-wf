@@ -11,26 +11,28 @@ import sys
 from pathlib import Path
 import yaml
 
+
 def get_info_from_yaml(yaml_info):
 
     name = yaml_info.stem
 
-    with open(yaml_info, 'r') as fh:
-        pangenome_info = yaml.safe_load(fh)['Content']
+    with open(yaml_info, "r") as fh:
+        pangenome_info = yaml.safe_load(fh)["Content"]
 
     useful_info = {
-        "Name":name,
-        "Genomes":pangenome_info['Genomes'],
-        "Genes":pangenome_info['Genes'],
-        "Families":pangenome_info['Families'],
-        "Persistent":pangenome_info['Persistent']['Family_count'],
-        "Shell":pangenome_info['Shell']['Family_count'],
-        "Cloud":pangenome_info['Cloud']['Family_count'],
-        "RGPs":pangenome_info['RGP'],
-        "Spots":pangenome_info['Spots'],
-        "Modules":pangenome_info['Modules']['Number_of_modules']
+        "Name": name,
+        "Genomes": pangenome_info["Genomes"],
+        "Genes": pangenome_info["Genes"],
+        "Families": pangenome_info["Families"],
+        "Persistent": pangenome_info["Persistent"]["Family_count"],
+        "Shell": pangenome_info["Shell"]["Family_count"],
+        "Cloud": pangenome_info["Cloud"]["Family_count"],
+        "RGPs": pangenome_info["RGP"],
+        "Spots": pangenome_info["Spots"],
+        "Modules": pangenome_info["Modules"]["Number_of_modules"],
     }
     return useful_info
+
 
 def write_tsv_from_list_of_dict(species_summary_file, species_infos):
     """ """
@@ -54,12 +56,11 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-                "--yaml_dir",
+        "--yaml_dir",
         help="Directory where yaml info file are stored",
         required=True,
         type=Path,
     )
-
 
     parser.add_argument(
         "-o",
@@ -80,7 +81,6 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-
 def main(argv=None):
     """Coordinate argument parsing and program execution."""
     args = parse_args(argv)
@@ -95,7 +95,6 @@ def main(argv=None):
         collected_infos.append(info)
 
     write_tsv_from_list_of_dict(args.output, collected_infos)
-
 
 
 if __name__ == "__main__":
