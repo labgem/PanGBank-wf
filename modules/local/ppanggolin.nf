@@ -12,11 +12,11 @@ process PPANGGOLIN {
     cpus { meta.genomes_count > 5000 ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
 
     // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
-    memory { meta.genomes_count > 5000 ?  "${16*30}GB" : "${(meta.genomes_count / 312)*8}GB" }
+    memory { meta.genomes_count > 5000 ?  "${16*30}GB" : "${Math.ceil((meta.genomes_count / 312)*8)}GB" }
     // memory { meta.genomes_count > 30 ? '1 GB' : '3 GB' }
 
     // tag { meta.genomes_count > 30 ? 'BIG' : 'SMALL' }
-    tag { "${meta.species} - ${meta.genomes_count} - ${(meta.genomes_count / 312)*8} GB - ${Math.round(Math.ceil(meta.genomes_count / 312))} cpus" }
+    tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 
     conda "bioconda::ppanggolin>=2.0.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
