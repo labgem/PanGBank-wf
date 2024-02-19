@@ -1,4 +1,4 @@
-# labgem/pangbank: Citations
+# PanGBank: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
@@ -10,13 +10,16 @@
 
 ## Pipeline tools
 
-- [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+- [PPanGGOLiN](https://ppanggolin.readthedocs.io)
 
-  > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
+  > Gautreau, G., Bazin, A., Gachet, M., Planel, R., Burlot, L., Dubois, M., ... & Vallenet, D. (2020). PPanGGOLiN: depicting microbial diversity via a partitioned pangenome graph. PLoS computational biology, 16(3), e1007732.
 
-- [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
+- [Mash](https://doi.org/10.1186/s13059-016-0997-x)
+  > Ondov, B. D., Treangen, T. J., Melsted, P., Mallonee, A. B., Bergman, N. H., Koren, S., & Phillippy, A. M. (2016). Mash: fast genome and metagenome distance estimation using MinHash. Genome biology, 17(1), 1-14.
 
-  > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
+<!-- - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
+
+  > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924. -->
 
 ## Software packaging/containerisation tools
 

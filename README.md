@@ -1,5 +1,6 @@
-[![GitHub Actions CI Status](https://github.com/labgem/pangbank/workflows/nf-core%20CI/badge.svg)](https://github.com/labgem/pangbank/actions?query=workflow%3A%22nf-core+CI%22)
-[![GitHub Actions Linting Status](https://github.com/labgem/pangbank/workflows/nf-core%20linting/badge.svg)](https://github.com/labgem/pangbank/actions?query=workflow%3A%22nf-core+linting%22)
+[![GitHub Actions CI Status](https://github.com/PanGBank/workflows/nf-core%20CI/badge.svg)](https://github.com/PanGBank/actions?query=workflow%3A%22nf-core+CI%22)
+[![GitHub Actions Linting Status](https://github.com/PanGBank/workflows/nf-core%20linting/badge.svg)](https://github.com/PanGBank/actions?query=workflow%3A%22nf-core+linting%22)
+
 <!-- [![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX) -->
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
@@ -9,20 +10,13 @@
 
 ## Introduction
 
-**labgem/pangbank** is a bioinformatics pipeline that ...
+**PanGBank** is a bioinformatics pipeline that uses PPanGGOLiN to generate pangenomes from a list of input genomes and taxonomy. It then prepares files for the PanGBank API.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
-
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
-
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+1. Parse input genomes and taxonomy, grouping them by species.
+2. Run PPanGGOLiN on the genomes of each species.
+3. Compile the pangenome information into a single file.
+4. Create a mash sketch for all input genomes to easily identify the most appropriate pangenome for an input genome.
+5. Concatenate the amino acid sequences of representative families into a single file for rapid retrieval of pangenomes containing a protein of interest.
 
 ## Usage
 
@@ -31,17 +25,6 @@
 
 <!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
      Explain what rows and columns represent. For instance (please edit as appropriate):
-
-First, prepare a samplesheet with your input data that looks as follows:
-
-`samplesheet.csv`:
-
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-```
-
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
 
 -->
 
@@ -62,7 +45,7 @@ nextflow run labgem/pangbank \
 
 ## Credits
 
-labgem/pangbank was originally written by Jean Mainguy.
+**PanGBank** was originally written in Snakemake and has been rewritten in Nextflow by Jean Mainguy.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
@@ -75,7 +58,7 @@ If you would like to contribute to this pipeline, please see the [contributing g
 ## Citations
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use labgem/pangbank for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+<!-- If you use PanGBank for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 <!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 
