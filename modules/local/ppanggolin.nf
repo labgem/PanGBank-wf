@@ -39,7 +39,7 @@ process PPANGGOLIN {
 
     script:
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
-    def tmpdir = meta.genomes_count > params.large_pangenome_cutoff ?  params.large_pangenome_tmpdir : ""
+    def tmpdir = meta.genomes_count > params.large_pangenome_cutoff ?  "--tmpdir ${params.large_pangenome_tmpdir} ": ""
     """
     ppanggolin all $input --output ${meta.species} --no_flat_files  --cpu $task.cpus  $tmpdir
 
