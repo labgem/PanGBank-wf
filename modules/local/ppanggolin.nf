@@ -4,18 +4,18 @@ process PPANGGOLIN {
 
     // A dynamic label would be perfect here but does not work.. https://github.com/nextflow-io/nextflow/issues/894
 
-    queue { meta.genomes_count > 5000 ? 'xlarge,xxlarge' : 'normal' }
-    time { meta.genomes_count > 5000 ? '5-00:00:00' : '23:50:00' }
+    queue { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_queue : params.regular_pangenome_queue }
+
+    time { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_time : params.regular_pangenome_time }
     // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
 
     // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
-    cpus { meta.genomes_count > 5000 ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
+    cpus { meta.genomes_count > params.large_pangenome_cutoff ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
 
     // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
-    memory { meta.genomes_count > 5000 ?  "${16*30}GB" : "${Math.ceil((meta.genomes_count / 312)*8)}GB" }
+    memory { meta.genomes_count > params.large_pangenome_cutoff ?  "${16*30}GB" : "${Math.ceil((meta.genomes_count / 312)*8)}GB" }
     // memory { meta.genomes_count > 30 ? '1 GB' : '3 GB' }
 
-    // tag { meta.genomes_count > 30 ? 'BIG' : 'SMALL' }
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 
     conda "bioconda::ppanggolin>=2.0.0"
@@ -39,7 +39,7 @@ process PPANGGOLIN {
 
     script:
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
-    def tmpdir = meta.genomes_count > 5000 ?  "--tmpdir " : ""
+    def tmpdir = meta.genomes_count > params.large_pangenome_cutoff ?  "--tmpdir " : ""
     """
     ppanggolin all $input --output ${meta.species} --no_flat_files  --cpu $task.cpus  $tmpdir
 
