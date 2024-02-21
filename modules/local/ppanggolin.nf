@@ -39,9 +39,9 @@ process PPANGGOLIN {
 
     script:
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
-    def tmpdir = meta.genomes_count > 5000 ?  "/env/cns/bigtmp2" : "/tmp/"
+    def tmpdir = meta.genomes_count > 5000 ?  "--tmpdir " : ""
     """
-    ppanggolin all $input --output ${meta.species} --no_flat_files  --cpu $task.cpus --tmpdir . # ${tmpdir}/${meta.species}/
+    ppanggolin all $input --output ${meta.species} --no_flat_files  --cpu $task.cpus  $tmpdir
 
     ppanggolin info -p ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
 
