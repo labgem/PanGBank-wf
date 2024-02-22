@@ -6,7 +6,7 @@ process PPANGGOLIN {
 
     queue { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_queue : params.regular_pangenome_queue }
 
-    time { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_time : params.regular_pangenome_time }
+    time { meta.genomes_count > params.large_pangenome_cutoff ? '5-00:00:00' : '23:50:00' }
     // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
 
     // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
