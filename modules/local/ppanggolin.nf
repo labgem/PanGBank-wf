@@ -21,7 +21,7 @@ process PPANGGOLIN {
     conda "bioconda::ppanggolin>=2.0.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.2--py39hf95cd2a_0' :
-        'biocontainers/ppanggolin:2.0.2--py39hf95cd2a_0' }"
+        'biocontainers/ppanggolin:2.0.3--py310h4b81fae_0' }"
 
     input:
     tuple val(meta), path(genome_file), path("genomes/*")
