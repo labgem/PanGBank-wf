@@ -54,14 +54,14 @@
                     "default": 15
                 },
                 "annotation_extensions": {
-                    "type": "array",
+                    "type": "string",
                     "description": "Expected extension for annotation files given as input",
-                    "default": "['.gbff', '.gff', '.gb']"
+                    "default": ".gbff;.gff;.gb"
                 },
                 "fasta_extensions": {
-                    "type": "array",
+                    "type": "string",
                     "description": "Expected extension for fasta files given as input",
-                    "default": "['.fna', '.fasta', '.fa']"
+                    "default": ".fna;.fasta;.fa"
                 }
             }
         },
