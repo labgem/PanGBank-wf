@@ -18,7 +18,7 @@ process PPANGGOLIN {
 
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 
-    conda "bioconda::ppanggolin>=2.0.0"
+    conda "bioconda::ppanggolin>=2.0.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.2--py39hf95cd2a_0' :
         'biocontainers/ppanggolin:2.0.2--py39hf95cd2a_0' }"
@@ -39,7 +39,15 @@ process PPANGGOLIN {
 
     script:
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
-    def tmpdir = meta.genomes_count > params.large_pangenome_cutoff ?  "--tmpdir ${params.large_pangenome_tmpdir} ": ""
+
+    def tmpdir = ""
+    if (params.large_pangenome_tmpdir && meta.genomes_count > params.large_pangenome_cutoff){
+        tmpdir =  "--tmpdir ${params.large_pangenome_tmpdir}"
+    }
+    else if (params.regular_pangenome_tmpdir && meta.genomes_count <= params.large_pangenome_cutoff) {
+        tmpdir =  "--tmpdir ${params.regular_pangenome_tmpdir}"
+    }
+
     """
     ppanggolin all $input --output ${meta.species} --no_flat_files  --cpu $task.cpus  $tmpdir
 
