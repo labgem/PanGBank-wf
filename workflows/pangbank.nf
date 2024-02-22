@@ -121,17 +121,19 @@ def create_ppanggo_input_channel(input_file) {
 
     extension_patern = ~/.*(\.[a-yA-Y]+)(\.gz)?$/ // A-Y to exclude Z to not cacth gz if exists.
     genome_extension = (genome_files[0] =~ extension_patern)[0][1].toLowerCase()
+    annotation_extensions = params.annotation_extensions.split(';')
+    fasta_extensions = params.fasta_extensions.split(';')
 
-    if (params.annotation_extensions.contains(genome_extension)){
+    if (annotation_extensions.contains(genome_extension)){
         meta.file_type = "annotation"
-    } else if (params.fasta_extensions.contains(genome_extension) ) {
+    } else if (fasta_extensions.contains(genome_extension) ) {
         meta.file_type = "fasta"
     }
     else {
         exit 1, """
         ERROR: Please check input genomes -> Genome file (${genome_files[0]}) does have an unexpected extension: $genome_extension
-        Possible value for annotation files: $annotation_exts\
-        Fasta files: $fasta_exts
+        Possible value for annotation files: $annotation_extensions\
+        Fasta files: $fasta_extensions
         """
     }
 
