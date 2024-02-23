@@ -6,7 +6,7 @@ process PPANGGOLIN {
 
     queue { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_queue : params.regular_pangenome_queue }
 
-    time { meta.genomes_count > params.large_pangenome_cutoff ? '5-00:00:00' : '23:50:00' }
+    time { meta.genomes_count > params.large_pangenome_cutoff ? '5days' : '23:50:00' }
     // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
 
     // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
@@ -20,7 +20,7 @@ process PPANGGOLIN {
 
     conda "bioconda::ppanggolin>=2.0.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.2--py39hf95cd2a_0' :
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.3--py39hf95cd2a_0' :
         'biocontainers/ppanggolin:2.0.3--py310h4b81fae_0' }"
 
     input:
