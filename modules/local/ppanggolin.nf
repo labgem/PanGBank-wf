@@ -18,10 +18,10 @@ process PPANGGOLIN {
 
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 
-    conda "bioconda::ppanggolin>=2.0.3"
+    conda "bioconda::ppanggolin>=2.0.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.3--py39hf95cd2a_0' :
-        'biocontainers/ppanggolin:2.0.3--py310h4b81fae_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.4--py310h4b81fae_0' :
+        'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
 
     input:
     tuple val(meta), path(genome_file), path("genomes/*")
