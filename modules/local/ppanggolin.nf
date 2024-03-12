@@ -13,7 +13,7 @@ process PPANGGOLIN {
     cpus { meta.genomes_count > params.large_pangenome_cutoff ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
 
     // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
-    memory { meta.genomes_count > params.large_pangenome_cutoff ?  "${16*30}GB" : "${Math.ceil((meta.genomes_count / 312)*8)}GB" }
+    memory { meta.genomes_count > params.large_pangenome_cutoff ?  "${16*30}GB" : "${Math.ceil(2 + (meta.genomes_count / 312)*8)}GB" }
     // memory { meta.genomes_count > 30 ? '1 GB' : '3 GB' }
 
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
