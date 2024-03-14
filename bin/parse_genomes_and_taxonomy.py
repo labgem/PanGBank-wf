@@ -20,44 +20,6 @@ import re
 def parse_genome_files(genomes_paths_file):
     """ """
     files_not_found = []
-    genome_files = []
-
-    ncbi_acc_pattern = re.compile(r"([GCFA]{3}_\d*\.\d)*.*")
-
-    with open(genomes_paths_file) as fl:
-        for i, line in enumerate(fl):
-            if not line:
-                continue
-            genome_file = Path(line.strip())
-
-            if not genome_file.is_file():
-                files_not_found.append((i + 1, genome_file))
-            else:
-                genome_files.append(genome_file)
-
-    if files_not_found:
-        for line, genome_file in files_not_found:
-            logging.error(f"Genome file '{genome_file}' at line {line} of the genome path file '{genomes_paths_file}' was not found!")
-        sys.exit(2)
-
-    acc_to_genome_file = {}
-    for genome_file in genome_files:
-        try:
-            # Retrieve accession from the genome name and check that accession follow expected format of ncbi accession.
-            accession = ncbi_acc_pattern.match(genome_file.name).group(1)
-        except AttributeError:
-            logging.error(
-                f"The genome file name '{genome_file}' does not have the expected format. It should start with an ncbi accession. ie : GCF_000012285.1_ASM1228v1_genomic.gbff.gz"
-            )
-            sys.exit(2)
-        acc_to_genome_file[accession] = genome_file
-
-    return acc_to_genome_file
-
-
-def parse_genome_files(genomes_paths_file):
-    """ """
-    files_not_found = []
 
     acc_to_genome_file = {}
     accession_count = 0
