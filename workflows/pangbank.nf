@@ -83,6 +83,8 @@ workflow PANGBANK {
     ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
 
+    ppanggo_inputs_meta.view()
+
     PPANGGOLIN(ppanggo_inputs_meta)
 
 
@@ -136,8 +138,7 @@ def create_ppanggo_input_channel(input_file) {
         Fasta files: $fasta_extensions
         """
     }
-
-    input_meta = [ meta, input_file, genome_files]
+    input_meta = [ meta, input_file]
 
     return input_meta
 }

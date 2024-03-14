@@ -24,7 +24,7 @@ process PPANGGOLIN {
         'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
 
     input:
-    tuple val(meta), path(genome_file), path("genomes/*")
+    tuple val(meta), path(genome_file)
 
 
     output:
