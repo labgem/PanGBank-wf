@@ -21,6 +21,7 @@ WorkflowPangbank.initialise(params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+ch_ppanggolin_config          = Channel.fromPath("$projectDir/assets/ppanggolin_config.yml", checkIfExists: true)
 // ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
 // ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
 // ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
@@ -80,17 +81,17 @@ workflow PANGBANK {
 
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
 
-    ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
+    ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
 
-    ppanggo_inputs_meta.view()
+    ch_ppanggo_inputs_meta.view()
 
-    PPANGGOLIN(ppanggo_inputs_meta)
+    PPANGGOLIN(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
 
 
-    pangenome_infos = PPANGGOLIN.out.pangenome_info.collect()
+    ch_pangenome_infos = PPANGGOLIN.out.pangenome_info.collect()
 
-    GATHER_PANGENOME_INFO(pangenome_infos)
+    GATHER_PANGENOME_INFO(ch_pangenome_infos)
 
 }
 

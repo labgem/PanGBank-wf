@@ -18,24 +18,24 @@ process PPANGGOLIN {
 
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 
-    conda "bioconda::ppanggolin>=2.0.4"
+    conda "bioconda::ppanggolin>=2.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.4--py310h4b81fae_0' :
         'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
 
     input:
-    tuple val(meta), path(genome_file)
-
+        tuple val(meta), path(genome_file)
+        path(ppanggolin_config)
 
     output:
-    tuple  val(meta), path("${meta.species}/pangenome.h5")       , emit: pangenome
+        tuple  val(meta), path("${meta.species}/pangenome.h5"), path("${meta.species}/genomes_statistics.tsv")       , emit: pangenome
     // tuple  val(meta), path("${meta.species}/info.yaml")          , emit: pangenome_info
 
-    path "${meta.species}.yaml"                                  , emit: pangenome_info
-    path "versions.yml", emit: versions
+        path "${meta.species}.yaml"                                  , emit: pangenome_info
+        path "versions.yml", emit: versions
 
     when:
-    task.ext.when == null || task.ext.when
+      task.ext.when == null || task.ext.when
 
     script:
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
@@ -49,7 +49,7 @@ process PPANGGOLIN {
     }
 
     """
-    ppanggolin all $input --output ${meta.species} --no_flat_files  --cpu $task.cpus  $tmpdir
+    ppanggolin all $input --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $tmpdir
 
     ppanggolin info -p ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
 
