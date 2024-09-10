@@ -42,9 +42,11 @@ ch_ppanggolin_config          = Channel.fromPath("$projectDir/assets/ppanggolin_
 // MODULE: Local modules
 //
 include { PARSE_GENOMES_AND_TAXONOMY                      } from '../modules/local/parse_genomes_and_taxonomy'
-include { PPANGGOLIN                                      } from '../modules/local/ppanggolin'
+include { PPANGGOLIN_ALL                                  } from '../modules/local/ppanggolin/all'
+include { PPANGGOLIN_FASTA                                } from '../modules/local/ppanggolin/fasta'
 include { GATHER_PANGENOME_INFO                           } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES                                 } from '../modules/local/md5sum_on_list_of_files'
+include { MASH_SKETCH                                     } from '../modules/nf-core/mash/sketch/main'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -87,12 +89,13 @@ workflow PANGBANK {
 
     ch_ppanggo_inputs_meta.view()
 
-    PPANGGOLIN(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
+    PPANGGOLIN_ALL(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
+
+    PPANGGOLIN_FASTA(PPANGGOLIN_ALL.out.pangenome)
 
     MD5SUM_ON_FILES(ch_ppanggo_inputs_meta)
 
-
-    ch_pangenome_infos = PPANGGOLIN.out.pangenome_info.collect()
+    ch_pangenome_infos = PPANGGOLIN_ALL.out.pangenome_info.collect()
 
     GATHER_PANGENOME_INFO(ch_pangenome_infos)
 

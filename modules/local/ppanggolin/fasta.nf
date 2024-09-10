@@ -1,4 +1,4 @@
-process PPANGGOLIN {
+process PPANGGOLIN_FASTA {
     // label 'process_single'
     tag "${meta.species} - (${meta.genomes_count})"
 
@@ -10,7 +10,7 @@ process PPANGGOLIN {
     // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
 
     // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
-    cpus { meta.genomes_count > params.large_pangenome_cutoff ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
+    cpus 1
 
     // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
     memory { meta.genomes_count > params.large_pangenome_cutoff ?  "${16*30}GB" : "${Math.ceil(2 + (meta.genomes_count / 312)*8)}GB" }
@@ -24,34 +24,19 @@ process PPANGGOLIN {
         'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
 
     input:
-        tuple val(meta), path(genome_file)
-        path(ppanggolin_config)
+        tuple val(meta), path(pangenome)
 
     output:
-        tuple  val(meta), path("${meta.species}/pangenome.h5"), path("${meta.species}/genomes_statistics.tsv")       , emit: pangenome
-    // tuple  val(meta), path("${meta.species}/info.yaml")          , emit: pangenome_info
-
-        path "${meta.species}.yaml"                                  , emit: pangenome_info
+        path("${meta.species}/persistent_nucleotide_families.fasta.gz")
         path "versions.yml", emit: versions
 
     when:
       task.ext.when == null || task.ext.when
 
     script:
-    def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
-
-    def tmpdir = ""
-    if (params.large_pangenome_tmpdir && meta.genomes_count > params.large_pangenome_cutoff){
-        tmpdir =  "--tmpdir ${params.large_pangenome_tmpdir}"
-    }
-    else if (params.regular_pangenome_tmpdir && meta.genomes_count <= params.large_pangenome_cutoff) {
-        tmpdir =  "--tmpdir ${params.regular_pangenome_tmpdir}"
-    }
 
     """
-    ppanggolin all $input --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $tmpdir
-
-    ppanggolin info -p ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
+    ppanggolin fasta -p $pangenome  -o ${meta.species} --gene_families persistent --compress
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
