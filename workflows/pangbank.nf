@@ -93,6 +93,14 @@ workflow PANGBANK {
 
     PPANGGOLIN_FASTA(PPANGGOLIN_ALL.out.pangenome)
 
+    ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta.map{meta, fasta -> fasta.path}//.toList()#
+                                                        .collectFile(name: 'sample.txt', newLine: true).map{file -> [[id:"families_persistent_all.msh"], file]}
+
+
+    MASH_SKETCH(ch_fasta_list_file)
+
+
+
     MD5SUM_ON_FILES(ch_ppanggo_inputs_meta)
 
     ch_pangenome_infos = PPANGGOLIN_ALL.out.pangenome_info.collect()

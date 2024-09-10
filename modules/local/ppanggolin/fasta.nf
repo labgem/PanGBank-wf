@@ -27,7 +27,7 @@ process PPANGGOLIN_FASTA {
         tuple val(meta), path(pangenome)
 
     output:
-        path("${meta.species}/persistent_nucleotide_families.fasta.gz")
+        tuple val(meta), path("${meta.species}/persistent_nucleotide_families.fasta.gz") , emit: persistent_families_fasta
         path "versions.yml", emit: versions
 
     when:
