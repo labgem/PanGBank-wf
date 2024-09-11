@@ -87,14 +87,13 @@ workflow PANGBANK {
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
 
-    ch_ppanggo_inputs_meta.view()
-
     PPANGGOLIN_ALL(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
 
     PPANGGOLIN_FASTA(PPANGGOLIN_ALL.out.pangenome)
 
-    ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta.map{meta, fasta -> fasta.path}//.toList()#
-                                                        .collectFile(name: 'sample.txt', newLine: true).map{file -> [[id:"families_persistent_all.msh"], file]}
+    ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta.map{meta, fasta -> fasta.path}
+                                                                    .collectFile(name: 'persistent_fasta_list.txt', newLine: true)
+                                                                    .map{file -> [[id:"families_persistent_all.msh"], file]}
 
 
     MASH_SKETCH(ch_fasta_list_file)
