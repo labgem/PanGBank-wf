@@ -75,9 +75,11 @@ workflow PANGBANK {
 
     ch_min_genomes = Channel.value(params.min_genomes)
 
+    ch_input_genomes = manage_url_input_genomes(file(params.genomes))
+
     // PREPARE SPECIES: Check species that have enough genome to build a pangenome
     PARSE_GENOMES_AND_TAXONOMY (
-        file(params.genomes),
+        ch_input_genomes,
         file(params.taxonomy),
         ch_min_genomes
     )
@@ -108,35 +110,74 @@ workflow PANGBANK {
 
 }
 
+
+def manage_url_input_genomes(input_genomes_file) {
+
+    // This function check if input genomes are URL
+    // If yes it download them and store them in tmp file
+    // and generate a new genome list file mapping genome name with local path
+    // Read the first line of the file
+    def first_line = input_genomes_file.withReader { it.readLine() }
+
+    // Assuming the second element after splitting by '\t' is the genome file path or URL
+    def genome_file_str = first_line.split('\t')[1]
+
+    println(genome_file_str)
+    def url_schemes = ["https", "http", "ftp"]
+
+    extension_patern = ~/.*((\.[a-yA-Y]+)(\.gz)?)$/ // A-Y to exclude Z to not cacth gz if exists.
+
+    // Check if the genome_file_str is a URL
+    if (url_schemes.contains(file(genome_file_str).getScheme())) {
+        // If it's a URL, download or handle it in a specific way
+        println "Collecting URL files"
+        genome_file_channel = channel.fromPath(input_genomes_file).splitCsv( header: ['name', 'path'], sep:"\t")
+        .map{ row -> ["file_name":"${row.name}${(row.path =~ extension_patern)[0][1]}", "path":row.path] }
+        .collectFile { row ->
+        [ "${row.file_name}", file(row.path).bytes ]
+    }
+    .map { path ->
+        ["name":"${path.name - (path =~ extension_patern)[0][1] }" ,"path": path]
+    }
+    .collectFile(name: 'input_genomes.txt', newLine: true){
+        row -> ['input_genomes.txt', "${row.name}\t${row.path}"]
+
+    }
+
+    return genome_file_channel
+
+    }
+
+    else {
+
+        println "Processing local file: ${genome_file_str}"
+        genome_file_channel = channel
+                                    .fromPath(input_genomes_file)
+                                    .splitCsv( header: ['name', 'path'], sep:"\t")
+                                    .collectFile(name: 'input_genomes.txt', newLine: true){row -> ['input_genomes.txt', "${row.name}\t${file(row.path)}"] }
+
+        return genome_file_channel
+    }
+}
+
+
 def create_ppanggo_input_channel(input_file) {
 
     // def annotation_exts = [".gbff", ".gff", ".gb"];
     // def fasta_exts = [".fna", ".fasta", ".fa"];
     // create meta map
     def meta = [:]
-    def genome_files = []
+
 
     meta.species = input_file.getSimpleName()
     meta.genomes_count = input_file.countLines()
 
-    // need to extract the genome files and add them to the channel
-    // in order that the files are correctly mounted when using docker
-    // is also the opportunity to check that they exists
-    input_file.eachLine { line ->
-        def genome_file = file(line.split('\t')[1])
-
-        if (!genome_file.exists()) {
-            exit 1, "ERROR: Please check input genomes -> Genome file does not exist!\n${genome_file}"
-        }
-
-        genome_files.add(file(genome_file))
-    }
-
-
     // Getting the extension of the first genome file
+    def first_line = input_file.withReader { it.readLine() }
+    def first_genome_file = first_line.split('\t')[1]
 
     extension_patern = ~/.*(\.[a-yA-Y]+)(\.gz)?$/ // A-Y to exclude Z to not cacth gz if exists.
-    genome_extension = (genome_files[0] =~ extension_patern)[0][1].toLowerCase()
+    genome_extension = (first_genome_file =~ extension_patern)[0][1].toLowerCase()
     annotation_extensions = params.annotation_extensions.split(';')
     fasta_extensions = params.fasta_extensions.split(';')
 
@@ -147,7 +188,7 @@ def create_ppanggo_input_channel(input_file) {
     }
     else {
         exit 1, """
-        ERROR: Please check input genomes -> Genome file (${genome_files[0]}) does have an unexpected extension: $genome_extension
+        ERROR: Please check input genomes -> Genome file (${first_genome_file}) does have an unexpected extension: $genome_extension
         Possible value for annotation files: $annotation_extensions\
         Fasta files: $fasta_extensions
         """

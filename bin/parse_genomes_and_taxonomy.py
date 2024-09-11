@@ -12,6 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 import gzip
 import re
+from urllib.parse import urlparse
 
 
 # TODO check circular contig when input genomes are in fasta and add them in ppanggolin input files
@@ -29,14 +30,14 @@ def parse_genome_files(genomes_paths_file):
             if not line:
                 continue
 
-            genome_file = Path(line.strip().split()[1])
+            genome_path = line.strip().split()[1]
             name = line.strip().split()[0]
 
-            if not genome_file.is_file():
-                files_not_found.append((i + 1, name, genome_file))
+            if not Path(genome_path).is_file():
+                files_not_found.append((i + 1, name, genome_path))
 
             accession_count += 1
-            acc_to_genome_file[name] = genome_file
+            acc_to_genome_file[name] = genome_path
 
     assert accession_count == len(acc_to_genome_file), "Some genome names are duplicated in the genome path file."
 
@@ -71,9 +72,8 @@ def parse_taxonomy_file(taxonomy_file):
 
 def associate_genomes_and_taxonomy(acc_to_genome_file, sptax_to_accessions, min_genome_count):
     """ """
-    remove_assembly_version = lambda accessions: {acc.split(".")[0] for acc in accessions}
 
-    all_input_accessions = remove_assembly_version(acc_to_genome_file)
+    all_input_accessions = {acc.split(".")[0] for acc in acc_to_genome_file}
 
     acc_to_acc_with_version = {acc.split(".")[0]: acc for acc in acc_to_genome_file}
 
@@ -81,7 +81,11 @@ def associate_genomes_and_taxonomy(acc_to_genome_file, sptax_to_accessions, min_
 
     species_infos = []
     for sptax, sp_accessions in sptax_to_accessions.items():
-        input_sp_accessions = all_input_accessions & remove_assembly_version(sp_accessions)
+
+        # remove assymbly version from assembly
+        sp_accessions_with_no_version = {acc.split(".")[0] for acc in sp_accessions}
+
+        input_sp_accessions = all_input_accessions & sp_accessions_with_no_version
 
         sptax_to_input_accs[sptax] = {acc_to_acc_with_version[acc] for acc in input_sp_accessions}
 
