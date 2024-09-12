@@ -115,6 +115,8 @@ def manage_url_input_genomes(input_genomes_file) {
     // If yes it download them and store them in tmp file
     // and generate a new genome list file mapping genome name with local path
     // Read the first line of the file
+    println("input_genomes_file: ${input_genomes_file}")
+
     def first_line = input_genomes_file.withReader { it.readLine() }
     println("FIRST LINE: ${first_line}")
     // Assuming the second element after splitting by '\t' is the genome file path or URL
