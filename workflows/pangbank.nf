@@ -120,9 +120,14 @@ def manage_url_input_genomes(input_genomes_file) {
 
     def file_size = file(input_genomes_file).size()
     println "File size: ${file_size} bytes"
-
-    def first_line = input_genomes_file.withReader('UTF-8') { it.readLine() }
+    def first_line  = ""
+    file(input_genomes_file).eachLine { line ->
+        first_line = line
+        return false
+    }
     println("FIRST LINE: ${first_line}")
+    // def first_line = input_genomes_file.withReader('UTF-8') { it.readLine() }
+    // println("FIRST LINE: ${first_line}")
     // Assuming the second element after splitting by '\t' is the genome file path or URL
     def genome_file_str = first_line.split('\t')[1]
 
