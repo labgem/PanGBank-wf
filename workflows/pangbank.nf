@@ -4,17 +4,6 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
-
-// def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
-// def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
-// def summary_params = paramsSummaryMap(workflow)
-
-// // Print parameter summary log to screen
-// log.info logo + paramsSummaryLog(workflow) + citation
-
-// WorkflowPangbank.initialise(params, log)
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
@@ -69,7 +58,7 @@ workflow PANGBANK {
 
     ch_min_genomes = Channel.value(params.min_genomes)
 
-    ch_input_genomes = manage_url_input_genomes(file(params.genomes))
+    ch_input_genomes = manage_input_genomes(file(params.genomes))
 
     // PREPARE SPECIES: Check species that have enough genome to build a pangenome
     PARSE_GENOMES_AND_TAXONOMY (
@@ -104,63 +93,71 @@ workflow PANGBANK {
 
 }
 
+def manage_input_genomes(input_genomes_file) {
 
-def manage_url_input_genomes(input_genomes_file) {
+    // This function process input genomes
+    // If paths in the file are URLs, it downloads the files and stores them in a temporary location,
+    // generating a new genome list file mapping genome names to local paths.
 
-    // This function check if input genomes are URL
-    // If yes it download them and store them in tmp file
-    // and generate a new genome list file mapping genome name with local path
-    // Read the first line of the file
-    println("input_genomes_file: ${input_genomes_file}")
+    log.info "Processing input genomes file: ${input_genomes_file}"
 
-    // def first_line  = ""
-    // file(input_genomes_file).eachLine { line ->
+    // Read the first line of the file to get the genome file path or URL
+    // def first_line = ""
+    // input_genomes_file.eachLine { line ->
     //     first_line = line
-    //     return false
+    //     return false  // Stop after reading the first line
     // }
-    // println("FIRST LINE: ${first_line}")
-    def first_line = file(input_genomes_file).withReader('UTF-8') { it.readLine() }
-    println("FIRST LINE: ${first_line}")
-    // Assuming the second element after splitting by '\t' is the genome file path or URL
+    // This is cleaner bu produced an error in github CI
+    def first_line = input_genomes_file.withReader('UTF-8') { it.readLine() }
+    log.info "First line from genome file: ${first_line}"
+
+    // Extract the genome file path or URL (assuming second column after splitting by tab)
     def genome_file_str = first_line.split('\t')[1]
 
-    println(genome_file_str)
+    // List of supported URL schemes
     def url_schemes = ["https", "http", "ftp"]
 
-    extension_patern = ~/.*((\.[a-yA-Y]+)(\.gz)?)$/ // A-Y to exclude Z to not cacth gz if exists.
+    // Regular expression pattern to extract the file extension (excluding 'gz')
+    def extension_pattern = ~/.*((\.[a-yA-Y]+)(\.gz)?)$/
 
-    // Check if the genome_file_str is a URL
+    // Check if the genome file path is a URL
     if (url_schemes.contains(file(genome_file_str).getScheme())) {
-        // If it's a URL, download or handle it in a specific way
-        println "Collecting URL files"
-        genome_file_channel = channel.fromPath(input_genomes_file).splitCsv( header: ['name', 'path'], sep:"\t")
-        .map{ row -> ["file_name":"${row.name}${(row.path =~ extension_patern)[0][1]}", "path":row.path] }
-        .collectFile { row ->
-        [ "${row.file_name}", file(row.path).bytes ]
-    }
-    .map { path ->
-        ["name":"${path.name - (path =~ extension_patern)[0][1] }" ,"path": path]
-    }
-    .collectFile(name: 'input_genomes.txt', newLine: true){
-        row -> ['input_genomes.txt', "${row.name}\t${row.path}"]
+        // If it's a URL, download the files and map them to local paths
+        log.info "Downloading genome files from URLs"
 
-    }
+        def genome_file_channel = channel.fromPath(input_genomes_file)
+            .splitCsv(header: ['name', 'path'], sep: "\t")
+            .map { row ->
+                def file_extension = (row.path =~ extension_pattern)[0][1]
+                ["file_name": "${row.name}${file_extension}", "path": row.path]
+            }
+            .collectFile { row ->
+                ["${row.file_name}", file(row.path).bytes]
+            }
+            .map { path ->
+                def file_extension = (path.name =~ extension_pattern)[0][1]
+                ["name": "${path.name - file_extension}", "path": path]
+            }
+            .collectFile(name: 'input_genomes.txt', newLine: true) { row ->
+                ['input_genomes.txt', "${row.name}\t${row.path}"]
+            }
 
-    return genome_file_channel
+        return genome_file_channel
 
-    }
+    } else {
+        // If it's a local file, process the file paths directly
+        log.info "Processing local genome file paths"
 
-    else {
-
-        println "Processing local file: ${genome_file_str}"
-        genome_file_channel = channel
-                                    .fromPath(input_genomes_file)
-                                    .splitCsv( header: ['name', 'path'], sep:"\t")
-                                    .collectFile(name: 'input_genomes.txt', newLine: true){row -> ['input_genomes.txt', "${row.name}\t${file(row.path)}"] }
+        def genome_file_channel = channel.fromPath(input_genomes_file)
+            .splitCsv(header: ['name', 'path'], sep: "\t")
+            .collectFile(name: 'input_genomes.txt', newLine: true) { row ->
+                ['input_genomes.txt', "${row.name}\t${file(row.path)}"]
+            }
 
         return genome_file_channel
     }
 }
+
 
 
 def create_ppanggo_input_channel(input_file) {
@@ -199,80 +196,3 @@ def create_ppanggo_input_channel(input_file) {
 
     return input_meta
 }
-
-
-    //
-    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    //
-    // INPUT_CHECK (
-    //     file(params.input)
-    // )
-    // ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    // //
-    // // MODULE: Run FastQC
-    // //
-    // FASTQC (
-    //     INPUT_CHECK.out.reads
-    // )
-    // ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-
-    // CUSTOM_DUMPSOFTWAREVERSIONS (
-    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    // )
-
-    // //
-    // // MODULE: MultiQC
-    // //
-    // workflow_summary    = WorkflowPangbank.paramsSummaryMultiqc(workflow, summary_params)
-    // ch_workflow_summary = Channel.value(workflow_summary)
-
-    // methods_description    = WorkflowPangbank.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    // ch_methods_description = Channel.value(methods_description)
-
-    // ch_multiqc_files = Channel.empty()
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-
-    // MULTIQC (
-    //     ch_multiqc_files.collect(),
-    //     ch_multiqc_config.toList(),
-    //     ch_multiqc_custom_config.toList(),
-    //     ch_multiqc_logo.toList()
-    // )
-    // multiqc_report = MULTIQC.out.report.toList()
-// }
-
-
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    COMPLETION EMAIL AND SUMMARY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-// workflow.onComplete {
-//     if (params.email || params.email_on_fail) {
-//         NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
-//     }
-//     NfcoreTemplate.dump_parameters(workflow, params)
-//     NfcoreTemplate.summary(workflow, params, log)
-//     // TODO try too use hook url to send message on mattermost https://developers.mattermost.com/integrate/webhooks/incoming/
-//     // if (params.hook_url) {
-//     //     NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
-//     // }
-// }
-
-// workflow.onError {
-//     if (workflow.errorReport.contains("Process requirement exceeds available memory")) {
-//         println("🛑 Default resources exceed availability 🛑 ")
-//         println("💡 See here on how to configure pipeline: https://nf-co.re/docs/usage/configuration#tuning-workflow-resources 💡")
-//     }
-// }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    THE END
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
