@@ -9,57 +9,87 @@
 
 nextflow.enable.dsl = 2
 
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    VALIDATE & PRINT PARAMETER SUMMARY
+    IMPORT FUNCTIONS / MODULES / SUBWORKFLOWS / WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { validateParameters; paramsHelp } from 'plugin/nf-validation'
+include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_pangbank_pipeline'
+include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_pangbank_pipeline'
 
-// Print help message if needed
-if (params.help) {
-    def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
-    def String command = "nextflow run ${workflow.manifest.name} --genomes genome_paths.txt --taxonomy gtdb_taxonomy.tsv.gz --outdir pangbank_results  -profile conda"
-    log.info paramsHelp(command) + citation
-    System.exit(0)
-}
+include { PANGBANK  } from './workflows/pangbank'
+// include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_template_pipeline'
 
-// Validate input parameters
-if (params.validate_params) {
-    validateParameters()
-}
-
-WorkflowMain.initialise(workflow, params, log, args)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    NAMED WORKFLOW FOR PIPELINE
+    NAMED WORKFLOWS FOR PIPELINE
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-include { PANGBANK } from './workflows/pangbank'
 
 //
-// WORKFLOW: Run main labgem/pangbank analysis pipeline
+// WORKFLOW: Run main analysis pipeline depending on type of input
 //
 workflow LABGEM_PANGBANK {
-    PANGBANK ()
-}
 
+    // take:
+    // genomes // channel: samplesheet read in from --genomes
+
+    main:
+
+    //
+    // WORKFLOW: Run pipeline
+    //
+    PANGBANK (
+        // genomes
+    )
+
+    // emit:
+    // multiqc_report = PANGBANK.out.multiqc_report // channel: /path/to/multiqc_report.html
+
+}
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    RUN ALL WORKFLOWS
+    RUN MAIN WORKFLOW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// //
-// // WORKFLOW: Execute a single named workflow for the pipeline
-// // See: https://github.com/nf-core/rnaseq/issues/619
-// //
 workflow {
+
+    main:
+
+    //
+    // SUBWORKFLOW: Run initialisation tasks
+    //
+    PIPELINE_INITIALISATION (
+        params.version,
+        params.help,
+        params.validate_params,
+        params.monochrome_logs,
+        args,
+        params.outdir,
+        params.genomes,
+        params.taxonomy
+    )
+
+    //
+    // WORKFLOW: Run main workflow
+    //
     LABGEM_PANGBANK ()
+
+    //
+    // SUBWORKFLOW: Run completion tasks
+    //
+    PIPELINE_COMPLETION (
+        params.email,
+        params.email_on_fail,
+        params.plaintext_email,
+        params.outdir,
+        params.monochrome_logs,
+        params.hook_url,
+        // LABGEM_PANGBANK.out.multiqc_report
+    )
 }
 
 /*
