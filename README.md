@@ -23,19 +23,26 @@
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
+PanGBank requires two input files:
 
--->
+1. **`--genomes <genome_file_list>`**
+   A TSV file with two columns:
+
+   - **Column 1:** `Genome_name` (unique name for each genome)
+   - **Column 2:** Path to the corresponding genome file
+
+2. **`--taxonomy <genome_taxonomy>`**
+   A TSV file with two columns:
+   - **Column 1:** `Genome_name` (must match the genome names in the `--genomes` file)
+   - **Column 2:** Taxonomy, a list of taxon levels separated by a semicolon (`;`). The last taxon name is considered the species, and genomes will be grouped into species groups for pangenome analysis.
 
 Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 nextflow run labgem/pangbank \
    -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
+   --genomes <genome_file_list> \
+   --taxonomy <genome_taxonomy>
    --outdir <OUTDIR>
 ```
 
