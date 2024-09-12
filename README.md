@@ -47,9 +47,9 @@ nextflow run labgem/pangbank \
 
 **PanGBank** was originally written in Snakemake and has been rewritten in Nextflow by Jean Mainguy.
 
-We thank the following people for their extensive assistance in the development of this pipeline:
+<!-- We thank the following people for their extensive assistance in the development of this pipeline: -->
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+<!-- nf-core: If applicable, make list of people who have also contributed -->
 
 ## Contributions and Support
 
