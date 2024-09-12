@@ -35,7 +35,7 @@ process PPANGGOLIN_ALL {
         path "versions.yml", emit: versions
 
     when:
-      task.ext.when == null || task.ext.when
+        task.ext.when == null || task.ext.when
 
     script:
     def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
