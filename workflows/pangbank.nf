@@ -116,6 +116,7 @@ def manage_url_input_genomes(input_genomes_file) {
     // and generate a new genome list file mapping genome name with local path
     // Read the first line of the file
     println("input_genomes_file: ${input_genomes_file}")
+    print("input_genomes_file: ${file(input_genomes_file).text}")
 
     def first_line = input_genomes_file.withReader { it.readLine() }
     println("FIRST LINE: ${first_line}")
