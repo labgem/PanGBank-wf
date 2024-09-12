@@ -41,3 +41,17 @@ jobs:
       - name: Run pipeline with help
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test,docker --help
+
+      - name: Run pipeline with fna input
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test,docker \
+                                          --genomes https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_fna_path.tsv \
+                                          --taxonomy https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_taxonomy.tsv \
+                                          --oudir results_fna/
+
+      - name: Run pipeline with gbff input
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test,docker \
+                                          --genomes https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_gbff_path.tsv \
+                                          --taxonomy https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_taxonomy.tsv \
+                                          --oudir results_gbff/
