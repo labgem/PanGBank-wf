@@ -102,14 +102,14 @@ def manage_input_genomes(input_genomes_file) {
     log.info "Processing input genomes file: ${input_genomes_file}"
 
     // Read the first line of the file to get the genome file path or URL
-    // def first_line = ""
-    // input_genomes_file.eachLine { line ->
-    //     first_line = line
-    //     return false  // Stop after reading the first line
-    // }
-    // This is cleaner bu produced an error in github CI
-    def first_line = input_genomes_file.withReader('UTF-8') { it.readLine() }
-    log.info "First line from genome file: ${first_line}"
+    def first_line = ""
+    input_genomes_file.eachLine { line ->
+        first_line = line
+        return false  // Stop after reading the first line
+    }
+    // This is cleaner bu produced an error in github CI with latest nextflow version
+    // def first_line = input_genomes_file.withReader('UTF-8') { it.readLine() }
+    // log.info "First line from genome file: ${first_line}"
 
     // Extract the genome file path or URL (assuming second column after splitting by tab)
     def genome_file_str = first_line.split('\t')[1]
