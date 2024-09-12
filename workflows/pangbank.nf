@@ -46,19 +46,15 @@ include { PPANGGOLIN_ALL                                  } from '../modules/loc
 include { PPANGGOLIN_FASTA                                } from '../modules/local/ppanggolin/fasta'
 include { GATHER_PANGENOME_INFO                           } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES                                 } from '../modules/local/md5sum_on_list_of_files'
-include { MASH_SKETCH                                     } from '../modules/nf-core/mash/sketch/main'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-//
 // MODULE: Installed directly from nf-core/modules
-//
-// include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-// include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-// include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+
+include { MASH_SKETCH                                     } from '../modules/nf-core/mash/sketch/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,18 +112,15 @@ def manage_url_input_genomes(input_genomes_file) {
     // and generate a new genome list file mapping genome name with local path
     // Read the first line of the file
     println("input_genomes_file: ${input_genomes_file}")
-    print("input_genomes_file: ${file(input_genomes_file).text}")
 
-    def file_size = file(input_genomes_file).size()
-    println "File size: ${file_size} bytes"
-    def first_line  = ""
-    file(input_genomes_file).eachLine { line ->
-        first_line = line
-        return false
-    }
-    println("FIRST LINE: ${first_line}")
-    // def first_line = input_genomes_file.withReader('UTF-8') { it.readLine() }
+    // def first_line  = ""
+    // file(input_genomes_file).eachLine { line ->
+    //     first_line = line
+    //     return false
+    // }
     // println("FIRST LINE: ${first_line}")
+    def first_line = file(input_genomes_file).withReader('UTF-8') { it.readLine() }
+    println("FIRST LINE: ${first_line}")
     // Assuming the second element after splitting by '\t' is the genome file path or URL
     def genome_file_str = first_line.split('\t')[1]
 
