@@ -15,7 +15,8 @@ include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipelin
 include { completionEmail           } from '../../nf-core/utils_nfcore_pipeline'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
 include { dashedLine                } from '../../nf-core/utils_nfcore_pipeline'
-include { nfCoreLogo                } from '../../nf-core/utils_nfcore_pipeline'
+include { logColours                } from '../../nf-core/utils_nfcore_pipeline'
+include { getWorkflowVersion                } from '../../nf-core/utils_nfcore_pipeline'
 include { imNotification            } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NFCORE_PIPELINE     } from '../../nf-core/utils_nfcore_pipeline'
 include { workflowCitation          } from '../../nf-core/utils_nfcore_pipeline'
@@ -55,7 +56,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate parameters and generate parameter summary to stdout
     //
-    pre_help_text = nfCoreLogo(monochrome_logs)
+    pre_help_text = pangbankLogo(monochrome_logs)
     post_help_text = '\n' + workflowCitation() + '\n' + dashedLine(monochrome_logs)
     def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --genomes genomes_file_list.tsv --taxonomy genome_taxonomy.tsv --outdir <OUTDIR>"
     UTILS_NFVALIDATION_PLUGIN (
@@ -261,4 +262,27 @@ def methodsDescriptionText(mqc_methods_yaml) {
     def description_html = engine.createTemplate(methods_text).make(meta)
 
     return description_html.toString()
+}
+
+
+//
+// nf-core logo
+//
+def pangbankLogo(monochrome_logs=true) {
+    Map colors = logColours(monochrome_logs)
+    String.format(
+        """\n
+        ${dashedLine(monochrome_logs)}
+
+        ${colors.blue} _____             _____ ${colors.green} ____              _  __ ${colors.reset}
+        ${colors.blue}|  __ \\           / ____|${colors.green}|  _ \\            | |/ / ${colors.reset}
+        ${colors.blue}| |__) |_ _ _ __ | |  __ ${colors.green}| |_) | __ _ _ __ | ' /  ${colors.reset}
+        ${colors.blue}|  ___/ _` | '_ \\| | |_ |${colors.green}|  _ < / _` | '_ \\|  <   ${colors.reset}
+        ${colors.blue}| |  | (_| | | | | |__| |${colors.green}| |_) | (_| | | | | . \\  ${colors.reset}
+        ${colors.blue}|_|   \\__,_|_| |_|\\_____|${colors.green}|____/ \\__,_|_| |_|_|\\_\\ ${colors.reset}
+
+        ${colors.purple}  ${workflow.manifest.name} ${getWorkflowVersion()}${colors.reset}
+        ${dashedLine(monochrome_logs)}
+        """.stripIndent()
+    )
 }
