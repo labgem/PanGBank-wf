@@ -5,7 +5,6 @@
 
 
 import argparse
-from gc import disable
 import logging
 import sys
 from pathlib import Path
@@ -195,6 +194,14 @@ def main(argv=None):
 
 
     logging.info("Final number of genomes in dataset: {}".format(genome_count - len(genomes_removed)))
+
+    selected_genomes = [genome for genome in sorted_genomes_file if genome not in genomes_removed]
+    selected_genome_outfile = args.output / "selected_genomes.list"
+
+    with open(selected_genome_outfile, "w") as fl:
+        fl.write("\n".join(selected_genomes))
+
+
     return genomes_removed
 
 
