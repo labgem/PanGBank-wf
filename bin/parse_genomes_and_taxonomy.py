@@ -14,6 +14,7 @@ import gzip
 import re
 from urllib.parse import urlparse
 
+from tqdm import tqdm
 
 # TODO check circular contig when input genomes are in fasta and add them in ppanggolin input files
 
@@ -26,7 +27,7 @@ def parse_genome_files(genomes_paths_file):
     accession_count = 0
 
     with open(genomes_paths_file) as fl:
-        for i, line in enumerate(fl):
+        for i, line in tqdm(enumerate(fl)):
             if not line:
                 continue
 
@@ -210,8 +211,10 @@ def main(argv=None):
 
     args.ppanggolin_files_outdir.mkdir(parents=True, exist_ok=True)
 
+    logging.info(f"Parsing genome file {args.genomes}")
     acc_to_genome_file = parse_genome_files(args.genomes)
 
+    logging.info(f"Parsing taxonomy file {args.taxonomy}")
     sptax_to_accessions = parse_taxonomy_file(args.taxonomy)
 
     sptax_to_input_accs, species_infos = associate_genomes_and_taxonomy(acc_to_genome_file, sptax_to_accessions, args.min_genomes)
