@@ -15,6 +15,21 @@ from typing import Dict
 
 from tqdm import tqdm
 
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from sklearn.cluster import SpectralClustering
+
+from scipy.sparse import dok_matrix, triu, find
+import numpy as np
+
+
+import time
+import numpy as np
+import pandas as pd
+
+
+
 def remove_close_genomes(genomes_under_selection, genome_to_index, mash_dist_matrix, genomes_removed, identity_cutoff):
     """
     """
@@ -81,6 +96,104 @@ def parse_mash_dist_result_into_matrix(genome_to_index:Dict[str, int], mash_resu
 
     return sparse_matrix_mash
 
+def select_genomes_like_panacota(mash_dist_matrix, sorted_genomes, genome_to_index, identity_cutoff, disable_bar):
+    genomes_under_selection = sorted_genomes[::-1]
+    # Put list of genomes removed by mash comparison, and why
+    # (out of limits distance with which genome)
+    genomes_removed = {}  # {genome: [compared_with, dist]}
+    genome_count = len(genomes_under_selection)
+
+    last_genome_process_count = 0
+
+    with tqdm(total=genome_count, unit="genome", disable=disable_bar) as progress:
+
+        while len(genomes_under_selection) > 1:
+
+            remove_close_genomes(genomes_under_selection, genome_to_index, mash_dist_matrix, genomes_removed, identity_cutoff)
+
+            current_genome_process_count = genome_count - len(genomes_under_selection)
+            genome_process_in_loop = current_genome_process_count - last_genome_process_count
+            last_genome_process_count = current_genome_process_count
+            progress.update(genome_process_in_loop)
+
+
+
+    logging.info("Final number of genomes in dataset: {}".format(genome_count - len(genomes_removed)))
+
+    selected_genomes = [genome for genome in sorted_genomes if genome not in genomes_removed]
+
+
+    return selected_genomes
+
+def select_genome_with_hierarchical_clustering(mash_dist_matrix, num_clusters, index_to_genome, method):
+
+    Z = linkage(mash_dist_matrix, method=method)
+
+    # Use fcluster to cut the dendrogram and get cluster labels
+    cluster_labels = fcluster(Z, num_clusters, criterion='maxclust')
+
+    known_clusters = set()
+    cluster_to_genomes = {}
+    selected_genomes = []
+    for i, cluster in enumerate(cluster_labels):
+        if cluster not in known_clusters:
+            # print(f"genome {i} in cluster {cluster}")
+            selected_genomes.append(index_to_genome[i])
+
+            known_clusters.add(cluster)
+            cluster_to_genomes[cluster] = [i]
+        else:
+            cluster_to_genomes[cluster].append(i)
+
+
+    # for cluster, genomes in cluster_to_genomes.items():
+    #     print(f"cluster={cluster} (size={len(genomes)}): {' '.join(map(str, genomes[:20]))}...")
+
+    print(len(selected_genomes), "Cluster")
+
+    return selected_genomes
+
+
+def maxmin_clustering_with_sorted_quality(dist_matrix, n):
+    """
+    Selects a subset of n genomes using the MaxMin algorithm, starting
+    with the highest quality genome (index 0).
+
+    Parameters:
+    - dist_matrix: np.array of distances (M x M)
+    - n: Number of genomes to select
+
+    Returns:
+    - selected_indices: Indices of the selected genomes
+    """
+    num_genomes = dist_matrix.shape[0]
+
+    # Start with the first genome (best quality, index 0)
+    selected_indices = [0]
+
+    # Iterate until n genomes are selected
+    while len(selected_indices) < n:
+        max_dist = -1
+        next_idx = -1
+
+        # Iterate over the remaining genomes (already sorted by quality)
+        for i in range(num_genomes):
+            if i not in selected_indices:
+                # Calculate the minimum distance between this genome
+                # and the already selected genomes
+                min_dist_to_selected = min([dist_matrix[i, j] for j in selected_indices])
+
+                # Select the genome that maximizes this minimum distance
+                if min_dist_to_selected > max_dist:
+                    max_dist = min_dist_to_selected
+                    next_idx = i
+
+        # Add the most distant genome to the subset
+        selected_indices.append(next_idx)
+
+    return selected_indices
+
+
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -132,6 +245,49 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
+def write_selected_genomes_ids(selected_genomes, outfile):
+
+
+    with open(outfile, "w") as fl:
+        fl.write("\n".join(selected_genomes))
+
+
+def spectral_clustering(sparse_similarity_matrix, n_clusters, index_to_genome ):
+    upper_triangle = triu(sparse_similarity_matrix, k=1)
+    row, col, data = find(upper_triangle)
+
+    for i in range(len(row)):
+        sparse_similarity_matrix[col[i], row[i]] = data[i]  # Fill the lower triangle
+
+    # Convert the sparse matrix to dense format for spectral clustering
+    similarity_matrix_dense = sparse_similarity_matrix.toarray()
+
+    # Ensure diagonal is 1 (each genome is perfectly similar to itself)
+    np.fill_diagonal(similarity_matrix_dense, 1.0)
+
+    # Perform spectral clustering using the dense similarity matrix
+    spectral = SpectralClustering(n_clusters=n_clusters, affinity='precomputed', random_state=42)
+
+    # Fit the model and predict cluster labels
+    cluster_labels = spectral.fit_predict(similarity_matrix_dense)
+
+    # Output the cluster labels for each genome
+    known_clusters = set()
+    selected_genomes = []
+    cluster_to_genomes = {}
+
+    for i, cluster in enumerate(cluster_labels):
+        if cluster not in known_clusters:
+            # print(f"genome {i} in cluster {cluster}")
+            selected_genomes.append(index_to_genome[i])
+
+            known_clusters.add(cluster)
+            cluster_to_genomes[cluster] = [i]
+        else:
+            cluster_to_genomes[cluster].append(i)
+
+    return selected_genomes
+
 def main(argv=None):
     """Coordinate argument parsing and program execution."""
     args = parse_args(argv)
@@ -146,8 +302,12 @@ def main(argv=None):
         logging.error(f"mash_dist_result file {args.mash_dist_result} was not found!")
         sys.exit(2)
 
+    if not args.output.is_dir():
+        logging.getLogger("PPanGGOLiN").debug(f"Create output directory {args.output.absolute().as_posix()}")
+        Path.mkdir(args.output, exist_ok=True)
 
-    identity_cutoff = 1 - args.min_dist
+
+
 
     sorted_genomes_file = args.sorted_genomes_file
     with open(sorted_genomes_file) as fl:
@@ -155,54 +315,126 @@ def main(argv=None):
 
 
     genome_to_index = {genome: index for index, genome in enumerate(sorted_genomes)}
+    index_to_genome = {index: genome for index, genome in enumerate(sorted_genomes)}
 
     sparse_matrix_file:Path = args.output / "sparse_matrix_mash_dist.npz"
 
     if sparse_matrix_file.is_file():
         logging.info(f"Loading matrix contained in {sparse_matrix_file}")
         # convert matrix returned by load_npz (coo format, as saved) to dok format
-        mash_dist_matrix = scipy.sparse.load_npz(sparse_matrix_file).todok()
+        sparse_similarity_matrix = scipy.sparse.load_npz(sparse_matrix_file).todok()
 
     else:
-        mash_dist_matrix = parse_mash_dist_result_into_matrix(genome_to_index, args.mash_dist_result, disable_bar=args.disable_bar)
+        sparse_similarity_matrix = parse_mash_dist_result_into_matrix(genome_to_index, args.mash_dist_result, disable_bar=args.disable_bar)
 
         logging.info("Saving matrix to npz file to be loaded quicker if needed later")
         # Convert dok_matrix to coo format, as dok format is not allowed by save_npz
-        coo_mat = mash_dist_matrix.tocoo()
+        coo_mat = sparse_similarity_matrix.tocoo()
         scipy.sparse.save_npz(sparse_matrix_file, coo_mat)
 
-
-    genomes_under_selection = sorted_genomes[::-1]
-    # Put list of genomes removed by mash comparison, and why
-    # (out of limits distance with which genome)
-    genomes_removed = {}  # {genome: [compared_with, dist]}
-    genome_count = len(genomes_under_selection)
-
-    last_genome_process_count = 0
-
-    with tqdm(total=genome_count, unit="genome", disable=args.disable_bar) as progress:
-
-        while len(genomes_under_selection) > 1:
-
-            remove_close_genomes(genomes_under_selection, genome_to_index, mash_dist_matrix, genomes_removed, identity_cutoff)
-
-            current_genome_process_count = genome_count - len(genomes_under_selection)
-            genome_process_in_loop = current_genome_process_count - last_genome_process_count
-            last_genome_process_count = current_genome_process_count
-            progress.update(genome_process_in_loop)
+    info_by_method = []
 
 
+    for distance_cutoff in [0, 0.0001, 0.0005, 0.001, 0.002, 0.003, 0.004, 0.005, 0.007]:
+        identity_cutoff = 1 - distance_cutoff
 
-    logging.info("Final number of genomes in dataset: {}".format(genome_count - len(genomes_removed)))
+        # Panacota selection
+        start_time = time.time()
+        selected_genomes_panacota = select_genomes_like_panacota(sparse_similarity_matrix, sorted_genomes, genome_to_index, identity_cutoff, args.disable_bar)
+        panacota_time = time.time() - start_time
 
-    selected_genomes = [genome for genome in sorted_genomes if genome not in genomes_removed]
-    selected_genome_outfile = args.output / "selected_genomes.list"
+        selected_genome_outfile = args.output / "selected_genomes_panacota.list"
+        write_selected_genomes_ids(selected_genomes_panacota, outfile=selected_genome_outfile)
 
-    with open(selected_genome_outfile, "w") as fl:
-        fl.write("\n".join(selected_genomes))
+        sum_index_selected_genome = sum([genome_to_index[g] for g in selected_genomes_panacota])
 
+        print(f'sum_index_selected_genome with panacota algo={sum_index_selected_genome}')
 
-    return genomes_removed
+        info_clustering = {
+            "method": "panacota",
+            "threshold": distance_cutoff,
+            "selected_genome_count": len(selected_genomes_panacota),
+            "total_genome_count": len(sorted_genomes),
+            "sum_genome_index": sum_index_selected_genome,
+            "common_genomes_with_panacota": len(selected_genomes_panacota),  # Use count of selected_genomes_panacota
+            "time_seconds": panacota_time
+        }
+
+        info_by_method.append(info_clustering)
+
+        # Convert similarity matrix to dense format (Mash distance matrix)
+        mash_distance_matrix = 1 - sparse_similarity_matrix.toarray()
+
+        # Hierarchical clustering for different linkage methods
+        for method in ["ward", "complete", "average", 'single']:
+            print('>'*10)
+            print(method.upper())
+
+            start_time = time.time()
+            selected_genomes_hierarchical = select_genome_with_hierarchical_clustering(mash_distance_matrix, len(selected_genomes_panacota), index_to_genome, method=method)
+            clustering_time = time.time() - start_time
+
+            sum_index_selected_genome = sum([genome_to_index[g] for g in selected_genomes_hierarchical])
+
+            print(f'SUM INDEX={sum_index_selected_genome}')
+
+            selected_genome_outfile = args.output / f"selected_genomes_hierarchical_{method}.list"
+            write_selected_genomes_ids(selected_genomes_hierarchical, outfile=selected_genome_outfile)
+
+            common_genome_with_panacota = len(set(selected_genomes_hierarchical) & set(selected_genomes_panacota))
+
+            print(common_genome_with_panacota, f"{method} vs PANACOTA")
+
+            info_clustering = {
+                "method": f"hierarchical_{method}",
+                "threshold": distance_cutoff,
+                "selected_genome_count": len(selected_genomes_hierarchical),
+                "total_genome_count": len(sorted_genomes),
+                "sum_genome_index": sum_index_selected_genome,
+                "common_genomes_with_panacota": common_genome_with_panacota,
+                "time_seconds": clustering_time
+            }
+
+            info_by_method.append(info_clustering)
+
+            print('<'*10)
+
+        print('>'*10)
+
+        # # Spectral Clustering
+        # print('SPECTRAL CLUSTERING')
+
+        # start_time = time.time()
+        # selected_genomes_spectral = spectral_clustering(sparse_similarity_matrix, len(selected_genomes_panacota), index_to_genome)
+        # spectral_clustering_time = time.time() - start_time
+
+        # sum_index_selected_genome = sum([genome_to_index[g] for g in selected_genomes_spectral])
+
+        # print(f'SUM INDEX={sum_index_selected_genome}')
+        # common_genome_with_panacota = len(set(selected_genomes_spectral) & set(selected_genomes_panacota))
+        # print(common_genome_with_panacota, "SPECTRAL vs PANACOTA")
+        # print('<'*10)
+
+        # info_clustering = {
+        #     "method": "spectral_clustering",
+        #     "threshold": distance_cutoff,
+        #     "selected_genome_count": len(selected_genomes_spectral),
+        #     "total_genome_count": len(sorted_genomes),
+        #     "sum_genome_index": sum_index_selected_genome,
+        #     "common_genomes_with_panacota": common_genome_with_panacota,
+        #     "time_seconds": spectral_clustering_time
+        # }
+
+        # info_by_method.append(info_clustering)
+
+    # Convert info_by_method to a pandas DataFrame
+    df_info = pd.DataFrame(info_by_method)
+
+    # Export DataFrame to TSV file
+    output_tsv_file = args.output / "clustering_info.tsv"
+    df_info.to_csv(output_tsv_file, sep='\t', index=False)
+
+    print(f"Clustering info saved to {output_tsv_file}")
 
 
 
