@@ -16,8 +16,7 @@ from typing import Dict
 from tqdm import tqdm
 
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
-import matplotlib.pyplot as plt
-from matplotlib import cm
+
 from sklearn.cluster import SpectralClustering
 
 from scipy.sparse import dok_matrix, triu, find
