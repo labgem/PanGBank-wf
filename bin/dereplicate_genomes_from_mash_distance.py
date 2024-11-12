@@ -17,8 +17,6 @@ from tqdm import tqdm
 
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 
-from sklearn.cluster import SpectralClustering
-
 from scipy.sparse import dok_matrix, triu, find
 import numpy as np
 
@@ -213,7 +211,7 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-        "--min_dist",
+        "-d", "--min_dist",
         help="Discard genome(s) closer than a Mash distance. ",
         default=0.005,
         type=float,
@@ -250,42 +248,6 @@ def write_selected_genomes_ids(selected_genomes, outfile):
     with open(outfile, "w") as fl:
         fl.write("\n".join(selected_genomes))
 
-
-def spectral_clustering(sparse_similarity_matrix, n_clusters, index_to_genome ):
-    upper_triangle = triu(sparse_similarity_matrix, k=1)
-    row, col, data = find(upper_triangle)
-
-    for i in range(len(row)):
-        sparse_similarity_matrix[col[i], row[i]] = data[i]  # Fill the lower triangle
-
-    # Convert the sparse matrix to dense format for spectral clustering
-    similarity_matrix_dense = sparse_similarity_matrix.toarray()
-
-    # Ensure diagonal is 1 (each genome is perfectly similar to itself)
-    np.fill_diagonal(similarity_matrix_dense, 1.0)
-
-    # Perform spectral clustering using the dense similarity matrix
-    spectral = SpectralClustering(n_clusters=n_clusters, affinity='precomputed', random_state=42)
-
-    # Fit the model and predict cluster labels
-    cluster_labels = spectral.fit_predict(similarity_matrix_dense)
-
-    # Output the cluster labels for each genome
-    known_clusters = set()
-    selected_genomes = []
-    cluster_to_genomes = {}
-
-    for i, cluster in enumerate(cluster_labels):
-        if cluster not in known_clusters:
-            # print(f"genome {i} in cluster {cluster}")
-            selected_genomes.append(index_to_genome[i])
-
-            known_clusters.add(cluster)
-            cluster_to_genomes[cluster] = [i]
-        else:
-            cluster_to_genomes[cluster].append(i)
-
-    return selected_genomes
 
 def main(argv=None):
     """Coordinate argument parsing and program execution."""
@@ -338,67 +300,67 @@ def main(argv=None):
         identity_cutoff = 1 - distance_cutoff
 
         # Panacota selection
-        start_time = time.time()
+        # start_time = time.time()
         selected_genomes_panacota = select_genomes_like_panacota(sparse_similarity_matrix, sorted_genomes, genome_to_index, identity_cutoff, args.disable_bar)
-        panacota_time = time.time() - start_time
+        # panacota_time = time.time() - start_time
 
-        selected_genome_outfile = args.output / "selected_genomes_panacota.list"
+        selected_genome_outfile = args.output / "selected_genomes.list"
         write_selected_genomes_ids(selected_genomes_panacota, outfile=selected_genome_outfile)
 
-        sum_index_selected_genome = sum([genome_to_index[g] for g in selected_genomes_panacota])
+        # sum_index_selected_genome = sum([genome_to_index[g] for g in selected_genomes_panacota])
 
-        print(f'sum_index_selected_genome with panacota algo={sum_index_selected_genome}')
+        # print(f'sum_index_selected_genome with panacota algo={sum_index_selected_genome}')
 
-        info_clustering = {
-            "method": "panacota",
-            "threshold": distance_cutoff,
-            "selected_genome_count": len(selected_genomes_panacota),
-            "total_genome_count": len(sorted_genomes),
-            "sum_genome_index": sum_index_selected_genome,
-            "common_genomes_with_panacota": len(selected_genomes_panacota),  # Use count of selected_genomes_panacota
-            "time_seconds": panacota_time
-        }
+        # info_clustering = {
+        #     "method": "panacota",
+        #     "threshold": distance_cutoff,
+        #     "selected_genome_count": len(selected_genomes_panacota),
+        #     "total_genome_count": len(sorted_genomes),
+        #     "sum_genome_index": sum_index_selected_genome,
+        #     "common_genomes_with_panacota": len(selected_genomes_panacota),  # Use count of selected_genomes_panacota
+        #     "time_seconds": panacota_time
+        # }
 
-        info_by_method.append(info_clustering)
+        # info_by_method.append(info_clustering)
 
-        # Convert similarity matrix to dense format (Mash distance matrix)
-        mash_distance_matrix = 1 - sparse_similarity_matrix.toarray()
+        # # Convert similarity matrix to dense format (Mash distance matrix)
+        # mash_distance_matrix = 1 - sparse_similarity_matrix.toarray()
 
-        # Hierarchical clustering for different linkage methods
-        for method in ["ward", "complete", "average", 'single']:
-            print('>'*10)
-            print(method.upper())
+        # # # Hierarchical clustering for different linkage methods
+        # for method in ["ward", "complete", "average", 'single']:
+        #     print('>'*10)
+        #     print(method.upper())
 
-            start_time = time.time()
-            selected_genomes_hierarchical = select_genome_with_hierarchical_clustering(mash_distance_matrix, len(selected_genomes_panacota), index_to_genome, method=method)
-            clustering_time = time.time() - start_time
+        #     start_time = time.time()
+        #     selected_genomes_hierarchical = select_genome_with_hierarchical_clustering(mash_distance_matrix, len(selected_genomes_panacota), index_to_genome, method=method)
+        #     clustering_time = time.time() - start_time
 
-            sum_index_selected_genome = sum([genome_to_index[g] for g in selected_genomes_hierarchical])
+        #     sum_index_selected_genome = sum([genome_to_index[g] for g in selected_genomes_hierarchical])
 
-            print(f'SUM INDEX={sum_index_selected_genome}')
+        #     print(f'SUM INDEX={sum_index_selected_genome}')
 
-            selected_genome_outfile = args.output / f"selected_genomes_hierarchical_{method}.list"
-            write_selected_genomes_ids(selected_genomes_hierarchical, outfile=selected_genome_outfile)
+        #     selected_genome_outfile = args.output / f"selected_genomes_hierarchical_{method}.list"
+        #     write_selected_genomes_ids(selected_genomes_hierarchical, outfile=selected_genome_outfile)
 
-            common_genome_with_panacota = len(set(selected_genomes_hierarchical) & set(selected_genomes_panacota))
+        #     common_genome_with_panacota = len(set(selected_genomes_hierarchical) & set(selected_genomes_panacota))
 
-            print(common_genome_with_panacota, f"{method} vs PANACOTA")
+        #     print(common_genome_with_panacota, f"{method} vs PANACOTA")
 
-            info_clustering = {
-                "method": f"hierarchical_{method}",
-                "threshold": distance_cutoff,
-                "selected_genome_count": len(selected_genomes_hierarchical),
-                "total_genome_count": len(sorted_genomes),
-                "sum_genome_index": sum_index_selected_genome,
-                "common_genomes_with_panacota": common_genome_with_panacota,
-                "time_seconds": clustering_time
-            }
+        #     info_clustering = {
+        #         "method": f"hierarchical_{method}",
+        #         "threshold": distance_cutoff,
+        #         "selected_genome_count": len(selected_genomes_hierarchical),
+        #         "total_genome_count": len(sorted_genomes),
+        #         "sum_genome_index": sum_index_selected_genome,
+        #         "common_genomes_with_panacota": common_genome_with_panacota,
+        #         "time_seconds": clustering_time
+        #     }
 
-            info_by_method.append(info_clustering)
+        #     info_by_method.append(info_clustering)
 
-            print('<'*10)
+        #     print('<'*10)
 
-        print('>'*10)
+        # print('>'*10)
 
         # # Spectral Clustering
         # print('SPECTRAL CLUSTERING')
