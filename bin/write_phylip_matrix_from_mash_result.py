@@ -9,21 +9,12 @@ import logging
 import sys
 from pathlib import Path
 import gzip
-import scipy.sparse
 from scipy.sparse import dok_matrix
 from typing import Dict
 
 from tqdm import tqdm
 
-from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
-
-from scipy.sparse import dok_matrix, triu, find
 import numpy as np
-
-
-import time
-import numpy as np
-import pandas as pd
 
 
 def parse_mash_dist_result_into_matrix(genome_to_index:Dict[str, int], mash_result_file:Path, disable_bar:bool, multiplication_factor=10000):
@@ -73,7 +64,7 @@ def write_phylip_matrix(index_to_genome, sparse_similarity_matrix, phylip_matrix
         fl.write(f"{number_of_genome}\n")
 
         for index1 in tqdm(range(number_of_genome), total=number_of_genome, unit="genome"):
-            fl.write('.'.join(index_to_genome[index1].split('/')[-1].split('.')[:-2]))
+            fl.write(str(index1))
 
             for index2 in range(index1):
                 similarity = sparse_similarity_matrix[index2,index1]

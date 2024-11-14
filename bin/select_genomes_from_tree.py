@@ -220,6 +220,7 @@ def main(argv=None):
 
 
     genome_to_index = {genome: index for index, genome in enumerate(sorted_genomes)}
+    index_to_genome = {index: genome for index, genome in enumerate(sorted_genomes)}
 
     tree_file = args.tree
 
@@ -232,17 +233,25 @@ def main(argv=None):
     print(f"Found {len(node_clusters)} clusters when processing the tree.")
 
     selected_genomes = []
+    leaf_is_index = True
 
     for node in node_clusters:
 
-        genomes = [leaf.label for leaf in node.traverse_leaves()]
+        if leaf_is_index:
+            selected_genome_index = min([int(leaf.label) for leaf in node.traverse_leaves()])
 
-        try:
-            selected_genome = min(genomes, key=lambda x: genome_to_index[x])
-        except KeyError as err:
-            raise KeyError(f"Genome {err} not found in the sorted genome list file '{args.sorted_genomes_file}'. ")
+            selected_genome = index_to_genome[selected_genome_index]
+            selected_genomes.append(selected_genome)
 
-        selected_genomes.append(selected_genome)
+        else:
+            genomes = [leaf.label for leaf in node.traverse_leaves()]
+
+            try:
+                selected_genome = min(genomes, key=lambda x: genome_to_index[x])
+            except KeyError as err:
+                raise KeyError(f"Genome {err} not found in the sorted genome list file '{args.sorted_genomes_file}'. ")
+
+            selected_genomes.append(selected_genome)
     assert len(selected_genomes) == len(node_clusters)
 
     selected_genome_outfile = args.output / "selected_genomes_from_tree.list"
