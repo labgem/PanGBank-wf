@@ -142,7 +142,7 @@ def main(argv=None):
     tree_file = args.tree
 
     proper_open = gzip.open if tree_file.suffix == ".gz" else open
-    with proper_open(tree_file) as fl:
+    with proper_open(tree_file, "rt") as fl:
         tree = read_tree_newick(fl.read().strip())
 
     num_cluster = args.number_of_genomes
