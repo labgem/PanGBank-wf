@@ -48,8 +48,8 @@ def parse_args(argv=None):
     parser.add_argument(
         "-o",
         "--output",
-        help="Directory where filtered genomes are stored.",
-        default="genome_derep_out",
+        help="File where filtered genomes are written.",
+        default="selected_genomes_from_tree.list",
         type=Path,
     )
 
@@ -172,7 +172,7 @@ def main(argv=None):
             selected_genomes.append(selected_genome)
     assert len(selected_genomes) == len(node_clusters)
 
-    selected_genome_outfile = args.output / "selected_genomes_from_tree.list"
+    selected_genome_outfile = args.output
     write_selected_genomes_ids(selected_genomes, outfile=selected_genome_outfile)
 
 
