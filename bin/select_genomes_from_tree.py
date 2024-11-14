@@ -9,76 +9,8 @@ import logging
 import sys
 from pathlib import Path
 from typing import Dict
+import gzip
 from treeswift import read_tree_newick
-
-
-def prep(tree, support, resolve_polytomies=True, suppress_unifurcations=True):
-
-
-
-    if resolve_polytomies:
-        tree.resolve_polytomies()
-    if suppress_unifurcations:
-        tree.suppress_unifurcations()
-    leaves = set()
-    for node in tree.traverse_postorder():
-        if node.edge_length is None:
-            node.edge_length = 0
-        node.DELETED = False
-        if node.is_leaf():
-            leaves.add(str(node))
-        else:
-            try:
-                node.confidence = float(str(node))
-            except:
-                node.confidence = 100. # give edges without support values support 100
-            if node.confidence < support: # don't allow low-support edges
-                node.edge_length = float('inf')
-    return leaves
-
-def select_cluster_from_tree_with_max_dist_with_prep(tree, num_clusters, support):
-    leaves = prep(tree, support, resolve_polytomies=False)
-
-    # compute leaf distances and max pairwise distances
-    for node in tree.traverse_postorder():
-        if node.is_leaf():
-            node.leaf_dist = 0
-            node.max_pair_dist = 0
-        else:
-
-            node.leaf_dist = float('-inf')
-            second_max_leaf_dist = float('-inf')
-
-            for child in node.children:
-
-                curr_dist = child.leaf_dist + child.edge_length
-
-                if curr_dist > node.leaf_dist:
-                    second_max_leaf_dist = node.leaf_dist
-                    node.leaf_dist = curr_dist
-
-                elif curr_dist > second_max_leaf_dist:
-                    second_max_leaf_dist = curr_dist
-
-            node.max_pair_dist = max([c.max_pair_dist for c in node.children] + [node.leaf_dist + second_max_leaf_dist])
-
-    sorted_nodes = sorted(tree.traverse_postorder(leaves=False), key=lambda node: node.max_pair_dist, reverse=True)
-
-    node_clusters = set(tree.traverse_leaves())
-    print(len(node_clusters))
-
-    while len(node_clusters) > num_clusters:
-
-        node = sorted_nodes.pop()
-
-        node_clusters -= set(node.traverse_postorder())
-
-        node_clusters.add(node)
-
-    print(len(node_clusters), "CLUSTERS")
-
-
-    return node_clusters
 
 
 def parse_args(argv=None):
@@ -179,21 +111,6 @@ def select_cluster_from_tree_with_max_dist(tree, num_clusters):
 
     return node_clusters
 
-# def get_label(nodes):
-#     return [n.label for n in nodes]
-
-# def compare_clusters(clusters1_nodes, clusters2_nodes):
-#     clusters1 = [get_label(n.traverse_leaves()) for n in clusters1_nodes]
-#     clusters2 = [get_label(n.traverse_leaves()) for n in clusters2_nodes]
-
-#     identical_cluster = 0
-#     for leaves in clusters1:
-#         if leaves in clusters2:
-#             identical_cluster += 1
-
-#     print("="*10)
-#     print(f"{identical_cluster} identical clusters ({100 * identical_cluster/max([len(clusters1), len(clusters2)]):.1f}%)")
-
 
 def main(argv=None):
     """Coordinate argument parsing and program execution."""
@@ -224,7 +141,8 @@ def main(argv=None):
 
     tree_file = args.tree
 
-    with open(tree_file) as fl:
+    proper_open = gzip.open if tree_file.suffix == ".gz" else open
+    with proper_open(tree_file) as fl:
         tree = read_tree_newick(fl.read().strip())
 
     num_cluster = args.number_of_genomes
@@ -257,18 +175,6 @@ def main(argv=None):
     selected_genome_outfile = args.output / "selected_genomes_from_tree.list"
     write_selected_genomes_ids(selected_genomes, outfile=selected_genome_outfile)
 
-    # with open(tree_file) as fl:
-    #     tree = read_tree_newick(fl.read().strip())
-
-    # node_clusters_with_prep = select_cluster_from_tree_with_max_dist_with_prep(tree, num_cluster, support= float('-inf') )
-
-    # print("Cluster with prep", len(node_clusters_with_prep))
-
-
-    # print(set(node_clusters_with_prep) == set(node_clusters))
-
-
-    # compare_clusters(node_clusters, node_clusters_with_prep)
 
 if __name__ == "__main__":
     main()
