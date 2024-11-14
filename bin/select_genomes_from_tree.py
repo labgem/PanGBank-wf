@@ -126,9 +126,9 @@ def main(argv=None):
         logging.error(f"newick tree file {args.tree} was not found!")
         sys.exit(2)
 
-    if not args.output.is_dir():
-        logging.debug(f"Create output directory {args.output.absolute().as_posix()}")
-        Path.mkdir(args.output, exist_ok=True)
+    if not args.output.parent.exists():
+        raise FileNotFoundError(f"Cannot write selected genomes list in '{args.output}' because its parent directory does not exists.")
+
 
 
     sorted_genomes_file = args.sorted_genomes_file
