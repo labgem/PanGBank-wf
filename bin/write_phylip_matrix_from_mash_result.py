@@ -17,7 +17,45 @@ from tqdm import tqdm
 import numpy as np
 
 
-def parse_mash_dist_result_into_matrix(genome_to_index:Dict[str, int], mash_result_file:Path, disable_bar:bool, multiplication_factor=10000):
+def parse_mash_dist_result_into_matrix_float(genome_to_index:Dict[str, int], mash_result_file:Path, disable_bar:bool):
+    """
+    """
+
+    if not mash_result_file.is_file():
+        raise FileNotFoundError(f"Mash result file '{mash_result_file}' does not exist.")
+
+    genome_count = len(genome_to_index)
+
+    # Using int16 to save memory (2 bytes per value)
+    sparse_similarity_matrix_mash = dok_matrix((genome_count, genome_count), dtype=float)
+
+    proper_open = gzip.open if mash_result_file.suffix == ".gz" else open
+
+    with tqdm(unit="k genome pair", disable=disable_bar, total=genome_count*genome_count / 1000) as progress:
+        with proper_open(mash_result_file, "rt") as matf:
+            for i, line in enumerate(matf):
+                path1, path2, dist = line.split()[:3]
+                index1 = genome_to_index[path1]
+                index2 = genome_to_index[path2]
+
+                # Multiply distance by 1000 and convert to integer
+                similarity = (1 - float(dist))
+
+                if  index1 == index2:
+                    pass
+
+                elif index1 < index2:
+                    sparse_similarity_matrix_mash[index1, index2] = similarity
+                else:
+                    sparse_similarity_matrix_mash[index2, index1] = similarity
+
+                if i % 100000 == 0:
+                    progress.update(100)
+
+    return sparse_similarity_matrix_mash
+
+
+def parse_mash_dist_result_into_matrix_int16(genome_to_index:Dict[str, int], mash_result_file:Path, disable_bar:bool, multiplication_factor=10000):
     """
     """
 
@@ -56,8 +94,50 @@ def parse_mash_dist_result_into_matrix(genome_to_index:Dict[str, int], mash_resu
 
     return sparse_similarity_matrix_mash
 
+def parse_mash_dist_result_into_matrix_int32(genome_to_index: Dict[str, int], mash_result_file: Path, disable_bar: bool, multiplication_factor=2147483647):
+    """
+    """
 
-def write_phylip_matrix(index_to_genome, sparse_similarity_matrix, phylip_matrix_file, multiplication_factor=10000):
+    # Ensure the multiplication factor fits within int32 range
+    assert multiplication_factor <= 2147483647, "Multiplication factor must fit within the int32 range."
+
+    # Check if the input file exists
+    if not mash_result_file.is_file():
+        raise FileNotFoundError(f"Mash result file '{mash_result_file}' does not exist.")
+
+    genome_count = len(genome_to_index)
+
+    # Using int32 for more precision (4 bytes per value)
+    sparse_similarity_matrix_mash = dok_matrix((genome_count, genome_count), dtype=np.int32)
+
+    # Open the file (support gzip if needed)
+    proper_open = gzip.open if mash_result_file.suffix == ".gz" else open
+
+    with tqdm(unit="k genome pair", disable=disable_bar, total=genome_count * genome_count / 1000) as progress:
+        with proper_open(mash_result_file, "rt") as matf:
+            for i, line in enumerate(matf):
+                # Parse the line (expecting path1, path2, and distance)
+                path1, path2, dist = line.split()[:3]
+                index1 = genome_to_index[path1]
+                index2 = genome_to_index[path2]
+
+                # Calculate similarity as an integer using int32 precision
+                similarity_int = int((1 - float(dist)) * multiplication_factor)
+
+                # Fill the matrix in one direction to avoid duplicates
+                if index1 != index2:  # Skip diagonal elements
+                    if index1 < index2:
+                        sparse_similarity_matrix_mash[index1, index2] = similarity_int
+                    else:
+                        sparse_similarity_matrix_mash[index2, index1] = similarity_int
+
+                # Progress update every 100,000 lines
+                if i % 100000 == 0:
+                    progress.update(100)
+
+    return sparse_similarity_matrix_mash
+
+def write_phylip_matrix(index_to_genome, sparse_similarity_matrix, phylip_matrix_file, multiplication_factor=2147483647):
     number_of_genome = len(index_to_genome)
     with open(phylip_matrix_file, 'w') as fl:
 
@@ -96,8 +176,16 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "--use_float_matrix",
+        action="store_true",
+        default=False,
+        help="Do not convert distance into integer in the matrix",
+    )
+
+
+    parser.add_argument(
         "--disable_bar",
-        type=bool,
+        action="store_true",
         default=False,
         help="Disable progress bar",
     )
@@ -159,8 +247,12 @@ def main(argv=None):
     # else:
 
     logging.info(f"Parsing mash distances from '{ args.mash_dist_result}' into a sparse matrix.")
+    if args.use_float_matrix:
+        multiplication_factor = 1
+        sparse_similarity_matrix = parse_mash_dist_result_into_matrix_float(genome_to_index, args.mash_dist_result, disable_bar=args.disable_bar)
 
-    sparse_similarity_matrix = parse_mash_dist_result_into_matrix(genome_to_index, args.mash_dist_result, disable_bar=args.disable_bar,
+    else:
+        sparse_similarity_matrix = parse_mash_dist_result_into_matrix_int16(genome_to_index, args.mash_dist_result, disable_bar=args.disable_bar,
                                                                     multiplication_factor=multiplication_factor)
 
     # logging.info("Saving matrix to npz file to be loaded quicker if needed later")
