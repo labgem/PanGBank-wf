@@ -26,7 +26,6 @@ def parse_mash_dist_result_into_matrix_float(genome_to_index:Dict[str, int], mas
 
     genome_count = len(genome_to_index)
 
-    # Using int16 to save memory (2 bytes per value)
     sparse_similarity_matrix_mash = dok_matrix((genome_count, genome_count), dtype=float)
 
     proper_open = gzip.open if mash_result_file.suffix == ".gz" else open
@@ -38,16 +37,10 @@ def parse_mash_dist_result_into_matrix_float(genome_to_index:Dict[str, int], mas
                 index1 = genome_to_index[path1]
                 index2 = genome_to_index[path2]
 
-                # Multiply distance by 1000 and convert to integer
-                similarity = (1 - float(dist))
-
-                if  index1 == index2:
-                    pass
-
-                elif index1 < index2:
+                if index1 < index2:
+                    # Multiply distance by 1000 and convert to integer
+                    similarity = (1 - float(dist))
                     sparse_similarity_matrix_mash[index1, index2] = similarity
-                else:
-                    sparse_similarity_matrix_mash[index2, index1] = similarity
 
                 if i % 100000 == 0:
                     progress.update(100)
