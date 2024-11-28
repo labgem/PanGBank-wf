@@ -1,22 +1,11 @@
 process PPANGGOLIN_FASTA {
-    // label 'process_single'
-    tag "${meta.species} - (${meta.genomes_count})"
+    tag "${meta.species}"
 
-    // A dynamic label would be perfect here but does not work.. https://github.com/nextflow-io/nextflow/issues/894
-
-    queue { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_queue : params.regular_pangenome_queue }
-
-    time { meta.genomes_count > params.large_pangenome_cutoff ? '5days' : '23:50:00' }
-    // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
-
-    // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
     cpus 1
 
-    // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
-    memory { meta.genomes_count > params.large_pangenome_cutoff ?  "${16*30}GB" : "${Math.ceil(2 + (meta.genomes_count / 312)*8)}GB" }
-    // memory { meta.genomes_count > 30 ? '1 GB' : '3 GB' }
+    memory "2GB"
 
-    tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
+    tag { "${meta.species}" }
 
     conda "bioconda::ppanggolin>=2.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -28,15 +17,15 @@ process PPANGGOLIN_FASTA {
 
     output:
         tuple val(meta), path("${meta.species}/persistent_nucleotide_families.fasta.gz") , emit: persistent_families_fasta
+        tuple val(meta), path("${meta.species}/all_protein_families.faa.gz") , emit: all_families_faa
         path "versions.yml", emit: versions
 
     when:
         task.ext.when == null || task.ext.when
 
     script:
-
     """
-    ppanggolin fasta -p $pangenome  -o ${meta.species} --gene_families persistent --compress
+    ppanggolin fasta -p $pangenome  -o ${meta.species} --gene_families persistent --prot_families all --compress
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
