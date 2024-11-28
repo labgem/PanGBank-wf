@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict
 import gzip
 from treeswift import read_tree_newick
+from statistics import median
 
 
 def parse_args(argv=None):
@@ -23,7 +24,7 @@ def parse_args(argv=None):
         "--sorted_genomes_file",
         type=Path,
         required=True,
-        help="Path to a file listing genome path file sorted from best to worst "
+        help="Path to a file listing genome path file sorted from best to worst ",
     )
     parser.add_argument(
         "--tree",
@@ -45,6 +46,22 @@ def parse_args(argv=None):
         default=False,
         help="Disable progress bar",
     )
+
+    parser.add_argument(
+        "--cluster_indexes_file",
+        help="File where cluster genome indexes are written.",
+        default="cluster_indexes.txt",
+        type=Path,
+    )
+
+    parser.add_argument(
+        "--method",
+        help="Method used to compute the distance used to cluster genomes in the tree",
+        choices=["median", "max_pair"],
+        default="max_pair",
+        type=str,
+    )
+
     parser.add_argument(
         "-o",
         "--output",
@@ -66,50 +83,89 @@ def parse_args(argv=None):
 
 def write_selected_genomes_ids(selected_genomes, outfile):
 
-
     with open(outfile, "w") as fl:
-        fl.write("\n".join(selected_genomes)+"\n")
+        fl.write("\n".join(selected_genomes) + "\n")
 
 
+def compute_leaves_median_distance(tree):
+    """
+    Compute for each node of the graph, the median distance between the node and its leaves
+    """
 
-def select_cluster_from_tree_with_max_dist(tree, num_clusters):
-
-    # compute leaf distances and max pairwise distances
     for node in tree.traverse_postorder():
         if node.is_leaf():
-            node.leaf_distance = 0
-            node.max_pair_dist = 0
+            node.leaf_distances = [0]
         else:
-
-            node.leaf_distance = float('-inf')
-            second_most_distant_leaf_dist = float('-inf')
-
+            node.leaf_distances = []
             for child in node.children:
 
-                current_leaf_dist = child.leaf_distance + child.edge_length
+                node.leaf_distances += [
+                    d + child.edge_length for d in child.leaf_distances
+                ]
 
-                if current_leaf_dist > node.leaf_distance:
-                    second_most_distant_leaf_dist = node.leaf_distance
-                    node.leaf_distance = current_leaf_dist
+        node.distance = median(node.leaf_distances)
 
-                elif current_leaf_dist > second_most_distant_leaf_dist:
-                    second_most_distant_leaf_dist = current_leaf_dist
 
-            node.most_distant_leaves_dist = node.leaf_distance + second_most_distant_leaf_dist
+def compute_max_leaves_pair_distance(tree):
+    """
+    Compute for each node of the graph, the maximal distance between the node and two of its leaves
+    """
+    for node in tree.traverse_postorder():
+        if node.is_leaf():
+            node.leaf_distances = [0]
+        else:
+            node.leaf_distances = []
+            for child in node.children:
 
-    sorted_nodes = sorted(tree.traverse_postorder(leaves=False), key=lambda node: node.most_distant_leaves_dist, reverse=True)
+                node.leaf_distances += [
+                    d + child.edge_length for d in child.leaf_distances
+                ]
+
+        node.distance = sum(
+            sorted(node.leaf_distances, reverse=True)[
+                : min(len(node.leaf_distances), 2)
+            ]
+        )
+
+
+def cluster_tree(tree, num_cluster, method):
+    """ """
+
+    if method == "median":
+        compute_leaves_median_distance(tree)
+    elif method == "max_pair":
+        compute_max_leaves_pair_distance(tree)
+    else:
+        raise ValueError(f"Unknown method to compute node distance {method}")
+
+    sorted_nodes = sorted(
+        tree.traverse_postorder(leaves=False),
+        key=lambda node: (node.distance, node.num_nodes()),
+        reverse=True,
+    )
 
     node_clusters = set(tree.traverse_leaves())
+    children_nodes = set()
 
-    while len(node_clusters) > num_clusters:
+    while len(node_clusters) > num_cluster:
 
         node = sorted_nodes.pop()
+        if node in children_nodes:
+            continue
 
-        node_clusters -= set(node.traverse_postorder())
-
+        child_nodes = set(node.traverse_postorder())
+        children_nodes |= child_nodes
+        node_clusters -= child_nodes
         node_clusters.add(node)
 
     return node_clusters
+
+
+def write_clusters(clusters, cluster_file):
+
+    with open(cluster_file, "w") as fl:
+        for indexes in clusters:
+            fl.write(" ".join(map(str, sorted(indexes))) + "\n")
 
 
 def main(argv=None):
@@ -127,17 +183,15 @@ def main(argv=None):
         sys.exit(2)
 
     if not args.output.parent.exists():
-        raise FileNotFoundError(f"Cannot write selected genomes list in '{args.output}' because its parent directory does not exists.")
-
-
+        raise FileNotFoundError(
+            f"Cannot write selected genomes list in '{args.output}' because its parent directory does not exists."
+        )
 
     sorted_genomes_file = args.sorted_genomes_file
+
     with open(sorted_genomes_file) as fl:
-        sorted_genomes = [line.rstrip() for line in fl]
 
-
-    genome_to_index = {genome: index for index, genome in enumerate(sorted_genomes)}
-    index_to_genome = {index: genome for index, genome in enumerate(sorted_genomes)}
+        index_to_genome = {index: genome.rstrip() for index, genome in enumerate(fl)}
 
     tree_file = args.tree
 
@@ -146,34 +200,31 @@ def main(argv=None):
         tree = read_tree_newick(fl.read().strip())
 
     num_cluster = args.number_of_genomes
-    node_clusters = select_cluster_from_tree_with_max_dist(tree, num_cluster)
+
+    node_clusters = cluster_tree(tree, num_cluster, args.method)
 
     print(f"Found {len(node_clusters)} clusters when processing the tree.")
 
     selected_genomes = []
-    leaf_is_index = True
-
+    clusters = []
     for node in node_clusters:
 
-        if leaf_is_index:
-            selected_genome_index = min([int(leaf.label) for leaf in node.traverse_leaves()])
+        cluster_indexes = [int(leaf.label) for leaf in node.traverse_leaves()]
+        clusters.append(cluster_indexes)
 
-            selected_genome = index_to_genome[selected_genome_index]
-            selected_genomes.append(selected_genome)
+        selected_genome_index = min(cluster_indexes)
+        selected_genome = index_to_genome[selected_genome_index]
+        selected_genomes.append(selected_genome)
 
-        else:
-            genomes = [leaf.label for leaf in node.traverse_leaves()]
-
-            try:
-                selected_genome = min(genomes, key=lambda x: genome_to_index[x])
-            except KeyError as err:
-                raise KeyError(f"Genome {err} not found in the sorted genome list file '{args.sorted_genomes_file}'. ")
-
-            selected_genomes.append(selected_genome)
     assert len(selected_genomes) == len(node_clusters)
 
     selected_genome_outfile = args.output
+    print(f"Writting selected genomes in {selected_genome_outfile}.")
     write_selected_genomes_ids(selected_genomes, outfile=selected_genome_outfile)
+
+    cluster_composition_file = args.cluster_indexes_file
+    print(f"Writing clusters in {cluster_composition_file}.")
+    write_clusters(clusters, cluster_composition_file)
 
 
 if __name__ == "__main__":
