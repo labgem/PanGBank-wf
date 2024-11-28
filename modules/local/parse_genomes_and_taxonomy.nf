@@ -2,10 +2,12 @@ process PARSE_GENOMES_AND_TAXONOMY {
     label 'process_single'
 
     conda "conda-forge::python=3.8.3"
+    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    //     'https://depot.galaxyproject.org/singularity/python:3.10' :
+    //     'biocontainers/python:3.10' }"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/python:3.10' :
-        'biocontainers/python:3.10' }"
-
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.4--py310h4b81fae_0' :
+        'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
     input:
     path genomes
     path taxonomy
