@@ -5,8 +5,6 @@ process PPANGGOLIN_FASTA {
 
     memory "2GB"
 
-    tag { "${meta.species}" }
-
     conda "bioconda::ppanggolin>=2.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.4--py310h4b81fae_0' :
