@@ -25,7 +25,7 @@ ch_ppanggolin_config          = Channel.fromPath("$projectDir/assets/ppanggolin_
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-// include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplication'
 
 //
 // MODULE: Local modules
@@ -71,6 +71,20 @@ workflow PANGBANK {
 
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
+
+    // ch_ppanggo_inputs_meta.view()
+    // ch_species_to_dereplicate = ch_ppanggo_inputs_meta.filter{meta, genome_file -> meta.genomes_count > params.dereplication_genome_cutoff}
+
+    // ch_ppanggo_inputs_meta.view()
+    ch_species_branched = ch_ppanggo_inputs_meta.branch{meta, genome_file ->
+                                                            to_dereplicate : meta.genomes_count > params.dereplication_genome_cutoff
+                                                            other : true}
+
+    // ch_species_branched.view()
+    // ch_species_to_dereplicate.view()
+    // ch_species_branched.to_dereplicate.view()
+    // dereplication_genome_cutoff
+    GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
 
     PPANGGOLIN_ALL(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
 
@@ -162,8 +176,6 @@ def manage_input_genomes(input_genomes_file) {
 
 def create_ppanggo_input_channel(input_file) {
 
-    // def annotation_exts = [".gbff", ".gff", ".gb"];
-    // def fasta_exts = [".fna", ".fasta", ".fa"];
     // create meta map
     def meta = [:]
 
@@ -175,10 +187,10 @@ def create_ppanggo_input_channel(input_file) {
     def first_line = input_file.withReader { it.readLine() }
     def first_genome_file = first_line.split('\t')[1]
 
-    extension_patern = ~/.*(\.[a-yA-Y]+)(\.gz)?$/ // A-Y to exclude Z to not cacth gz if exists.
-    genome_extension = (first_genome_file =~ extension_patern)[0][1].toLowerCase()
-    annotation_extensions = params.annotation_extensions.split(';')
-    fasta_extensions = params.fasta_extensions.split(';')
+    def extension_patern = ~/.*(\.[a-yA-Y]+)(\.gz)?$/ // A-Y to exclude Z to not cacth gz if exists.
+    def genome_extension = (first_genome_file =~ extension_patern)[0][1].toLowerCase()
+    def annotation_extensions = params.annotation_extensions.split(';')
+    def fasta_extensions = params.fasta_extensions.split(';')
 
     if (annotation_extensions.contains(genome_extension)){
         meta.file_type = "annotation"
@@ -192,7 +204,7 @@ def create_ppanggo_input_channel(input_file) {
         Fasta files: $fasta_extensions
         """
     }
-    input_meta = [ meta, input_file]
+    def input_meta = [ meta, input_file]
 
     return input_meta
 }
