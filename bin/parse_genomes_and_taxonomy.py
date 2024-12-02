@@ -40,11 +40,15 @@ def parse_genome_files(genomes_paths_file):
             accession_count += 1
             acc_to_genome_file[name] = genome_path
 
-    assert accession_count == len(acc_to_genome_file), "Some genome names are duplicated in the genome path file."
+    assert accession_count == len(
+        acc_to_genome_file
+    ), "Some genome names are duplicated in the genome path file."
 
     if files_not_found:
         for line, acc, genome_file in files_not_found:
-            logging.error(f"Genome file '{genome_file}' at line {line} of the genome path file '{genomes_paths_file}' was not found!")
+            logging.error(
+                f"Genome file '{genome_file}' at line {line} of the genome path file '{genomes_paths_file}' was not found!"
+            )
         sys.exit(2)
 
     return acc_to_genome_file
@@ -71,7 +75,9 @@ def parse_taxonomy_file(taxonomy_file):
     return sptax_to_accessions
 
 
-def associate_genomes_and_taxonomy(acc_to_genome_file, sptax_to_accessions, min_genome_count):
+def associate_genomes_and_taxonomy(
+    acc_to_genome_file, sptax_to_accessions, min_genome_count
+):
     """ """
 
     all_input_accessions = {acc.split(".")[0] for acc in acc_to_genome_file}
@@ -88,14 +94,22 @@ def associate_genomes_and_taxonomy(acc_to_genome_file, sptax_to_accessions, min_
 
         input_sp_accessions = all_input_accessions & sp_accessions_with_no_version
 
-        sptax_to_input_accs[sptax] = {acc_to_acc_with_version[acc] for acc in input_sp_accessions}
+        sptax_to_input_accs[sptax] = {
+            acc_to_acc_with_version[acc] for acc in input_sp_accessions
+        }
 
         species = sptax.split(";")[-1]
 
-        sp_genbank_accesions_count = len([acc for acc in sp_accessions if acc.startswith("GCA_")])
-        sp_refseq_accesions_count = len([acc for acc in sp_accessions if acc.startswith("GCF_")])
+        sp_genbank_accesions_count = len(
+            [acc for acc in sp_accessions if acc.startswith("GCA_")]
+        )
+        sp_refseq_accesions_count = len(
+            [acc for acc in sp_accessions if acc.startswith("GCF_")]
+        )
 
-        build_pangenome = True if len(input_sp_accessions) >= min_genome_count else False
+        build_pangenome = (
+            True if len(input_sp_accessions) >= min_genome_count else False
+        )
 
         sp_info = {
             "species": species,
@@ -125,13 +139,18 @@ def write_species_summary(species_summary_file, species_infos):
         writer.writerows(species_infos)
 
 
-def write_ppanggolin_input_files(outdir, sptax_to_input_accs_filtered, acc_to_genome_file):
+def write_ppanggolin_input_files(
+    outdir, sptax_to_input_accs_filtered, acc_to_genome_file
+):
     """ """
     for sptax, input_accs in sptax_to_input_accs_filtered.items():
         species = sptax.split(";")[-1].replace(" ", "_")
 
         with open(outdir / f"{species}.tsv", "w") as flout:
-            flout.write("\n".join(f"{acc}\t{acc_to_genome_file[acc]}" for acc in input_accs) + "\n")
+            flout.write(
+                "\n".join(f"{acc}\t{acc_to_genome_file[acc]}" for acc in input_accs)
+                + "\n"
+            )
 
 
 def parse_args(argv=None):
@@ -206,7 +225,9 @@ def main(argv=None):
         sys.exit(2)
 
     if not args.species_summary_file.parent.exists():
-        logging.error(f"The directory of species_summary_outfile {args.species_summary_file.parent} was not found!")
+        logging.error(
+            f"The directory of species_summary_outfile {args.species_summary_file.parent} was not found!"
+        )
         sys.exit(2)
 
     args.ppanggolin_files_outdir.mkdir(parents=True, exist_ok=True)
@@ -217,17 +238,27 @@ def main(argv=None):
     logging.info(f"Parsing taxonomy file {args.taxonomy}")
     sptax_to_accessions = parse_taxonomy_file(args.taxonomy)
 
-    sptax_to_input_accs, species_infos = associate_genomes_and_taxonomy(acc_to_genome_file, sptax_to_accessions, args.min_genomes)
+    sptax_to_input_accs, species_infos = associate_genomes_and_taxonomy(
+        acc_to_genome_file, sptax_to_accessions, args.min_genomes
+    )
 
     logging.info(f"Writing species summary in {args.species_summary_file}")
     write_species_summary(args.species_summary_file, species_infos)
 
-    sptax_to_input_accs_filtered = {sptax: accs for sptax, accs in sptax_to_input_accs.items() if len(accs) >= args.min_genomes}
+    sptax_to_input_accs_filtered = {
+        sptax: accs
+        for sptax, accs in sptax_to_input_accs.items()
+        if len(accs) >= args.min_genomes
+    }
 
-    logging.info(f"{len(sptax_to_input_accs_filtered)} species have enough genomes to build a pangenome.")
+    logging.info(
+        f"{len(sptax_to_input_accs_filtered)} species have enough genomes to build a pangenome."
+    )
 
     logging.info(f"Writing ppanggolin input files in {args.ppanggolin_files_outdir}")
-    write_ppanggolin_input_files(args.ppanggolin_files_outdir, sptax_to_input_accs_filtered, acc_to_genome_file)
+    write_ppanggolin_input_files(
+        args.ppanggolin_files_outdir, sptax_to_input_accs_filtered, acc_to_genome_file
+    )
 
 
 if __name__ == "__main__":

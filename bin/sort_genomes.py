@@ -9,8 +9,7 @@ import pandas as pd
 
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
-    parser = argparse.ArgumentParser(
-    )
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--genome_stats",
         type=Path,
@@ -37,12 +36,11 @@ def parse_args(argv=None):
         ),
     )
 
-
     parser.add_argument(
         "--sort_by",
         type=str,
-        nargs='+',
-        default=['L90', 'L75', 'L50', 'auN'],
+        nargs="+",
+        default=["L90", "L75", "L50", "auN"],
         help=(
             "Specify the columns to sort genomes by. Sorting is ascending for 'genome index' metrics "
             "(L50, L75, L90) and descending for all other columns that represent contig sizes "
@@ -72,11 +70,15 @@ def main(argv=None):
         sys.exit(2)
 
     if not args.sorted_genome_list.parent.exists():
-        logging.error(f"The directory of sorted_genomes output file {args.sorted_genomes.parent} was not found!")
+        logging.error(
+            f"The directory of sorted_genomes output file {args.sorted_genomes.parent} was not found!"
+        )
         sys.exit(2)
 
     if args.sorted_genome_stats and not args.sorted_genome_stats.parent.exists():
-        logging.error(f"The directory of sorted_genomes output file {args.sorted_genomes.parent} was not found!")
+        logging.error(
+            f"The directory of sorted_genomes output file {args.sorted_genomes.parent} was not found!"
+        )
         sys.exit(2)
 
     logging.info(f"Parsing genome file {args.genome_stats}")
@@ -96,7 +98,7 @@ def main(argv=None):
 
     logging.info(f"Sorting genome based on {columns_to_sort}")
 
-    ascending_columns = ['L50', 'L75','L90']
+    ascending_columns = ["L50", "L75", "L90"]
     ascending_sorts = [column in ascending_columns for column in columns_to_sort]
     # Sort by the specified column
     sorted_df = df.sort_values(by=columns_to_sort, ascending=ascending_sorts)
@@ -106,9 +108,10 @@ def main(argv=None):
         logging.info(f"Writing sorted genome stats in {args.sorted_genome_stats}")
         sorted_df.to_csv(args.sorted_genome_stats, sep="\t", index=False)
 
-
     logging.info(f"Writing sorted genome list in {args.sorted_genome_list}")
-    sorted_df['File'].to_csv(args.sorted_genome_list, sep="\t", index=False, header=False)
+    sorted_df["File"].to_csv(
+        args.sorted_genome_list, sep="\t", index=False, header=False
+    )
 
 
 if __name__ == "__main__":
