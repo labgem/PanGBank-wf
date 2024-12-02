@@ -84,22 +84,26 @@ def write_distance_count_table(distances_count, output_file):
 
 
 def parse_mash_dist_result_np_array(
-    genome_to_index, mash_result_file, disable_bar=False
+    genome_to_index, mash_dist_result, disable_bar=False
 ):
 
     distances_count = defaultdict(int)
     genome_count = len(genome_to_index)
     list_of_arrays = initialise_lower_triangular_list_of_np_array(genome_count)
 
-    proper_open = gzip.open if mash_result_file.suffix == ".gz" else open
+    if mash_dist_result == sys.stdin:
+        mash_dist_source = sys.stdin
+    else:
+        proper_open = gzip.open if mash_dist_result.suffix == ".gz" else open
+        mash_dist_source = proper_open(mash_dist_result, "rt")
 
     with tqdm(
         unit="k genome pair",
         disable=disable_bar,
         total=genome_count * genome_count / 1000,
     ) as progress:
-        with proper_open(mash_result_file, "rt") as matf:
-            for i, line in enumerate(matf):
+        with mash_dist_source as input_stream:
+            for i, line in enumerate(input_stream):
                 path1, path2, dist = line.split()[:3]
                 index1 = genome_to_index[path1]
                 index2 = genome_to_index[path2]
@@ -129,10 +133,11 @@ def write_phylip_matrix_from_list_of_arrays(
             unit="genome",
             disable=disable_bar,
         ):
+            for index1 in range(1, number_of_genomes):
 
-            dist_line = "\t".join((f"{d:.8f}" for d in list_of_arrays[index1]))
+                dist_line = "\t".join((f"{d:.8f}" for d in list_of_arrays[index1]))
 
-            fl.write(f"{index1}\t{dist_line}\n")
+                fl.write(f"{index1}\t{dist_line}\n")
 
 
 def main(argv=None):
