@@ -26,23 +26,6 @@ workflow GENOME_DEREPLICATION {
                             .collectFile(newLine: true){ meta, genome -> ["${meta.species}", genome.path]}
                             .map{path_file -> [["id":path_file.name], path_file]}
 
-
-    // SEQFU_STATS from nf core
-    // ch_meta_to_single_genome = ch_species_to_dereplicate.splitCsv(elem:1, sep:"\t", header: ["name", "path"])
-    //                             .map{meta, content -> [meta, content.path]}
-
-    // SEQFU_STATS(ch_meta_to_single_genome)
-
-    // ch_meta_genome_stat = SEQFU_STATS.out.stats
-    //                         .collectFile(keepHeader:true){ meta, genome_stat -> ["${meta.species}", genome_stat]}
-    //                         .map{path_file -> [["id":path_file.name], path_file]}
-
-    // ch_meta_genome_stat.view()
-
-    // SORT_GENOMES(ch_meta_genome_stat)
-    //SEQFU_STATS.out.stats.view()
-
-    // input could be splitted to run faster
     SEQFU_STATS_FROM_FILE(ch_species_to_path_file)
 
     SORT_GENOMES(SEQFU_STATS_FROM_FILE.out.stats)
@@ -62,17 +45,34 @@ workflow GENOME_DEREPLICATION {
 
     ch_sp_tree_genome_list_and_name_to_path = QUICKTREE.out.tree.concat(SORT_GENOMES.out.sorted_genomes_list, ch_sp_and_genome_name_to_path)
                                             .groupTuple(size:3)
-                                            .view  { v -> "-->groupTuple: ${v}" }
                                             .map {meta, tree_list_and_name_to_path
                                                     -> [meta, tree_list_and_name_to_path[0], tree_list_and_name_to_path[1], tree_list_and_name_to_path[2]]}
-                                            .view  { v -> "map: ${v}" }
-
 
     GENOME_SELECTION_FROM_TREE(ch_sp_tree_genome_list_and_name_to_path, ch_genome_count_cutoff)
+
+    ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition.concat(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
+                                                                .groupTuple(size:2)
+                                                                .map {meta, cluster_compo_and_phylip_matrix
+                                                                        -> [meta, cluster_compo_and_phylip_matrix[0], cluster_compo_and_phylip_matrix[1]]}
+                                                                // .view  { v -> "ch_cluster_compo_and_phylip_matrix: ${v}" }
+    // CLUSTER_STAT()
+
+    // Build final channel to emit
+    ch_sp_to_original_meta = ch_species_to_dereplicate.map { meta, genome_file -> [["id":meta.species], meta]}
+    ch_meta_and_selected_genomes = ch_sp_to_original_meta.concat(GENOME_SELECTION_FROM_TREE.out.selected_genomes)
+                                                    .groupTuple(size:2)
+                                                    .map {sp, meta_and_selected_genomes ->
+                                                        def meta = meta_and_selected_genomes[0]
+                                                        def selected_genomes =  meta_and_selected_genomes[1]
+
+                                                        meta.genomes_count = selected_genomes.countLines()
+                                                        [meta, selected_genomes]}
+
 
     // ch_versions.mix( MASH_SKETCH_GENOMES.out.versions )
 
     emit:
+    dereplicated_genomes = ch_meta_and_selected_genomes
     versions = ch_versions
 
 }

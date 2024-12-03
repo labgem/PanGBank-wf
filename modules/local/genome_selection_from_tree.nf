@@ -13,7 +13,9 @@ process GENOME_SELECTION_FROM_TREE {
     val number_of_genomes
 
     output:
-    tuple val(meta), path("selected_genomes.txt")    ,  emit: selected_genomes
+    tuple val(meta), path("selected_genomes.tsv")    ,  emit: selected_genomes
+    tuple val(meta), path("cluster_composition.txt")    ,  emit: cluster_composition
+
 
     when:
     task.ext.when == null || task.ext.when
@@ -26,7 +28,7 @@ process GENOME_SELECTION_FROM_TREE {
                                 --sorted_genomes $sorted_genomes \\
                                 --genome_name_to_path $genome_name_to_path \\
                                 --cluster_composition "cluster_composition.txt" \\
-                                --selected_genomes selected_genomes.txt
+                                --selected_genomes selected_genomes.tsv
 
     """
 

@@ -86,7 +86,9 @@ workflow PANGBANK {
     // dereplication_genome_cutoff
     GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
 
-    PPANGGOLIN_ALL(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
+    ch_species_ppanggo_input = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
+
+    PPANGGOLIN_ALL(ch_species_ppanggo_input, ch_ppanggolin_config.toList())
 
     PPANGGOLIN_FASTA(PPANGGOLIN_ALL.out.pangenome)
 
