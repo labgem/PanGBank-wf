@@ -20,9 +20,9 @@ process SORT_GENOMES {
     script:
 
     """
-    sort_genomes.py --genome_stats $genome_stat_file \
-                    --sort_by L90 L75 L50 auN \
-                    --sorted_genome_list sorted_genomes.txt \
+    sort_genomes.py --genome_stats $genome_stat_file \\
+                    --sort_by L90 L75 L50 auN \\
+                    --sorted_genome_list sorted_genomes.txt \\
                     --sorted_genome_stats sorted_genomes.tsv
 
     """

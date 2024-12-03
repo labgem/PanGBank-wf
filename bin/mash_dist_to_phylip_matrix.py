@@ -16,7 +16,6 @@ from tqdm import tqdm
 
 import numpy as np
 from collections import defaultdict
-import pandas as pd
 
 
 def parse_args(argv=None):
@@ -33,11 +32,13 @@ def parse_args(argv=None):
     )
     parser.add_argument(
         "--mash_dist_result",
-        type=Path,
+        type=lambda x: sys.stdin if x == "-" else Path(x),
         required=True,
-        help="Result file of mash dist",
+        help=(
+            "Result of the `mash dist` command. Provide a file path or use '-' to read from "
+            "standard input (e.g., when piping the output directly)."
+        ),
     )
-
     parser.add_argument(
         "--disable_bar",
         action="store_true",
@@ -77,17 +78,9 @@ def initialise_lower_triangular_list_of_np_array(size):
     return list_of_array
 
 
-def write_distance_count_table(distances_count, output_file):
-
-    df_count = pd.DataFrame(distances_count.items(), columns=["dist", "count"])
-    df_count.to_csv(output_file, sep="\t", index=False)
-
-
 def parse_mash_dist_result_np_array(
     genome_to_index, mash_dist_result, disable_bar=False
 ):
-
-    distances_count = defaultdict(int)
     genome_count = len(genome_to_index)
     list_of_arrays = initialise_lower_triangular_list_of_np_array(genome_count)
 
@@ -111,12 +104,10 @@ def parse_mash_dist_result_np_array(
                 if index1 < index2:
                     list_of_arrays[index2][index1] = np.float32(dist)
 
-                    distances_count[np.float16(dist)] += 1
-
                 if i % 100000 == 0:
                     progress.update(100)
 
-    return list_of_arrays, distances_count
+    return list_of_arrays
 
 
 def write_phylip_matrix_from_list_of_arrays(
@@ -133,11 +124,10 @@ def write_phylip_matrix_from_list_of_arrays(
             unit="genome",
             disable=disable_bar,
         ):
-            for index1 in range(1, number_of_genomes):
 
-                dist_line = "\t".join((f"{d:.8f}" for d in list_of_arrays[index1]))
+            dist_line = "\t".join((f"{d:.8f}" for d in list_of_arrays[index1]))
 
-                fl.write(f"{index1}\t{dist_line}\n")
+            fl.write(f"{index1}\t{dist_line}\n")
 
 
 def main(argv=None):
@@ -150,7 +140,7 @@ def main(argv=None):
         logging.error(f"Sorted genome file {args.sorted_genomes_file} was not found!")
         sys.exit(2)
 
-    if not args.mash_dist_result.is_file():
+    if args.mash_dist_result != sys.stdin and not args.mash_dist_result.is_file():
         logging.error(f"mash_dist_result file {args.mash_dist_result} was not found!")
         sys.exit(2)
 
@@ -174,15 +164,14 @@ def main(argv=None):
     logging.info(
         f"Parsing mash distances from '{ args.mash_dist_result}' into a numpy flat array."
     )
-    list_of_arrays, distances_count = parse_mash_dist_result_np_array(
+    list_of_arrays = parse_mash_dist_result_np_array(
         genome_to_index, args.mash_dist_result, disable_bar=args.disable_bar
     )
-
-    write_distance_count_table(distances_count, args.distance_count_file)
 
     logging.info(
         f"Converting the numpy flat array into a low triangle phylip matrix in '{phylip_matrix_file}'"
     )
+
     write_phylip_matrix_from_list_of_arrays(
         len(genome_to_index), list_of_arrays, phylip_matrix_file
     )

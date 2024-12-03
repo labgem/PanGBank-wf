@@ -30,7 +30,7 @@ process PPANGGOLIN_ALL {
     output:
         tuple  val(meta), path("${meta.species}/pangenome.h5")       , emit: pangenome
         path "${meta.species}.yaml"                                  , emit: pangenome_info
-        path "${meta.species}/genomes_statistics.tsv"
+        path "${meta.species}/genomes_statistics.tsv.*"
 
         path "versions.yml", emit: versions
 
