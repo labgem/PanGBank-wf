@@ -8,6 +8,7 @@ include { MASH_SKETCH as MASH_SKETCH_GENOMES } from '../../modules/nf-core/mash/
 include { SORT_GENOMES } from '../../modules/local/sort_genomes'
 include { MASH_DIST_TO_PHYLIP } from '../../modules/local/mash_distance_in_phylip'
 
+include { QUICKTREE } from '../../modules/local/quicktree'
 
 
 workflow GENOME_DEREPLICATION {
@@ -53,6 +54,11 @@ workflow GENOME_DEREPLICATION {
 
 
     MASH_DIST_TO_PHYLIP(species_sketch_genome_list)
+
+    QUICKTREE(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
+
+
+    // GENOME_SELECTION_FROM_TREE(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
 
     // ch_versions.mix( MASH_SKETCH_GENOMES.out.versions )
 
