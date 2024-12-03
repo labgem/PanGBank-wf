@@ -1,6 +1,6 @@
 process SORT_GENOMES {
     // label 'process_single'
-    tag "${meta.species}"
+    tag "${meta.id}"
 
     conda "bioconda::ppanggolin>=2.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

@@ -12,7 +12,7 @@ process QUICKTREE {
     tuple val(meta), path(phylip_matrix)
 
     output:
-    tuple val(meta), path("tree.nw")    ,  emit: stats
+    tuple val(meta), path("tree.nw")    ,  emit: tree
     path "versions.yml"               ,  emit: versions
 
     when:
