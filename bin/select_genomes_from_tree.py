@@ -29,15 +29,6 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-        "--genome_name_to_path",
-        type=Path,
-        required=True,
-        help="Path to a TSV file containing input genome paths."
-        "The file is expected to have two columns: the first column containing genome accessions, "
-        "and the second column containing the path to genome file.",
-    )
-
-    parser.add_argument(
         "--number_of_genomes",
         help="Number of genomes to select from the tree.",
         default=2000,
@@ -59,18 +50,18 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "--selected_genomes",
+        help="File where filtered genomes are written.",
+        default="selected_genomes_from_tree.txt",
+        type=Path,
+    )
+
+    parser.add_argument(
         "--method",
         help="Method used to compute the distance used to cluster genomes in the tree",
         choices=["median", "max_pair"],
         default="max_pair",
         type=str,
-    )
-
-    parser.add_argument(
-        "--selected_genomes",
-        help="File where filtered genomes are written.",
-        default="selected_genomes_from_tree.list",
-        type=Path,
     )
 
     parser.add_argument(
@@ -84,20 +75,16 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def write_selected_genomes(
-    selected_genomes: List[str], path_to_genome_name: Dict[str, str], outfile: Path
-) -> None:
+def write_selected_genomes(selected_genomes: List[str], outfile: Path) -> None:
     """
-    Writes the selected genomes and their corresponding names to an output file.
+    Writes the selected genomes to an output file.
 
-    :param selected_genomes: A list of genome paths to be written to the file.
-    :param path_to_genome_name: A dictionary mapping genome paths to their corresponding genome names.
+    :param selected_genomes: A list of selected genome paths.
     :param outfile: Path to the output file where the selected genomes will be written.
     """
     with open(outfile, "w") as fl:
         for genome_path in selected_genomes:
-            genome_name = path_to_genome_name[genome_path]
-            fl.write(f"{genome_name}\t{genome_path}\n")
+            fl.write(f"{genome_path}\n")
 
 
 def compute_leaves_median_distance(tree: Tree) -> None:
@@ -283,12 +270,6 @@ def check_input_output_args(args: argparse.Namespace) -> None:
             f"The specified Newick tree file '{args.tree}' does not exist."
         )
 
-    # Check if the genome name-to-path file exists
-    if not args.genome_name_to_path.is_file():
-        raise FileNotFoundError(
-            f"The specified genome name-to-path file '{args.genome_name_to_path}' does not exist."
-        )
-
     # Check if the directory for the selected genomes file exists
     if not args.selected_genomes.parent.exists():
         raise FileNotFoundError(
@@ -324,15 +305,10 @@ def main(argv=None):
         tree_file, num_cluster, args.method, index_to_genome
     )
 
-    # Parse the genome name to path mapping
-    path_to_genome_name = parse_genome_name_to_path_file(args.genome_name_to_path)
-
     # Write selected genomes to the output file
     selected_genomes_outfile = args.selected_genomes
     logging.info(f"Writing selected genomes to {selected_genomes_outfile}.")
-    write_selected_genomes(
-        selected_genomes, path_to_genome_name, outfile=selected_genomes_outfile
-    )
+    write_selected_genomes(selected_genomes, outfile=selected_genomes_outfile)
 
     # Write the cluster composition to the output file
     logging.info(f"Writing clusters to {args.cluster_composition}.")

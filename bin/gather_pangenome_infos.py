@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-
-"""Provide a command line tool to gather yaml pangenome info into a TSV file."""
-
-
 import argparse
 import csv
 import logging
