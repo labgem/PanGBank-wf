@@ -13,6 +13,8 @@ include { GENOME_SELECTION_FROM_TREE } from '../../modules/local/genome_selectio
 include { ANY2FASTA } from '../../modules/local/any2fasta'
 
 include { FORMAT_INPUT_GENOMES } from '../../modules/local/format_input_genomes'
+include { CLUSTER_STAT } from '../../modules/local/cluster_stat.nf'
+
 
 
 workflow GENOME_DEREPLICATION {
@@ -97,12 +99,12 @@ workflow GENOME_DEREPLICATION {
 
     FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path)
 
-    // ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition.concat(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
-    //                                                             .groupTuple(size:2)
-    //                                                             .map {meta, cluster_compo_and_phylip_matrix
-    //                                                                     -> [meta, cluster_compo_and_phylip_matrix[0], cluster_compo_and_phylip_matrix[1]]}
-    //                                                             // .view  { v -> "ch_cluster_compo_and_phylip_matrix: ${v}" }
-    // // CLUSTER_STAT()
+    ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition.concat(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
+                                                                .groupTuple(size:2)
+                                                                .map {meta, cluster_compo_and_phylip_matrix
+                                                                        -> [meta, cluster_compo_and_phylip_matrix[0], cluster_compo_and_phylip_matrix[1]]}
+                                                                .view  { v -> "DDDDDDDD: ${v}" }
+    CLUSTER_STAT(ch_cluster_compo_and_phylip_matrix)
 
     // // Build final channel to emit
     ch_sp_to_original_meta = ch_species_to_dereplicate.map { meta, genome_file -> [["id":meta.species], meta]}

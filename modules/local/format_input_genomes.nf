@@ -1,5 +1,6 @@
 process FORMAT_INPUT_GENOMES {
     label 'process_single'
+    tag "$meta.id"
 
     // reuse ppanggolin env as it as already been downloaded and used
     conda "bioconda::ppanggolin>=2.0.0"
