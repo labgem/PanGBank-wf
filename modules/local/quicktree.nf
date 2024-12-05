@@ -4,8 +4,8 @@ process QUICKTREE {
 
     conda "bioconda::quicktree"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/quicktree%3A2.2--h470a237_1':
-        'biocontainers/quicktree%3A2.2--h470a237_1' }"
+        'https://depot.galaxyproject.org/singularity/quicktree%3A2.5--h516909a_0':
+        'biocontainers/quicktree%3A2.5--h516909a_0' }"
 
 
     input:

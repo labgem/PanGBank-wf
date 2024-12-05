@@ -1,4 +1,5 @@
 process MD5SUM_ON_FILES {
+    tag "$meta.species"
 
     conda "conda-forge::coreutils=9.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

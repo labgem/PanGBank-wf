@@ -4,10 +4,10 @@ process MASH_DIST_TO_PHYLIP {
 
     // search a mulled container with mash and python as describe here: https://nf-co.re/docs/guidelines/components/modules#re-use-of-multi-tool-containers
     // mulled-search  -d quay singularity  --search mash python | grep mulled
-    conda "bioconda::mash=2.3 conda-forge::python=3.11"
+    conda "bioconda::mash=2.3 anaconda::numpy=2.1.3 conda-forge::tqdm"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        ' https://depot.galaxyproject.org/singularity/mulled-v2-7f933c366aa077c57320ffc29bf8f7e2d0ea9234:f2c964aa6075b63b60450d37ba79b2f1fb0f6020-0' :
-        'biocontainers/mulled-v2-7f933c366aa077c57320ffc29bf8f7e2d0ea9234:f2c964aa6075b63b60450d37ba79b2f1fb0f6020-0' }"
+        'https://depot.galaxyproject.org/singularity/mulled-v2-83c3b71f1ea527155742db36d554b890aaa6a3d4:06958a0680d045f715a4f8b3bcce64df31d13ef8-0' :
+        'biocontainers/mulled-v2-83c3b71f1ea527155742db36d554b890aaa6a3d4:06958a0680d045f715a4f8b3bcce64df31d13ef8-0' }"
 
     input:
     tuple val(meta), path(mash_sketch), path(sorted_genomes)

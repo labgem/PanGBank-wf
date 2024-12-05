@@ -18,10 +18,12 @@ process PPANGGOLIN_ALL {
 
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 
-    conda "bioconda::ppanggolin>=2.1.0"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.4--py310h4b81fae_0' :
-        'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
+    conda "bioconda::ppanggolin=2.2.1"
+    container 'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.0--py310h7c593f9_0'
+    // container 'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py312h0fa9677_0'
+    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+    //     'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py312h0fa9677_0' :
+    //     'biocontainers/ppanggolin:2.2.1--py311haab0aaa_0' }"
 
     input:
         tuple val(meta), path(genome_file)
@@ -30,7 +32,7 @@ process PPANGGOLIN_ALL {
     output:
         tuple  val(meta), path("${meta.species}/pangenome.h5")       , emit: pangenome
         path "${meta.species}.yaml"                                  , emit: pangenome_info
-        path "${meta.species}/genomes_statistics.tsv.*"
+        path "${meta.species}/genomes_statistics.tsv*"
 
         path "versions.yml", emit: versions
 
