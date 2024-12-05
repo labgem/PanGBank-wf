@@ -15,9 +15,6 @@ include { ANY2FASTA } from '../../modules/local/any2fasta'
 include { FORMAT_INPUT_GENOMES } from '../../modules/local/format_input_genomes'
 
 
-
-
-
 workflow GENOME_DEREPLICATION {
     take:
     ch_species_to_dereplicate   // [ [ meta] , fasta    ],
@@ -35,6 +32,7 @@ workflow GENOME_DEREPLICATION {
     // ch_species_branched.fasta_input.view { v -> "fasta_input: ${v}" }
 
     ANY2FASTA(ch_species_branched.annotation_input)
+    ch_versions = ch_versions.mix(ANY2FASTA.out.versions)
 
     // ANY2FASTA.out.genome_path_fasta.view()
 
@@ -49,10 +47,12 @@ workflow GENOME_DEREPLICATION {
 
 
     SEQFU_STATS_FROM_FILE(ch_species_to_path_file)
+    ch_versions = ch_versions.mix(SEQFU_STATS_FROM_FILE.out.versions)
 
     SORT_GENOMES(SEQFU_STATS_FROM_FILE.out.stats)
 
     MASH_SKETCH_GENOMES(ch_species_to_path_file)
+    ch_versions = ch_versions.mix(MASH_SKETCH_GENOMES.out.versions)
 
     ch_species_sketch_genome_list = MASH_SKETCH_GENOMES.out.mash.concat(SORT_GENOMES.out.sorted_genomes_list)
                                                             .groupTuple()
@@ -63,8 +63,10 @@ workflow GENOME_DEREPLICATION {
 
 
     MASH_DIST_TO_PHYLIP(ch_species_sketch_genome_list)
+    ch_versions = ch_versions.mix(MASH_DIST_TO_PHYLIP.out.versions)
 
     QUICKTREE(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
+    ch_versions = ch_versions.mix(QUICKTREE.out.versions)
 
     ch_sp_and_genome_name_to_path =  ch_species_to_fasta_input_files.map{ meta, genome_file -> [["id":meta.species], genome_file] }
     ch_sp_and_fasta_to_orginal_path = ANY2FASTA.out.fasta_to_orginal_path.map{meta, file -> [["id":meta.species], file]}
@@ -76,17 +78,6 @@ workflow GENOME_DEREPLICATION {
                                                     def tree = files[0]
                                                     def sorted_genomes = files[1]
                                                     [meta, tree, sorted_genomes]}
-
-
-
-    // ch_sp_tree_genome_list_and_name_to_path = QUICKTREE.out.tree.concat(SORT_GENOMES.out.sorted_genomes_list, ch_sp_and_genome_name_to_path, ch_sp_and_original_path_to_fasta)
-    //                                         .groupTuple()
-    //                                         .map {meta, files ->
-    //                                                 def tree = files[0]
-    //                                                 def sorted_genomes = files[1]
-    //                                                 def genome_name_to_path = files[2]
-    //                                                 def fasta_to_original_input = files.size() <= 3 ? file("NO_FILE") : files[3]
-    //                                                 [meta, tree, sorted_genomes, genome_name_to_path, fasta_to_original_input]}
 
 
     GENOME_SELECTION_FROM_TREE(ch_sp_tree_and_sorted_genomes, ch_genome_count_cutoff)
