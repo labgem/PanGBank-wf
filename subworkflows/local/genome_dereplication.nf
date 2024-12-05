@@ -114,21 +114,21 @@ workflow GENOME_DEREPLICATION {
     // // CLUSTER_STAT()
 
     // // Build final channel to emit
-    // ch_sp_to_original_meta = ch_species_to_dereplicate.map { meta, genome_file -> [["id":meta.species], meta]}
-    // ch_meta_and_selected_genomes = ch_sp_to_original_meta.concat(GENOME_SELECTION_FROM_TREE.out.selected_genomes)
-    //                                                 .groupTuple(size:2)
-    //                                                 .map {sp, meta_and_selected_genomes ->
-    //                                                     def meta = meta_and_selected_genomes[0]
-    //                                                     def selected_genomes =  meta_and_selected_genomes[1]
-    //                                                     meta.genomes_count = selected_genomes.countLines()
-    //                                                     [meta, selected_genomes]}
+    ch_sp_to_original_meta = ch_species_to_dereplicate.map { meta, genome_file -> [["id":meta.species], meta]}
+    ch_meta_and_selected_genomes = ch_sp_to_original_meta.concat(FORMAT_INPUT_GENOMES.out.genome_selection_ppanggo_input)
+                                                    .groupTuple(size:2)
+                                                    .map {sp, meta_and_selected_genomes ->
+                                                        def meta = meta_and_selected_genomes[0]
+                                                        def selected_genomes =  meta_and_selected_genomes[1]
+                                                        meta.genomes_count = selected_genomes.countLines()
+                                                        [meta, selected_genomes]}
+                                                    .view { i -> "CCCCCC $i"}
 
 
     // ch_versions.mix( MASH_SKETCH_GENOMES.out.versions )
 
     emit:
-    // dereplicated_genomes = ch_meta_and_selected_genomes
-    dereplicated_genomes = ch_species_to_dereplicate
+    dereplicated_genomes = ch_meta_and_selected_genomes
     versions = ch_versions
 
 }
