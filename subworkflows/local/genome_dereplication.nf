@@ -11,7 +11,8 @@ include { MASH_DIST_TO_PHYLIP } from '../../modules/local/mash_distance_in_phyli
 include { QUICKTREE } from '../../modules/local/quicktree'
 include { GENOME_SELECTION_FROM_TREE } from '../../modules/local/genome_selection_from_tree'
 include { ANY2FASTA } from '../../modules/local/any2fasta'
-// include { FORMAT_INPUT_GENOMES } from '../../modules/local/any2fasta'
+
+include { FORMAT_INPUT_GENOMES } from '../../modules/local/format_input_genomes'
 
 
 
@@ -66,7 +67,7 @@ workflow GENOME_DEREPLICATION {
     QUICKTREE(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
 
     ch_sp_and_genome_name_to_path =  ch_species_to_fasta_input_files.map{ meta, genome_file -> [["id":meta.species], genome_file] }
-    ch_sp_and_original_path_to_fasta = ANY2FASTA.out.original_path_to_fasta.map{meta, file -> [["id":meta.species], file]}
+    ch_sp_and_fasta_to_orginal_path = ANY2FASTA.out.fasta_to_orginal_path.map{meta, file -> [["id":meta.species], file]}
 
 
     ch_sp_tree_and_sorted_genomes = QUICKTREE.out.tree.concat(SORT_GENOMES.out.sorted_genomes_list)
@@ -92,7 +93,7 @@ workflow GENOME_DEREPLICATION {
 
     GENOME_SELECTION_FROM_TREE.out.selected_genomes.view{i -> "AAAAAAAA $i "}
 
-    ch_sp_selected_genome_to_name_and_original_path = GENOME_SELECTION_FROM_TREE.out.selected_genomes.concat(ch_sp_and_genome_name_to_path, ch_sp_and_original_path_to_fasta)
+    ch_sp_selected_genome_to_name_and_original_path = GENOME_SELECTION_FROM_TREE.out.selected_genomes.concat(ch_sp_and_genome_name_to_path, ch_sp_and_fasta_to_orginal_path)
                                                     .groupTuple()
                                                     .map {meta, files ->
                                                             def selected_genomes = files[0]
@@ -103,7 +104,7 @@ workflow GENOME_DEREPLICATION {
 
     ch_sp_selected_genome_to_name_and_original_path.view{i -> "BBBBBBBB $i "}
 
-    // FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path)
+    FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path)
 
     // ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition.concat(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
     //                                                             .groupTuple(size:2)

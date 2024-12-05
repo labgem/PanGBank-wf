@@ -1,0 +1,30 @@
+process FORMAT_INPUT_GENOMES {
+    label 'process_single'
+
+    // reuse ppanggolin env as it as already been downloaded and used
+    conda "bioconda::ppanggolin>=2.0.0"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.2--py39hf95cd2a_0' :
+        'biocontainers/ppanggolin:2.0.2--py39hf95cd2a_0' }"
+
+    input:
+    tuple val(meta), path(selected_genomes), path(genome_name_to_fasta), path(fasta_to_original_path)
+
+    output:
+    tuple val(meta), path("formatted_selected_genomes.tsv"), emit: genome_selection_ppanggo_input
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def fasta_to_original_path_arg = fasta_to_original_path.name != 'NO_FILE' ? "--fasta_to_original_path $fasta_to_original_path" : ''
+    """
+    format_ppanggo_input_from_genome_selection.py --selected_genomes $selected_genomes \\
+                                --genome_name_to_path $genome_name_to_fasta \\
+                                --formatted_genomes formatted_selected_genomes.tsv \\
+                                $fasta_to_original_path_arg
+
+    """
+
+}
+

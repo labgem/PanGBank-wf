@@ -13,7 +13,7 @@ process ANY2FASTA {
 
     output:
     tuple val(meta), path("genome_name_to_fasta.tsv")    ,  emit: genome_path_fasta
-    tuple val(meta), path("orignal_path_to_fasta.tsv")    ,  emit: original_path_to_fasta
+    tuple val(meta), path("fasta_to_orginal_path.tsv")    ,  emit: fasta_to_orginal_path
     path "versions.yml"               ,  emit: versions
 
     when:
@@ -26,8 +26,9 @@ process ANY2FASTA {
         # Run the any2fasta command and compress the output
         any2fasta -q -u "\$genome_path" | gzip > "\${genome_name}.fasta.gz"
         fasta_genome_path=`realpath "\${genome_name}.fasta.gz"`
+
         echo -e \$genome_name'\\t'\$fasta_genome_path >> genome_name_to_fasta.tsv
-        echo -e \$genome_path'\\t'\$fasta_genome_path >> orignal_path_to_fasta.tsv
+        echo -e \$fasta_genome_path'\\t'\$genome_path >> fasta_to_orginal_path.tsv
 
 
     done < $genome_path_file
