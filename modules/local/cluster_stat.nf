@@ -11,7 +11,8 @@ process CLUSTER_STAT {
     tuple val(meta), path(cluster_composition), path(phylip_matrix)
 
     output:
-    tuple val(meta), path("cluster_stat.tsv"), path("distance_count.tsv"), emit: cluster_stat
+    path "cluster_stat.tsv", emit: cluster_stat
+    path "distance_count.tsv", emit: distance_count
 
     when:
     task.ext.when == null || task.ext.when
