@@ -14,16 +14,13 @@ process PPANGGOLIN_ALL {
 
     // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
     memory { meta.genomes_count > params.large_pangenome_cutoff ?  "${16*30}GB" : "${Math.ceil(2 + (meta.genomes_count / 312)*8)}GB" }
-    // memory { meta.genomes_count > 30 ? '1 GB' : '3 GB' }
 
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 
     conda "bioconda::ppanggolin=2.2.1"
-    container 'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.0--py310h7c593f9_0'
-    // container 'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py312h0fa9677_0'
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py312h0fa9677_0' :
-    //     'biocontainers/ppanggolin:2.2.1--py311haab0aaa_0' }"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py311haab0aaa_1' :
+        'biocontainers/ppanggolin%3A2.2.1--py311haab0aaa_1' }"
 
     input:
         tuple val(meta), path(genome_file)

@@ -2,10 +2,11 @@ process SORT_GENOMES {
     // label 'process_single'
     tag "${meta.id}"
 
-    conda "bioconda::ppanggolin>=2.1.0"
+    // reuse ppanggolin env as it as already been downloaded and used
+    conda "bioconda::ppanggolin=2.2.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.4--py310h4b81fae_0' :
-        'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py311haab0aaa_1' :
+        'biocontainers/ppanggolin%3A2.2.1--py311haab0aaa_1' }"
 
     input:
         tuple val(meta), path(genome_stat_file)

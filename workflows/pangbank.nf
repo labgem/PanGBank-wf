@@ -67,21 +67,24 @@ workflow PANGBANK {
         ch_min_genomes
     )
 
-    ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
-
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
 
 
-    ch_species_branched = ch_ppanggo_inputs_meta.branch{meta, genome_file ->
-                                                            to_dereplicate : meta.genomes_count > params.dereplication_genome_cutoff
-                                                            other : true}
 
-    GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
+    if (!params.skip_dereplication ) {
 
-    ch_species_ppanggo_input = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
+        ch_species_branched = ch_ppanggo_inputs_meta.branch{meta, genome_file ->
+                                                                to_dereplicate : meta.genomes_count > params.dereplication_genome_cutoff
+                                                                other : true}
 
-    PPANGGOLIN_ALL(ch_species_ppanggo_input, ch_ppanggolin_config.toList())
+        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
+
+        ch_ppanggo_inputs_meta = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
+
+    }
+
+    PPANGGOLIN_ALL(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
 
     PPANGGOLIN_FASTA(PPANGGOLIN_ALL.out.pangenome)
 

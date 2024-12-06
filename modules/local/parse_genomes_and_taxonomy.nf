@@ -16,7 +16,6 @@ process PARSE_GENOMES_AND_TAXONOMY {
     output:
     path "ppanggolin_input_files/*.tsv"       , emit: ppanggo_inputs
     path "species_summary.tsv"
-    path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -27,10 +26,6 @@ process PARSE_GENOMES_AND_TAXONOMY {
                                     --min_genomes $min_genomes --species_summary_file species_summary.tsv\
                                     --ppanggolin_files_outdir ppanggolin_input_files
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }
 
