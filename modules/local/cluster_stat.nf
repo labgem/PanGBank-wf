@@ -4,8 +4,8 @@ process CLUSTER_STAT {
 
     conda "bioconda::ppanggolin=2.2.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin%3A2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
+        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
 
     input:
     tuple val(meta), path(cluster_composition), path(phylip_matrix)

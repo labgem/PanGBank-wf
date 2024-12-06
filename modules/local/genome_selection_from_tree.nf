@@ -4,8 +4,8 @@ process GENOME_SELECTION_FROM_TREE {
 
     conda "bioconda::treeswift=1.1.45"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/treeswift%3A1.1.45--pyh7e72e81_0':
-        'biocontainers/treeswift%3A1.1.45--pyh7e72e81_0' }"
+        'https://depot.galaxyproject.org/singularity/treeswift:1.1.45--pyh7e72e81_0':
+        'biocontainers/treeswift:1.1.45--pyh7e72e81_0' }"
 
 
     input:

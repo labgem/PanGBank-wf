@@ -5,8 +5,8 @@ process FORMAT_INPUT_GENOMES {
     // reuse ppanggolin env as it as already been downloaded and used
     conda "bioconda::ppanggolin=2.2.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin%3A2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
+        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
 
     input:
     tuple val(meta), path(selected_genomes), path(genome_name_to_fasta), path(fasta_to_original_path)
