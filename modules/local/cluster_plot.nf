@@ -11,7 +11,7 @@ process CLUSTER_PLOT {
     path distance_count
 
     output:
-    path "distance_plots/*.html"
+    path "plots/*.html"
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,6 +21,6 @@ process CLUSTER_PLOT {
     plot_cluster_stat.py \\
             --cluster_stat $cluster_stat \\
             --distance_to_count $distance_count \\
-            --output_dir distance_plots
+            --output_dir plots
     """
 }
