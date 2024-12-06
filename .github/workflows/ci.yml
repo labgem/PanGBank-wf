@@ -24,8 +24,9 @@ jobs:
     strategy:
       matrix:
         NXF_VER:
-          - "23.04.0"
+          - "24.04.2"
           - "latest-everything"
+        test_name: [test, test_gbff, test_dereplication]
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
@@ -45,16 +46,6 @@ jobs:
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test,docker --help
 
-      - name: Run pipeline with fna input
+      - name: Run pipeline with ${{ matrix.test_name }} test profile
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test,docker \
-                                          --genomes https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_fna_path.tsv \
-                                          --taxonomy https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_taxonomy.tsv \
-                                          --outdir results_fna/
-
-      - name: Run pipeline with gbff input
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test,docker \
-                                          --genomes https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_gbff_path.tsv \
-                                          --taxonomy https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/genome_to_taxonomy.tsv \
-                                          --outdir results_gbff/
+          nextflow run ${GITHUB_WORKSPACE} -profile -profile ${{ matrix.test_name }},docker --outdir ./results
