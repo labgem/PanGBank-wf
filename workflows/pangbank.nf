@@ -72,18 +72,11 @@ workflow PANGBANK {
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs.flatten()
                                                 .map { create_ppanggo_input_channel(it) }
 
-    // ch_ppanggo_inputs_meta.view()
-    // ch_species_to_dereplicate = ch_ppanggo_inputs_meta.filter{meta, genome_file -> meta.genomes_count > params.dereplication_genome_cutoff}
 
-    // ch_ppanggo_inputs_meta.view()
     ch_species_branched = ch_ppanggo_inputs_meta.branch{meta, genome_file ->
                                                             to_dereplicate : meta.genomes_count > params.dereplication_genome_cutoff
                                                             other : true}
 
-    // ch_species_branched.view()
-    // ch_species_to_dereplicate.view()
-    // ch_species_branched.to_dereplicate.view()
-    // dereplication_genome_cutoff
     GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
 
     ch_species_ppanggo_input = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
