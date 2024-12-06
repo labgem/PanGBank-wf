@@ -46,12 +46,12 @@ jobs:
 
       - name: Run pipeline with test test profile
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile -profile test,docker --outdir ./results_fna
+          nextflow run ${GITHUB_WORKSPACE} -profile test,docker --outdir ./results_fna
 
       - name: Run pipeline with test_gbff test profile
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile -profile test_gbff,docker --outdir ./results_gbff
+          nextflow run ${GITHUB_WORKSPACE} -profile test_gbff,docker --outdir ./results_gbff
 
       - name: Run pipeline with test_dereplication test profile
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile -profile test_dereplication,docker --outdir ./results_derep
+          nextflow run ${GITHUB_WORKSPACE} -profile test_dereplication,docker --outdir ./results_derep
