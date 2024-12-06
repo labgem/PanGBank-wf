@@ -19,6 +19,8 @@ lint:
     - manifest.name
     - manifest.homePage
     - params.input
+  editorconfig-checker:
+    - nextflow.config
 nf_core_version: 2.14.1
 repository_type: pipeline
 template:
