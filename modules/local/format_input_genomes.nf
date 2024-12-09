@@ -20,7 +20,7 @@ process FORMAT_INPUT_GENOMES {
 
     script:
     def fasta_to_original_path_arg = fasta_to_original_path.name != 'NO_FILE' ? "--fasta_to_original_path $fasta_to_original_path" : ''
-    def reference_genomes_arg = reference_genomes.name ? "--reference_genomes $reference_genomes" : ''
+    def reference_genomes_arg = reference_genomes ? "--reference_genomes $reference_genomes" : ''
 
     """
     echo $reference_genomes

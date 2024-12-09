@@ -23,7 +23,7 @@ workflow GENOME_DEREPLICATION {
 
     main:
     ch_versions = Channel.empty()
-    ch_genome_count_cutoff = Channel.value(params.dereplication_genome_cutoff)
+    ch_genome_count_cutoff = Channel.value(params.dereplication_threshold)
 
     if (params.reference_genomes) {
         ch_reference_genomes = file(params.reference_genomes, checkIfExists: true)

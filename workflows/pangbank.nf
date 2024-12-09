@@ -75,7 +75,7 @@ workflow PANGBANK {
     if (!params.skip_dereplication ) {
 
         ch_species_branched = ch_ppanggo_inputs_meta.branch{meta, genome_file ->
-                                                                to_dereplicate : meta.genomes_count > params.dereplication_genome_cutoff
+                                                                to_dereplicate : meta.genomes_count > params.dereplication_threshold
                                                                 other : true}
 
         GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)

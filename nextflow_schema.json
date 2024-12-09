@@ -18,7 +18,7 @@
                     "exists": true,
                     "mimetype": "text",
                     "pattern": "^\\S+\\.*$",
-                    "description": "Path to text file containing paths of the input genomes. One line per genome.",
+                    "description": "TSV file with two columns: genome name and file path.",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "taxonomy": {
@@ -27,13 +27,13 @@
                     "exists": true,
                     "mimetype": "text/tsv",
                     "pattern": "^\\S+\\.tsv(\\.gz)?$",
-                    "description": "Taxonomy of the input genomes.",
+                    "description": "TSV file with two columns: genome name and taxonomy (taxon name separated by semicolons).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
-                    "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
+                    "description": "The output directory where the results will be saved.",
                     "fa_icon": "fas fa-folder-open"
                 }
             }
@@ -58,6 +58,19 @@
                     "type": "string",
                     "description": "Expected extension for fasta files given as input",
                     "default": ".fna;.fasta;.fa"
+                },
+                "skip_dereplication": {
+                    "type": "boolean",
+                    "description": "Skip dereplication of genomes. All input genomes will be processed."
+                },
+                "reference_genomes": {
+                    "type": "string",
+                    "description": "List of reference genome names to retain for the pangenome creation process, even if they are removed during dereplication."
+                },
+                "dereplication_threshold": {
+                    "type": "integer",
+                    "description": "Maximum number of genomes allowed per species. If a species has more genomes than this threshold, the genomes will be reduced through dereplication to meet the specified limit.",
+                    "default": 2000
                 }
             }
         },
@@ -275,22 +288,22 @@
     },
     "allOf": [
         {
-            "$ref": "#/definitions/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/definitions/pangbank_options"
+            "$ref": "#/$defs/pangbank_options"
         },
         {
-            "$ref": "#/definitions/ressources_options"
+            "$ref": "#/$defs/ressources_options"
         },
         {
-            "$ref": "#/definitions/institutional_config_options"
+            "$ref": "#/$defs/institutional_config_options"
         },
         {
-            "$ref": "#/definitions/max_job_request_options"
+            "$ref": "#/$defs/max_job_request_options"
         },
         {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/$defs/generic_options"
         }
     ]
 }
