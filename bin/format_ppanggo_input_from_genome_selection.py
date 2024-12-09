@@ -3,7 +3,7 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Set
 
 
 def parse_args(argv=None):
@@ -30,6 +30,14 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "--reference_genomes",
+        type=Path,
+        required=False,
+        help="Path to a file containing a list of reference genome names, one per line. "
+        "These genomes will be included in the selection regardless if they are in the provided selection.",
+    )
+
+    parser.add_argument(
         "--fasta_to_original_path",
         type=Path,
         required=False,
@@ -52,21 +60,40 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def parse_genome_name_to_path_file(genome_name_to_path: Path) -> Dict[str, str]:
+def parse_genome_name_to_path_file(genome_name_to_path_file: Path) -> Dict[str, str]:
     """
     Parses a genome name-to-path file and returns a dictionary mapping paths to genome names.
 
-    :param genome_name_to_path: Path to the file containing genome name and path mappings.
+    :param genome_name_to_path_file: Path to the file containing genome name and path mappings.
                                 Each line of the file should have the format:
                                 `<genome_name>\t<genome_path>`.
     :return: A dictionary where the keys are genome paths and the values are genome names.
     """
-    with open(genome_name_to_path, "r") as fl:
+    with open(genome_name_to_path_file, "r") as fl:
         path_to_genome_name = {
             line.split("\t")[1].strip(): line.split("\t")[0] for line in fl
         }
 
     return path_to_genome_name
+
+def get_path_of_reference_genomes(
+    reference_genome_names: Set[str],
+    path_to_genome_name: Dict[str, str]
+) -> Set[str]:
+    """
+    Retrieve the file paths of reference genomes that match the specified genome names.
+
+    :param reference_genome_names: A set of genome names to be used as reference.
+    :param path_to_genome_name: A mapping of file paths to genome names.
+    :return: A set of file paths corresponding to the reference genomes.
+    """
+    # Identify reference genome names present in the provided genome name mapping
+    current_species_ref_genomes = set(path_to_genome_name.values()) & reference_genome_names
+
+    # Collect file paths corresponding to the identified reference genome names
+    reference_genome_paths = {path for path, name in path_to_genome_name.items() if name in current_species_ref_genomes}
+
+    return reference_genome_paths
 
 
 def main(argv=None):
@@ -86,7 +113,7 @@ def main(argv=None):
     fasta_to_original_path = args.fasta_to_original_path
 
     with open(selected_genomes_file) as fl:
-        selected_genomes = [genome_path.rstrip() for genome_path in fl]
+        selected_genomes = {genome_path.rstrip() for genome_path in fl}
 
     tmp_fasta_to_original_path = {}
     if args.fasta_to_original_path:
@@ -98,13 +125,34 @@ def main(argv=None):
     # Parse the genome name to path mapping
     path_to_genome_name = parse_genome_name_to_path_file(args.genome_name_to_path)
 
+
+    if args.reference_genomes:
+        with open(args.reference_genomes) as fl:
+            # Load reference genome names from the file
+            reference_genomes = {line.rstrip() for line in fl if line}
+            logging.info(f"Loaded {len(reference_genomes)} reference genome names from {args.reference_genomes}.")
+
+        # Get paths for the specified reference genomes
+        reference_genome_paths = get_path_of_reference_genomes(reference_genomes, path_to_genome_name)
+        logging.info(f"Retrieved {len(reference_genome_paths)} reference genome paths matching the provided input genomes.")
+
+        # Add the retrieved genome paths to the selected genomes set
+        selection_count = len(selected_genomes)
+        selected_genomes |= reference_genome_paths
+        new_selection_count = len(selected_genomes)
+        added_genomes_count = new_selection_count - selection_count
+
+        logging.info(
+            f"Added {added_genomes_count} new reference genomes to the selected list, "
+            f"bringing the total to {new_selection_count}. These genomes were not already in the list."
+        )
+
+
     # Write selected genomes to the output file
-    selected_genomes_outfile = args.selected_genomes
-    logging.info(f"Writing selected genomes to {selected_genomes_outfile}.")
-
-    with open(args.formatted_genomes, "w") as fl:
+    selected_genomes_outfile = args.formatted_genomes
+    logging.info(f"Writing selected genomes to {selected_genomes_outfile}")
+    with open(selected_genomes_outfile, "w") as fl:
         for genome_path in selected_genomes:
-
             genome_name = path_to_genome_name[genome_path]
 
             if tmp_fasta_to_original_path:
@@ -115,3 +163,5 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
+
+

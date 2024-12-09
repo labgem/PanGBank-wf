@@ -22,9 +22,15 @@ workflow GENOME_DEREPLICATION {
     ch_species_to_dereplicate   // Channel with species metadata and genome path files.
 
     main:
-    // Initialize an empty channel to collect version information
     ch_versions = Channel.empty()
     ch_genome_count_cutoff = Channel.value(params.dereplication_genome_cutoff)
+
+    if (params.reference_genomes) {
+        ch_reference_genomes = file(params.reference_genomes, checkIfExists: true)
+    }
+    else {
+        ch_reference_genomes = []
+    }
 
     // Branch the input channel based on the type of input file (annotation or fasta).
     ch_species_branched = ch_species_to_dereplicate.branch { meta, genome_file ->
@@ -105,7 +111,7 @@ workflow GENOME_DEREPLICATION {
             def fasta_to_original_input = files.size() <= 2 ? file("NO_FILE") : files[2]
             [meta, selected_genomes, genome_name_to_path, fasta_to_original_input]
         }
-    FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path)
+    FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path, ch_reference_genomes)
 
     // Compute cluster statistics and generate a cluster composition file.
     ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition
