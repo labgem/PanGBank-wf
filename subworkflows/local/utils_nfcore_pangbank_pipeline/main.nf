@@ -49,11 +49,7 @@ workflow PIPELINE_INITIALISATION {
 
     //
     // Validate parameters and generate parameter summary to stdout
-    // //
-    // pre_help_text = pangbankLogo(monochrome_logs)
-    // post_help_text = '\n' + workflowCitation() + '\n' + dashedLine(monochrome_logs)
-    // def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --genomes genomes_file_list.tsv --taxonomy genome_taxonomy.tsv --outdir <OUTDIR>"
-
+    //
     UTILS_NFSCHEMA_PLUGIN (
         workflow,
         validate_params,
@@ -70,54 +66,6 @@ workflow PIPELINE_INITIALISATION {
         nextflow_cli_args
     )
 
-    //
-    // Validate parameters and generate parameter summary to stdout
-    //
-    // pre_help_text = pangbankLogo(monochrome_logs)
-    // post_help_text = '\n' + workflowCitation() + '\n' + dashedLine(monochrome_logs)
-    // def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --genomes genomes_file_list.tsv --taxonomy genome_taxonomy.tsv --outdir <OUTDIR>"
-    // UTILS_NFVALIDATION_PLUGIN (
-    //     help,
-    //     workflow_command,
-    //     pre_help_text,
-    //     post_help_text,
-    //     validate_params,
-    //     "nextflow_schema.json"
-    // )
-    // UTILS_NFSCHEMA_PLUGIN (
-    //     workflow,
-    //     validate_params,
-    //     null
-    // )
-
-
-    //
-    // Custom validation for pipeline parameters
-    //
-    // validateInputParameters()
-
-    // //
-    // // Create channel from input file provided through params.input
-    // //
-    // Channel
-    //     .fromSamplesheet("input")
-    //     .map {
-    //         meta, fastq_1, fastq_2 ->
-    //             if (!fastq_2) {
-    //                 return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-    //             } else {
-    //                 return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-    //             }
-    //     }
-    //     .groupTuple()
-    //     .map {
-    //         validateInputSamplesheet(it)
-    //     }
-    //     .map {
-    //         meta, fastqs ->
-    //             return [ meta, fastqs.flatten() ]
-    //     }
-    //     .set { ch_samplesheet }
 
     emit:
     // samplesheet = ch_samplesheet

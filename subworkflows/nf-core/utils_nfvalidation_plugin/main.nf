@@ -1,62 +1,46 @@
 //
-// Subworkflow that uses the nf-validation plugin to render help text and parameter summary
+// Subworkflow that uses the nf-schema plugin to validate parameters and render the parameter summary
 //
 
-/*
-========================================================================================
-    IMPORT NF-VALIDATION PLUGIN
-========================================================================================
-*/
+include { paramsSummaryLog   } from 'plugin/nf-schema'
+include { validateParameters } from 'plugin/nf-schema'
 
-include { paramsHelp         } from 'plugin/nf-validation'
-include { paramsSummaryLog   } from 'plugin/nf-validation'
-include { validateParameters } from 'plugin/nf-validation'
-
-/*
-========================================================================================
-    SUBWORKFLOW DEFINITION
-========================================================================================
-*/
-
-workflow UTILS_NFVALIDATION_PLUGIN {
+workflow UTILS_NFSCHEMA_PLUGIN {
 
     take:
-    print_help       // boolean: print help
-    workflow_command //  string: default commmand used to run pipeline
-    pre_help_text    //  string: string to be printed before help text and summary log
-    post_help_text   //  string: string to be printed after help text and summary log
-    validate_params  // boolean: validate parameters
-    schema_filename  //    path: JSON schema file, null to use default value
+    input_workflow      // workflow: the workflow object used by nf-schema to get metadata from the workflow
+    validate_params     // boolean:  validate the parameters
+    parameters_schema   // string:   path to the parameters JSON schema.
+                        //           this has to be the same as the schema given to `validation.parametersSchema`
+                        //           when this input is empty it will automatically use the configured schema or
+                        //           "${projectDir}/nextflow_schema.json" as default. This input should not be empty
+                        //           for meta pipelines
 
     main:
 
-    log.debug "Using schema file: ${schema_filename}"
-
-    // Default values for strings
-    pre_help_text    = pre_help_text    ?: ''
-    post_help_text   = post_help_text   ?: ''
-    workflow_command = workflow_command ?: ''
-
     //
-    // Print help message if needed
+    // Print parameter summary to stdout. This will display the parameters
+    // that differ from the default given in the JSON schema
     //
-    if (print_help) {
-        log.info pre_help_text + paramsHelp(workflow_command, parameters_schema: schema_filename) + post_help_text
-        System.exit(0)
+    if(parameters_schema) {
+        log.info paramsSummaryLog(input_workflow, parameters_schema:parameters_schema)
+    } else {
+        log.info paramsSummaryLog(input_workflow)
     }
 
     //
-    // Print parameter summary to stdout
+    // Validate the parameters using nextflow_schema.json or the schema
+    // given via the validation.parametersSchema configuration option
     //
-    log.info pre_help_text + paramsSummaryLog(workflow, parameters_schema: schema_filename) + post_help_text
-
-    //
-    // Validate parameters relative to the parameter JSON schema
-    //
-    if (validate_params){
-        validateParameters(parameters_schema: schema_filename)
+    if(validate_params) {
+        if(parameters_schema) {
+            validateParameters(parameters_schema:parameters_schema)
+        } else {
+            validateParameters()
+        }
     }
 
     emit:
     dummy_emit = true
 }
+

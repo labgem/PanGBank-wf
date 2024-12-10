@@ -1,7 +1,5 @@
 bump_version: null
 lint:
-  editorconfig-checker:
-    - nextflow.config
   files_exist:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-pangbank_logo_light.png
@@ -10,12 +8,14 @@ lint:
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
+    - conf/test_full.config
   files_unchanged:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-pangbank_logo_light.png
     - docs/images/nf-core-pangbank_logo_light.png
     - docs/images/nf-core-pangbank_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .gitignore
   multiqc_config:
     - report_comment
   nextflow_config:
