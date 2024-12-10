@@ -1,5 +1,5 @@
 process ANY2FASTA {
-    tag "$meta.id"
+    tag "$meta.species"
     label 'process_single'
 
     conda "bioconda::any2fasta=0.4.2"
