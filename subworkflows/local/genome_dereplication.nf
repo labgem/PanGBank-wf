@@ -57,6 +57,7 @@ workflow GENOME_DEREPLICATION {
 
     // Sort genomes based on calculated metrics for quality prioritization.
     SORT_GENOMES(SEQFU_STATS_FROM_FILE.out.stats)
+    ch_versions = ch_versions.mix(SORT_GENOMES.out.versions)
 
     // Compute pairwise Mash distances for all genomes.
     MASH_SKETCH_GENOMES(ch_species_to_path_file)
@@ -100,6 +101,7 @@ workflow GENOME_DEREPLICATION {
 
     // Select genome clusters from the phylogenetic tree and prioritize based on quality.
     GENOME_SELECTION_FROM_TREE(ch_sp_tree_and_sorted_genomes, ch_genome_count_cutoff)
+    ch_versions = ch_versions.mix(GENOME_SELECTION_FROM_TREE.out.versions)
 
     // Prepare input files for PPanGGOLiN by mapping selected genome paths to their original inputs.
     ch_sp_selected_genome_to_name_and_original_path = GENOME_SELECTION_FROM_TREE.out.selected_genomes
@@ -112,6 +114,8 @@ workflow GENOME_DEREPLICATION {
             [meta, selected_genomes, genome_name_to_path, fasta_to_original_input]
         }
     FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path, ch_reference_genomes)
+    ch_versions = ch_versions.mix(FORMAT_INPUT_GENOMES.out.versions)
+
 
     // Compute cluster statistics and generate a cluster composition file.
     ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition
@@ -121,11 +125,17 @@ workflow GENOME_DEREPLICATION {
             [meta, cluster_compo_and_phylip_matrix[0], cluster_compo_and_phylip_matrix[1]]
         }
     CLUSTER_STAT(ch_cluster_compo_and_phylip_matrix)
+    ch_versions = ch_versions.mix(CLUSTER_STAT.out.versions)
 
     // Generate plots from cluster statistics.
-    ch_cluster_stat = CLUSTER_STAT.out.cluster_stat.collectFile(skip: 1, keepHeader: true, name: 'cluster_stat.tsv')
-    ch_distance_count = CLUSTER_STAT.out.distance_count.collectFile(skip: 1, keepHeader: true, name: 'distance_count.tsv')
+    ch_cluster_stat = CLUSTER_STAT.out.cluster_stat.map {meta, cluster_stat -> cluster_stat}
+                                    .collectFile(skip: 1, keepHeader: true, name: 'cluster_stat.tsv')
+    ch_distance_count = CLUSTER_STAT.out.distance_count.map {meta, distance_count -> distance_count}
+                                    .collectFile(skip: 1, keepHeader: true, name: 'distance_count.tsv')
+
     CLUSTER_PLOT(ch_cluster_stat, ch_distance_count)
+    ch_versions = ch_versions.mix(CLUSTER_PLOT.out.versions)
+
 
     // Merge updated metadata with the selected genomes and finalize output.
     ch_sp_to_original_meta = ch_species_to_dereplicate.map { meta, genome_file -> [["id": meta.species], meta] }

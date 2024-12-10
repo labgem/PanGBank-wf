@@ -11,8 +11,8 @@ process CLUSTER_STAT {
     tuple val(meta), path(cluster_composition), path(phylip_matrix)
 
     output:
-    path "cluster_stat.tsv", emit: cluster_stat
-    path "distance_count.tsv", emit: distance_count
+    tuple val(meta), path("cluster_stat.tsv"), emit: cluster_stat
+    tuple val(meta), path("distance_count.tsv"), emit: distance_count
     path "versions.yml"      , emit: versions
 
 
