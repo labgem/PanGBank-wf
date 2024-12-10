@@ -2,10 +2,10 @@ process SEQFU_STATS_FROM_FILE {
     tag "$meta.id"
     label 'process_single'
 
-    conda "bioconda::seqfu"
+    conda "bioconda::seqfu=1.22.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/seqfu:1.22.3--h1eb128b_0':
-        'biocontainers/seqfu:1.20.3--h1eb128b_0' }"
+        'biocontainers/seqfu:1.22.3--h1eb128b_0' }"
 
 
     input:

@@ -1,5 +1,5 @@
 process SORT_GENOMES {
-    // label 'process_single'
+    label 'process_single'
     tag "${meta.id}"
 
     // reuse ppanggolin env as it as already been downloaded and used
@@ -14,6 +14,7 @@ process SORT_GENOMES {
     output:
         tuple  val(meta), path("sorted_genomes.txt")       , emit: sorted_genomes_list
         path "sorted_genomes.tsv"                          , emit: sorted_genomes_stats
+        path "versions.yml"      , emit: versions
 
     when:
         task.ext.when == null || task.ext.when
@@ -26,6 +27,11 @@ process SORT_GENOMES {
                     --sorted_genome_list sorted_genomes.txt \\
                     --sorted_genome_stats sorted_genomes.tsv
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
+    END_VERSIONS
     """
 
 }

@@ -2,7 +2,7 @@ process QUICKTREE {
     tag "$meta.id"
     label 'process_single'
 
-    conda "bioconda::quicktree"
+    conda "bioconda::quicktree=2.5"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/quicktree:2.5--h516909a_0':
         'biocontainers/quicktree:2.5--h516909a_0' }"

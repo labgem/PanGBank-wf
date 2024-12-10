@@ -1,13 +1,11 @@
 process PARSE_GENOMES_AND_TAXONOMY {
     label 'process_single'
 
-    conda "conda-forge::python=3.8.3"
-    // container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-    //     'https://depot.galaxyproject.org/singularity/python:3.10' :
-    //     'biocontainers/python:3.10' }"
+    // reuse ppanggolin env as it as already been downloaded and used
+    conda "bioconda::ppanggolin=2.2.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.0.4--py310h4b81fae_0' :
-        'biocontainers/ppanggolin:2.0.4--py310h4b81fae_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
+        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
     input:
     path genomes
     path taxonomy
@@ -15,7 +13,8 @@ process PARSE_GENOMES_AND_TAXONOMY {
 
     output:
     path "ppanggolin_input_files/*.tsv"       , emit: ppanggo_inputs
-    path "species_summary.tsv"
+    path "species_summary.tsv"                , emit: summary
+    path "versions.yml"      , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -26,6 +25,10 @@ process PARSE_GENOMES_AND_TAXONOMY {
                                     --min_genomes $min_genomes --species_summary_file species_summary.tsv\
                                     --ppanggolin_files_outdir ppanggolin_input_files
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+    END_VERSIONS
     """
 }
 

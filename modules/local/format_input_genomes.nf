@@ -14,6 +14,8 @@ process FORMAT_INPUT_GENOMES {
 
     output:
     tuple val(meta), path("formatted_selected_genomes.tsv"), emit: genome_selection_ppanggo_input
+    path "versions.yml"      , emit: versions
+
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,6 +31,10 @@ process FORMAT_INPUT_GENOMES {
                                 --formatted_genomes formatted_selected_genomes.tsv \\
                                 $fasta_to_original_path_arg $reference_genomes_arg
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+    END_VERSIONS
     """
 
 }

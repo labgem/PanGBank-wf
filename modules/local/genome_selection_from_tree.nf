@@ -15,7 +15,7 @@ process GENOME_SELECTION_FROM_TREE {
     output:
     tuple val(meta), path("selected_genomes.txt")    ,  emit: selected_genomes
     tuple val(meta), path("cluster_composition.txt")    ,  emit: cluster_composition
-
+    path "versions.yml"      , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,6 +29,11 @@ process GENOME_SELECTION_FROM_TREE {
                                 --cluster_composition "cluster_composition.txt" \\
                                 --selected_genomes selected_genomes.txt
 
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        treeswift: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('treeswift').version)")
+    END_VERSIONS
     """
 
 }

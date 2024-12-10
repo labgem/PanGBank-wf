@@ -13,6 +13,8 @@ process CLUSTER_STAT {
     output:
     path "cluster_stat.tsv", emit: cluster_stat
     path "distance_count.tsv", emit: distance_count
+    path "versions.yml"      , emit: versions
+
 
     when:
     task.ext.when == null || task.ext.when
@@ -25,5 +27,15 @@ process CLUSTER_STAT {
             --species $meta.id \\
             --cluster_stat cluster_stat.tsv \\
             --distance_count_file distance_count.tsv
+
+
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        pandas: \$(python -c "import pandas; print(pandas.__version__)")
+        numpy: \$(python -c "import numpy; print(numpy.__version__)")
+    END_VERSIONS
+
     """
 }

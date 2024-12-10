@@ -34,6 +34,7 @@ process MASH_DIST_TO_PHYLIP {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         mash: \$(mash --version 2>&1)
+        numpy: \$(python -c "import numpy; print(numpy.__version__)")
     END_VERSIONS
     """
 }
