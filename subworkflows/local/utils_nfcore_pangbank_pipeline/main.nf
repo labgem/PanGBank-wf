@@ -8,36 +8,30 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { UTILS_NFVALIDATION_PLUGIN } from '../../nf-core/utils_nfvalidation_plugin'
-include { paramsSummaryMap          } from 'plugin/nf-validation'
-include { fromSamplesheet           } from 'plugin/nf-validation'
-include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipeline'
+include { UTILS_NFSCHEMA_PLUGIN     } from '../../nf-core/utils_nfschema_plugin'
+include { paramsSummaryMap          } from 'plugin/nf-schema'
+include { samplesheetToList         } from 'plugin/nf-schema'
 include { completionEmail           } from '../../nf-core/utils_nfcore_pipeline'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
-include { dashedLine                } from '../../nf-core/utils_nfcore_pipeline'
-include { logColours                } from '../../nf-core/utils_nfcore_pipeline'
-include { getWorkflowVersion                } from '../../nf-core/utils_nfcore_pipeline'
 include { imNotification            } from '../../nf-core/utils_nfcore_pipeline'
+include { pangbankLogo              } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NFCORE_PIPELINE     } from '../../nf-core/utils_nfcore_pipeline'
-include { workflowCitation          } from '../../nf-core/utils_nfcore_pipeline'
+include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipeline'
 
 /*
-========================================================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     SUBWORKFLOW TO INITIALISE PIPELINE
-========================================================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 workflow PIPELINE_INITIALISATION {
 
     take:
     version           // boolean: Display version and exit
-    help              // boolean: Display help text
     validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
     monochrome_logs   // boolean: Do not use coloured log outputs
     nextflow_cli_args //   array: List of positional nextflow CLI args
     outdir            //  string: The output directory where the results will be saved
-    genomes
-    taxonomy
 
     main:
 
@@ -55,25 +49,48 @@ workflow PIPELINE_INITIALISATION {
 
     //
     // Validate parameters and generate parameter summary to stdout
-    //
-    pre_help_text = pangbankLogo(monochrome_logs)
-    post_help_text = '\n' + workflowCitation() + '\n' + dashedLine(monochrome_logs)
-    def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --genomes genomes_file_list.tsv --taxonomy genome_taxonomy.tsv --outdir <OUTDIR>"
-    UTILS_NFVALIDATION_PLUGIN (
-        help,
-        workflow_command,
-        pre_help_text,
-        post_help_text,
+    // //
+    // pre_help_text = pangbankLogo(monochrome_logs)
+    // post_help_text = '\n' + workflowCitation() + '\n' + dashedLine(monochrome_logs)
+    // def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --genomes genomes_file_list.tsv --taxonomy genome_taxonomy.tsv --outdir <OUTDIR>"
+
+    UTILS_NFSCHEMA_PLUGIN (
+        workflow,
         validate_params,
-        "nextflow_schema.json"
+        null
     )
 
     //
     // Check config provided to the pipeline
     //
+    def pangbank_logo = pangbankLogo(monochrome_logs)
+    log.info pangbank_logo
+
     UTILS_NFCORE_PIPELINE (
         nextflow_cli_args
     )
+
+    //
+    // Validate parameters and generate parameter summary to stdout
+    //
+    // pre_help_text = pangbankLogo(monochrome_logs)
+    // post_help_text = '\n' + workflowCitation() + '\n' + dashedLine(monochrome_logs)
+    // def String workflow_command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --genomes genomes_file_list.tsv --taxonomy genome_taxonomy.tsv --outdir <OUTDIR>"
+    // UTILS_NFVALIDATION_PLUGIN (
+    //     help,
+    //     workflow_command,
+    //     pre_help_text,
+    //     post_help_text,
+    //     validate_params,
+    //     "nextflow_schema.json"
+    // )
+    // UTILS_NFSCHEMA_PLUGIN (
+    //     workflow,
+    //     validate_params,
+    //     null
+    // )
+
+
     //
     // Custom validation for pipeline parameters
     //
@@ -122,7 +139,7 @@ workflow PIPELINE_COMPLETION {
     outdir          //    path: Path to output directory where results will be published
     monochrome_logs // boolean: Disable ANSI colour codes in log output
     hook_url        //  string: hook URL for notifications
-    // multiqc_report  //  string: Path to MultiQC report
+    multiqc_report  //  string: Path to MultiQC report
 
     main:
 
@@ -133,11 +150,18 @@ workflow PIPELINE_COMPLETION {
     //
     workflow.onComplete {
         if (email || email_on_fail) {
-            completionEmail(summary_params, email, email_on_fail, plaintext_email, outdir, monochrome_logs, multiqc_report.toList())
+            completionEmail(
+                summary_params,
+                email,
+                email_on_fail,
+                plaintext_email,
+                outdir,
+                monochrome_logs,
+                multiqc_report.toList()
+            )
         }
 
         completionSummary(monochrome_logs)
-
         if (hook_url) {
             imNotification(summary_params, hook_url)
         }
@@ -149,9 +173,9 @@ workflow PIPELINE_COMPLETION {
 }
 
 /*
-========================================================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     FUNCTIONS
-========================================================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 //
 // Check and validate pipeline parameters
@@ -167,7 +191,7 @@ def validateInputSamplesheet(input) {
     def (metas, fastqs) = input[1..2]
 
     // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
-    def endedness_ok = metas.collect{ it.single_end }.unique().size == 1
+    def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
     if (!endedness_ok) {
         error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
     }
@@ -199,7 +223,6 @@ def genomeExistsError() {
         error(error_string)
     }
 }
-
 //
 // Generate methods description for MultiQC
 //
@@ -241,8 +264,10 @@ def methodsDescriptionText(mqc_methods_yaml) {
         // Removing `https://doi.org/` to handle pipelines using DOIs vs DOI resolvers
         // Removing ` ` since the manifest.doi is a string and not a proper list
         def temp_doi_ref = ""
-        String[] manifest_doi = meta.manifest_map.doi.tokenize(",")
-        for (String doi_ref: manifest_doi) temp_doi_ref += "(doi: <a href=\'https://doi.org/${doi_ref.replace("https://doi.org/", "").replace(" ", "")}\'>${doi_ref.replace("https://doi.org/", "").replace(" ", "")}</a>), "
+        def manifest_doi = meta.manifest_map.doi.tokenize(",")
+        manifest_doi.each { doi_ref ->
+            temp_doi_ref += "(doi: <a href=\'https://doi.org/${doi_ref.replace("https://doi.org/", "").replace(" ", "")}\'>${doi_ref.replace("https://doi.org/", "").replace(" ", "")}</a>), "
+        }
         meta["doi_text"] = temp_doi_ref.substring(0, temp_doi_ref.length() - 2)
     } else meta["doi_text"] = ""
     meta["nodoi_text"] = meta.manifest_map.doi ? "" : "<li>If available, make sure to update the text to include the Zenodo DOI of version of the pipeline used. </li>"
@@ -264,25 +289,3 @@ def methodsDescriptionText(mqc_methods_yaml) {
     return description_html.toString()
 }
 
-
-//
-// nf-core logo
-//
-def pangbankLogo(monochrome_logs=true) {
-    Map colors = logColours(monochrome_logs)
-    String.format(
-        """\n
-        ${dashedLine(monochrome_logs)}
-
-        ${colors.blue} _____             _____ ${colors.green} ____              _  __ ${colors.reset}
-        ${colors.blue}|  __ \\           / ____|${colors.green}|  _ \\            | |/ / ${colors.reset}
-        ${colors.blue}| |__) |_ _ _ __ | |  __ ${colors.green}| |_) | __ _ _ __ | ' /  ${colors.reset}
-        ${colors.blue}|  ___/ _` | '_ \\| | |_ |${colors.green}|  _ < / _` | '_ \\|  <   ${colors.reset}
-        ${colors.blue}| |  | (_| | | | | |__| |${colors.green}| |_) | (_| | | | | . \\  ${colors.reset}
-        ${colors.blue}|_|   \\__,_|_| |_|\\_____|${colors.green}|____/ \\__,_|_| |_|_|\\_\\ ${colors.reset}
-
-        ${colors.purple}  ${workflow.manifest.name} ${getWorkflowVersion()}${colors.reset}
-        ${dashedLine(monochrome_logs)}
-        """.stripIndent()
-    )
-}

@@ -7,20 +7,15 @@
 ----------------------------------------------------------------------------------------
 */
 
-nextflow.enable.dsl = 2
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT FUNCTIONS / MODULES / SUBWORKFLOWS / WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+include { PANGBANK  } from './workflows/pangbank'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_pangbank_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_pangbank_pipeline'
-
-include { PANGBANK  } from './workflows/pangbank'
-// include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_template_pipeline'
-
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,20 +28,15 @@ include { PANGBANK  } from './workflows/pangbank'
 //
 workflow LABGEM_PANGBANK {
 
-    // take:
-    // genomes // channel: samplesheet read in from --genomes
-
     main:
 
     //
-    // WORKFLOW: Run pipeline
+    // WORKFLOW: Run main workflow
     //
-    PANGBANK (
-        // genomes
-    )
+    PANGBANK ()
 
-    // emit:
-    // multiqc_report = PANGBANK.out.multiqc_report // channel: /path/to/multiqc_report.html
+    emit:
+    multiqc_report = PANGBANK.out.multiqc_report // channel: /path/to/multiqc_report.html
 
 }
 /*
@@ -58,19 +48,15 @@ workflow LABGEM_PANGBANK {
 workflow {
 
     main:
-
     //
     // SUBWORKFLOW: Run initialisation tasks
     //
     PIPELINE_INITIALISATION (
         params.version,
-        params.help,
         params.validate_params,
         params.monochrome_logs,
         args,
         params.outdir,
-        params.genomes,
-        params.taxonomy
     )
 
     //
@@ -88,7 +74,7 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        // LABGEM_PANGBANK.out.multiqc_report
+        LABGEM_PANGBANK.out.multiqc_report
     )
 }
 
