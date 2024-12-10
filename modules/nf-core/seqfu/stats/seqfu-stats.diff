@@ -1,0 +1,22 @@
+Changes in module 'nf-core/seqfu/stats'
+'modules/nf-core/seqfu/stats/meta.yml' is unchanged
+Changes in 'seqfu/stats/main.nf':
+--- modules/nf-core/seqfu/stats/main.nf
++++ modules/nf-core/seqfu/stats/main.nf
+@@ -4,8 +4,8 @@
+ 
+     conda "${moduleDir}/environment.yml"
+     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+-        'https://depot.galaxyproject.org/singularity/seqfu:1.20.3--h1eb128b_0':
+-        'biocontainers/seqfu:1.20.3--h1eb128b_0' }"
++        'https://depot.galaxyproject.org/singularity/seqfu:1.22.3--h1eb128b_0':
++        'biocontainers/seqfu:1.22.3--h1eb128b_0' }"
+ 
+ 
+     input:
+
+'modules/nf-core/seqfu/stats/environment.yml' is unchanged
+'modules/nf-core/seqfu/stats/tests/main.nf.test.snap' is unchanged
+'modules/nf-core/seqfu/stats/tests/tags.yml' is unchanged
+'modules/nf-core/seqfu/stats/tests/main.nf.test' is unchanged
+************************************************************
