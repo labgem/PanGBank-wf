@@ -151,29 +151,6 @@ def paramsSummaryMultiqc(summary_params) {
 }
 
 //
-// pangbank logo
-//
-def pangbankLogo(monochrome_logs=true) {
-    def colors = logColours(monochrome_logs) as Map
-    String.format(
-        """\n
-        ${dashedLine(monochrome_logs)}
-
-        ${colors.blue} _____             _____ ${colors.green} ____              _  __ ${colors.reset}
-        ${colors.blue}|  __ \\           / ____|${colors.green}|  _ \\            | |/ / ${colors.reset}
-        ${colors.blue}| |__) |_ _ _ __ | |  __ ${colors.green}| |_) | __ _ _ __ | ' /  ${colors.reset}
-        ${colors.blue}|  ___/ _` | '_ \\| | |_ |${colors.green}|  _ < / _` | '_ \\|  <   ${colors.reset}
-        ${colors.blue}| |  | (_| | | | | |__| |${colors.green}| |_) | (_| | | | | . \\  ${colors.reset}
-        ${colors.blue}|_|   \\__,_|_| |_|\\_____|${colors.green}|____/ \\__,_|_| |_|_|\\_\\ ${colors.reset}
-
-        ${colors.purple}  ${workflow.manifest.name} ${getWorkflowVersion()}${colors.reset}
-        ${dashedLine(monochrome_logs)}
-        """.stripIndent()
-    )
-}
-
-
-//
 // nf-core logo
 //
 def nfCoreLogo(monochrome_logs=true) {
@@ -483,4 +460,3 @@ def imNotification(summary_params, hook_url) {
         log.warn(post.getErrorStream().getText())
     }
 }
-
