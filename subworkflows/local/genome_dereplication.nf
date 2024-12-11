@@ -115,7 +115,6 @@ workflow GENOME_DEREPLICATION {
 
     // Prepare input files for PPanGGOLiN by mapping selected genome paths to their original inputs.
     ch_sp_selected_genome_to_name_and_original_path = GENOME_SELECTION_FROM_TREE.out.selected_genomes
-        .view { i -> "MMMMM ${i}" }
         .concat(ch_species_to_fasta_input_files, ch_sp_and_fasta_to_original_path)
         .groupTuple()
         .map { meta, files ->
@@ -124,7 +123,6 @@ workflow GENOME_DEREPLICATION {
             def fasta_to_original_input = files.size() <= 2 ? file("NO_FILE") : files[2]
             [meta, selected_genomes, genome_name_to_path, fasta_to_original_input]
         }
-        .view { i -> "CCCCCCC ${i}" }
     FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path, ch_reference_genomes)
     ch_versions = ch_versions.mix(FORMAT_INPUT_GENOMES.out.versions)
 
