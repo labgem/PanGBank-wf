@@ -16,8 +16,6 @@ include { FORMAT_INPUT_GENOMES } from '../../modules/local/format_input_genomes'
 include { CLUSTER_STAT } from '../../modules/local/cluster_stat.nf'
 include { CLUSTER_PLOT } from '../../modules/local/cluster_plot.nf'
 
-include { mergeText } from 'plugin/nf-boost'
-
 workflow GENOME_DEREPLICATION {
     take:
     ch_species_to_dereplicate // Channel with species metadata and genome path files.
