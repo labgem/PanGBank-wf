@@ -16,10 +16,11 @@ include { FORMAT_INPUT_GENOMES } from '../../modules/local/format_input_genomes'
 include { CLUSTER_STAT } from '../../modules/local/cluster_stat.nf'
 include { CLUSTER_PLOT } from '../../modules/local/cluster_plot.nf'
 
+include { mergeText } from 'plugin/nf-boost'
 
 workflow GENOME_DEREPLICATION {
     take:
-    ch_species_to_dereplicate   // Channel with species metadata and genome path files.
+    ch_species_to_dereplicate // Channel with species metadata and genome path files.
 
     main:
     ch_versions = Channel.empty()
@@ -38,18 +39,34 @@ workflow GENOME_DEREPLICATION {
         fasta_input: true
     }
 
+    ch_sp_annotation_input_split = ch_species_branched.annotation_input.splitText(elem: 1, by: 500, file: true)
+
+
     // Convert annotation files to FASTA format if required.
-    ANY2FASTA(ch_species_branched.annotation_input)
+    ANY2FASTA(ch_sp_annotation_input_split)
     ch_versions = ch_versions.mix(ANY2FASTA.out.versions)
 
+    ch_sp_and_fasta_to_original_path = ANY2FASTA.out.fasta_to_orginal_path
+        .collectFile(newLine: false) { meta, content -> ["${meta.species}.fasta_to_orginal_path", content] }
+        .map { path_file -> [["id": path_file.baseName], path_file] }
+
+    ch_sp_and_genome_path_fasta = ANY2FASTA.out.genome_path_fasta
+        .collectFile(newLine: false) { meta, content -> ["${meta.species}.fasta_input_file", content] }
+        .map { path_file -> [["id": path_file.baseName], path_file] }
+
+
     // Combine fasta input files from both branches (direct and converted).
-    ch_species_to_fasta_input_files = ch_species_branched.fasta_input.concat(ANY2FASTA.out.genome_path_fasta)
+    ch_species_to_fasta_input_files = ch_species_branched.fasta_input
+        .map { meta, file -> [["id": meta.species], file] }
+        .concat(ch_sp_and_genome_path_fasta)
 
     // Generate a single path list file for all genomes within a species.
     ch_species_to_path_file = ch_species_to_fasta_input_files
         .splitCsv(elem: 1, sep: "\t", header: ["name", "path"])
-        .collectFile(newLine: true) { meta, genome -> ["${meta.species}", genome.path] }
-        .map { path_file -> [["id": path_file.name], path_file] }
+        .collectFile(newLine: true) { meta, genome -> ["${meta.id}.fasta_input_file", genome.path] }
+        .map { path_file -> [["id": path_file.baseName], path_file] }
+
+
 
     // Calculate genome sequence metrics using seqfu.
     SEQFU_STATS_FROM_FILE(ch_species_to_path_file)
@@ -73,6 +90,7 @@ workflow GENOME_DEREPLICATION {
             [meta, mash_sketch, genome_list]
         }
 
+
     // Convert Mash distances to a PHYLIP matrix format.
     MASH_DIST_TO_PHYLIP(ch_species_sketch_genome_list)
     ch_versions = ch_versions.mix(MASH_DIST_TO_PHYLIP.out.versions)
@@ -80,14 +98,6 @@ workflow GENOME_DEREPLICATION {
     // Build a phylogenetic tree from the distance matrix.
     QUICKTREE(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
     ch_versions = ch_versions.mix(QUICKTREE.out.versions)
-
-    // Map species and genome paths to their original paths for later use.
-    ch_sp_and_genome_name_to_path = ch_species_to_fasta_input_files.map { meta, genome_file ->
-        [["id": meta.species], genome_file]
-    }
-    ch_sp_and_fasta_to_original_path = ANY2FASTA.out.fasta_to_orginal_path.map { meta, file ->
-        [["id": meta.species], file]
-    }
 
     // Combine the tree with sorted genomes for clustering.
     ch_sp_tree_and_sorted_genomes = QUICKTREE.out.tree
@@ -105,7 +115,8 @@ workflow GENOME_DEREPLICATION {
 
     // Prepare input files for PPanGGOLiN by mapping selected genome paths to their original inputs.
     ch_sp_selected_genome_to_name_and_original_path = GENOME_SELECTION_FROM_TREE.out.selected_genomes
-        .concat(ch_sp_and_genome_name_to_path, ch_sp_and_fasta_to_original_path)
+        .view { i -> "MMMMM ${i}" }
+        .concat(ch_species_to_fasta_input_files, ch_sp_and_fasta_to_original_path)
         .groupTuple()
         .map { meta, files ->
             def selected_genomes = files[0]
@@ -113,6 +124,7 @@ workflow GENOME_DEREPLICATION {
             def fasta_to_original_input = files.size() <= 2 ? file("NO_FILE") : files[2]
             [meta, selected_genomes, genome_name_to_path, fasta_to_original_input]
         }
+        .view { i -> "CCCCCCC ${i}" }
     FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path, ch_reference_genomes)
     ch_versions = ch_versions.mix(FORMAT_INPUT_GENOMES.out.versions)
 
@@ -128,10 +140,12 @@ workflow GENOME_DEREPLICATION {
     ch_versions = ch_versions.mix(CLUSTER_STAT.out.versions)
 
     // Generate plots from cluster statistics.
-    ch_cluster_stat = CLUSTER_STAT.out.cluster_stat.map {meta, cluster_stat -> cluster_stat}
-                                    .collectFile(skip: 1, keepHeader: true, name: 'cluster_stat.tsv')
-    ch_distance_count = CLUSTER_STAT.out.distance_count.map {meta, distance_count -> distance_count}
-                                    .collectFile(skip: 1, keepHeader: true, name: 'distance_count.tsv')
+    ch_cluster_stat = CLUSTER_STAT.out.cluster_stat
+        .map { meta, cluster_stat -> cluster_stat }
+        .collectFile(skip: 1, keepHeader: true, name: 'cluster_stat.tsv')
+    ch_distance_count = CLUSTER_STAT.out.distance_count
+        .map { meta, distance_count -> distance_count }
+        .collectFile(skip: 1, keepHeader: true, name: 'distance_count.tsv')
 
     CLUSTER_PLOT(ch_cluster_stat, ch_distance_count)
     ch_versions = ch_versions.mix(CLUSTER_PLOT.out.versions)
@@ -153,4 +167,3 @@ workflow GENOME_DEREPLICATION {
     dereplicated_genomes = ch_meta_and_selected_genomes
     versions = ch_versions
 }
-
