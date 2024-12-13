@@ -22,6 +22,7 @@ lint:
     - manifest.name
     - manifest.homePage
     - params.input
+  actions_ci: false # to remove when vnextflow v23 is dropped.
 nf_core_version: 3.0.2
 org_path: null
 repository_type: pipeline
