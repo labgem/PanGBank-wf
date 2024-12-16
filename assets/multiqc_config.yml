@@ -12,3 +12,135 @@ report_section_order:
 export_plots: true
 
 disable_version_detection: true
+
+run_modules:
+  - custom_content
+
+custom_data:
+  summary_pangenome:
+    section_name: "Pangenome summary table"
+    description: "This table provides an overview of key metrics describing the pangenome and its structural components."
+    plot_type: "generalstats"
+    pconfig:
+      id: "summary_pangenome_table"
+      title: "Summary pangenome table"
+      namespace: "De novo assembly metrics"
+    headers:
+      Genomes:
+        description: "Genomes included in the pangenome analysis."
+        format: "{:,.0f}"
+      Genes:
+        description: "Genes across all genomes in the pangenome."
+        format: "{:,.0f}"
+      Persistent:
+        description: "Gene families classified as persistent, shared by most genomes."
+        format: "{:,.0f}"
+      Shell:
+        description: "Gene families classified as shell, present in a subset of genomes."
+        format: "{:,.0f}"
+      Cloud:
+        description: "Gene families classified as cloud, specific to a small number of genomes."
+        format: "{:,.0f}"
+      Spots:
+        description: "Spots of insertions predicted in the pangenome."
+        format: "{:,.0f}"
+      RGPs:
+        description: "Regions of Genomic Plasticity (RGPs) predicted in the pangenome."
+        format: "{:,.0f}"
+      Modules:
+        description: "Modules predicted in the pangenome."
+        format: "{:,.0f}"
+
+  # genomes:
+  #     plot_type: 'bargraph'
+  #     file_format: 'tsv'
+  #     section_name: 'Genomes count'
+  #     categories:
+  #         Genomes:
+  #             name: "Genomes"
+  #             # color: "#7a9a4c"
+  #     pconfig:
+  #         id: 'genome_count_bargraph'
+  #         title: 'Example Bargraph'
+  #         ylab: 'y values'
+
+  partitions:
+    plot_type: "bargraph"
+    file_format: "tsv"
+    section_name: "Pangenome Partitions"
+    categories:
+      Persistent:
+        name: "Persistent"
+        color: "#e59c04"
+      Shell:
+        name: "Shell"
+        color: "#00d860"
+      Cloud:
+        name: "Cloud"
+        color: "#79deff"
+    pconfig:
+      id: "partition_bargraph"
+      title: "Distribution of Pangenome Partitions"
+      ylab: "y values"
+  spots:
+    plot_type: "bargraph"
+    file_format: "tsv"
+    section_name: "Spots"
+    categories:
+      Spots:
+        color: "#7a9a4c"
+    pconfig:
+      id: "spot_count_bargraph"
+      title: "Spots Of Insertions Predicted in The Pangenomes"
+      ylab: "y values"
+  modules:
+    plot_type: "bargraph"
+    file_format: "tsv"
+    section_name: "Functional modules"
+    categories:
+      Modules:
+        color: "#ca5c55"
+    pconfig:
+      id: ""
+      title: "Modules Predicted In The Pangenomes"
+      ylab: "y values"
+
+  dereplication:
+    description: "The bar plot shows the number of genomes in three categories after dereplication. Reference genomes are a subset of the selected genomes, provided as input to ensure their retention during dereplication"
+
+    plot_type: "bargraph"
+    file_format: "tsv"
+    section_name: "Dereplication"
+    categories:
+      selected_genomes:
+        name: "selected_genomes"
+        color: "#1E88E5"
+      reference_genomes:
+        name: "reference_genomes"
+        color: "#003C4D"
+      discarded_genomes:
+        name: "discarded_genomes"
+        color: "#D81B60"
+    pconfig:
+      id: ""
+      title: "Genome Distribution After Dereplication"
+      ylab: "y values"
+
+sp:
+  summary_pangenome:
+    fn: "pangenome_summary.tsv"
+    shared: true
+  genomes:
+    fn: "pangenome_summary.tsv"
+    shared: true
+  partitions:
+    fn: "pangenome_summary.tsv"
+    shared: true
+  spots:
+    fn: "pangenome_summary.tsv"
+    shared: true
+  modules:
+    fn: "pangenome_summary.tsv"
+    shared: true
+  dereplication:
+    fn: "dereplication_summary.tsv"

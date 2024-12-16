@@ -2,6 +2,7 @@
  * Dereplicate genomes from species with a lot of genomes
  */
 
+
 include { SEQFU_STATS_FROM_FILE } from '../../modules/local/seqfu_stats'
 
 include { MASH_SKETCH as MASH_SKETCH_GENOMES } from '../../modules/nf-core/mash/sketch/main'
@@ -23,6 +24,7 @@ workflow GENOME_DEREPLICATION {
     main:
     ch_versions = Channel.empty()
     ch_genome_count_cutoff = Channel.value(params.dereplication_threshold)
+    ch_multiqc_files = Channel.empty()
 
     if (params.reference_genomes) {
         ch_reference_genomes = file(params.reference_genomes, checkIfExists: true)
@@ -123,7 +125,10 @@ workflow GENOME_DEREPLICATION {
         }
     FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path, ch_reference_genomes)
     ch_versions = ch_versions.mix(FORMAT_INPUT_GENOMES.out.versions)
+    ch_dereplication_summary = FORMAT_INPUT_GENOMES.out.dereplication_summary
+                        .collectFile(skip: 1, keepHeader: true, name: 'dereplication_summary.tsv')
 
+    ch_multiqc_files = ch_multiqc_files.mix(ch_dereplication_summary)
 
     // Compute cluster statistics and generate a cluster composition file.
     ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition
@@ -162,4 +167,5 @@ workflow GENOME_DEREPLICATION {
     emit:
     dereplicated_genomes = ch_meta_and_selected_genomes
     versions = ch_versions
+    multiqc_files = ch_multiqc_files
 }

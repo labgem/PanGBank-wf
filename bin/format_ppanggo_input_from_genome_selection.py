@@ -57,8 +57,21 @@ def parse_args(argv=None):
         "and the second column for the original genome file paths to be used in the output.",
     )
 
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--summary_selection",
+        help="File where genome selection summary stats are written.",
+        default="summary_selection.yaml",
+        type=Path,
+    )
 
+    parser.add_argument(
+        "--species",
+        type=str,
+        help="Specify species name",
+        default=None
+    )
+
+    return parser.parse_args(argv)
 
 def parse_genome_name_to_path_file(genome_name_to_path_file: Path) -> Dict[str, str]:
     """
@@ -125,7 +138,7 @@ def main(argv=None):
     # Parse the genome name to path mapping
     path_to_genome_name = parse_genome_name_to_path_file(args.genome_name_to_path)
 
-
+    reference_genome_count = 0
     if args.reference_genomes:
         with open(args.reference_genomes) as fl:
             # Load reference genome names from the file
@@ -138,6 +151,7 @@ def main(argv=None):
 
         # Add the retrieved genome paths to the selected genomes set
         selection_count = len(selected_genomes)
+        reference_genome_count = len(reference_genome_paths)
         selected_genomes |= reference_genome_paths
         new_selection_count = len(selected_genomes)
         added_genomes_count = new_selection_count - selection_count
@@ -159,6 +173,20 @@ def main(argv=None):
                 genome_path = tmp_fasta_to_original_path[genome_path]
 
             fl.write(f"{genome_name}\t{genome_path}\n")
+
+    # Write the cluster composition to the output file
+    logging.info(f"Writing summary selection to {args.summary_selection}.")
+
+
+    final_selection = len(selected_genomes)
+    selection_no_ref =  final_selection - reference_genome_count
+    total_genomes = len(path_to_genome_name)
+    discarded_genome_count = total_genomes - final_selection
+
+    with open(args.summary_selection, "w") as fl:
+
+        fl.write('species\tselected_genomes\treference_genomes\tdiscarded_genomes\n')
+        fl.write(f'{args.species}\t{selection_no_ref}\t{reference_genome_count}\t{discarded_genome_count}\n')
 
 
 if __name__ == "__main__":

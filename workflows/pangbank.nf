@@ -84,6 +84,7 @@ workflow PANGBANK {
 
         ch_ppanggo_inputs_meta = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
         ch_versions = ch_versions.mix(GENOME_DEREPLICATION.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(GENOME_DEREPLICATION.out.multiqc_files)
     }
 
     PPANGGOLIN_ALL(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
@@ -109,7 +110,7 @@ workflow PANGBANK {
 
     GATHER_PANGENOME_INFO(ch_pangenome_infos)
     ch_versions = ch_versions.mix(GATHER_PANGENOME_INFO.out.versions)
-
+    ch_multiqc_files = ch_multiqc_files.mix(GATHER_PANGENOME_INFO.out.summary)
     //
     // Collate and save software versions
     //
