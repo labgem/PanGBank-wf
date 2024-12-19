@@ -6,14 +6,29 @@ process PPANGGOLIN_ALL {
 
     queue { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_queue : params.regular_pangenome_queue }
 
-    time { meta.genomes_count > params.large_pangenome_cutoff ? '5days' : '23:50:00' }
+    time { meta.genomes_count > params.large_pangenome_cutoff ?
+            '5days' :
+            (meta.genomes_count >= (params.large_pangenome_cutoff / 2)) ?
+            '23:50:00' :
+            '12:00:00'}
     // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
 
     // 16 cpu when more than 5k, from 1 to 16cpu from 1 to 5k genomes
-    cpus { meta.genomes_count > params.large_pangenome_cutoff ? "16" : "${Math.round(Math.ceil(meta.genomes_count / 312))}" }
+    cpus {
+        meta.genomes_count >= params.large_pangenome_cutoff ?
+        "16" :
+        (meta.genomes_count >= (params.large_pangenome_cutoff / 2)) ?
+        "8" :
+        "4"
+    }
 
-    // With >5K  genomes : 30GB per cpu otherwise 8GB/cpu
-    memory { meta.genomes_count > params.large_pangenome_cutoff ?  "${16*30}GB" : "${Math.ceil(2 + (meta.genomes_count / 312)*8)}GB" }
+    memory {
+        meta.genomes_count >= params.large_pangenome_cutoff ?
+        "${16*30}GB" :
+        (meta.genomes_count >= (params.large_pangenome_cutoff / 2)) ?
+        "${8*8}GB" :
+        "${4*4}GB"
+    }
 
     tag { "${meta.species} ${meta.genomes_count}genomes ${Math.ceil((meta.genomes_count / 312)*8)}GB ${Math.round(Math.ceil(meta.genomes_count / 312))}cpus" }
 

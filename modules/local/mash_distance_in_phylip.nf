@@ -1,6 +1,5 @@
 process MASH_DIST_TO_PHYLIP {
     tag "$meta.id"
-    label 'process_low'
 
     // search a mulled container with mash and python as describe here: https://nf-co.re/docs/guidelines/components/modules#re-use-of-multi-tool-containers
     // mulled-search  -d quay singularity  --search mash python | grep mulled
