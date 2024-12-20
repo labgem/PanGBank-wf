@@ -1,6 +1,6 @@
 process CLUSTER_STAT {
     tag "$meta.id"
-    label 'process_low'
+    label 'process_single'
 
     conda "bioconda::ppanggolin=2.2.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
