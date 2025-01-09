@@ -187,7 +187,7 @@ def build_density_table_per_sp_and_type(df_count: pd.DataFrame) -> pd.DataFrame:
             ].copy()
 
             # Skip if there are insufficient data points for density estimation
-            if len(df_count_type["count"]) <= 10:
+            if len(df_count_type["count"]) <= 50:
                 continue
 
             df_density_type = build_density_table(df_count_type)
