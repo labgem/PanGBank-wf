@@ -6,9 +6,7 @@ process PPANGGOLIN_ALL {
 
     queue { meta.genomes_count > params.large_pangenome_cutoff ? params.large_pangenome_queue : params.regular_pangenome_queue }
 
-    time { meta.genomes_count > params.large_pangenome_cutoff ?
-            '5days' :
-            (meta.genomes_count >= (params.large_pangenome_cutoff / 2)) ?
+    time { meta.genomes_count >= params.large_pangenome_cutoff ?
             '23:50:00' :
             '12:00:00'}
     // clusterOptions { meta.genomes_count > 5000 ? '--tmp 50G --exclusive=user' : ''  } // node with at least XGo and exclusif to the user
@@ -24,7 +22,7 @@ process PPANGGOLIN_ALL {
 
     memory {
         meta.genomes_count >= params.large_pangenome_cutoff ?
-        "${16*30}GB" :
+        "${8*16}GB" :
         (meta.genomes_count >= (params.large_pangenome_cutoff / 2)) ?
         "${8*8}GB" :
         "${4*4}GB"
