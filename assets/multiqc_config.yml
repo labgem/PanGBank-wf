@@ -12,7 +12,6 @@ report_section_order:
 export_plots: true
 max_table_rows: 5000
 
-
 disable_version_detection: true
 
 run_modules:
@@ -53,19 +52,6 @@ custom_data:
         description: "Modules predicted in the pangenome."
         format: "{:,.0f}"
 
-  # genomes:
-  #     plot_type: 'bargraph'
-  #     file_format: 'tsv'
-  #     section_name: 'Genomes count'
-  #     categories:
-  #         Genomes:
-  #             name: "Genomes"
-  #             # color: "#7a9a4c"
-  #     pconfig:
-  #         id: 'genome_count_bargraph'
-  #         title: 'Example Bargraph'
-  #         ylab: 'y values'
-
   partitions:
     plot_type: "bargraph"
     file_format: "tsv"
@@ -83,7 +69,7 @@ custom_data:
     pconfig:
       id: "partition_bargraph"
       title: "Distribution of Pangenome Partitions"
-      ylab: "y values"
+      ylab: "Families"
   spots:
     plot_type: "bargraph"
     file_format: "tsv"
@@ -94,7 +80,7 @@ custom_data:
     pconfig:
       id: "spot_count_bargraph"
       title: "Spots Of Insertions Predicted in The Pangenomes"
-      ylab: "y values"
+      ylab: "Spots"
   modules:
     plot_type: "bargraph"
     file_format: "tsv"
@@ -105,7 +91,7 @@ custom_data:
     pconfig:
       id: ""
       title: "Modules Predicted In The Pangenomes"
-      ylab: "y values"
+      ylab: "Modules"
 
   dereplication:
     description: "The bar plot shows the number of genomes in three categories after dereplication. Reference genomes are a subset of the selected genomes, provided as input to ensure their retention during dereplication"
@@ -126,7 +112,7 @@ custom_data:
     pconfig:
       id: ""
       title: "Genome Distribution After Dereplication"
-      ylab: "y values"
+      ylab: "Genomes"
 
 sp:
   summary_pangenome:
