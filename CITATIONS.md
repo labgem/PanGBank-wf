@@ -1,4 +1,4 @@
-# labgem/pangbank: Citations
+# PanGBank: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
@@ -10,9 +10,17 @@
 
 ## Pipeline tools
 
-- [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+- [PPanGGOLiN](https://ppanggolin.readthedocs.io)
 
-  > Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
+  > Gautreau, G., Bazin, A., Gachet, M., Planel, R., Burlot, L., Dubois, M., ... & Vallenet, D. (2020). PPanGGOLiN: depicting microbial diversity via a partitioned pangenome graph. PLoS computational biology, 16(3), e1007732.
+
+  - [PPanGGOLiN](https://ppanggolin.readthedocs.io)
+
+  > Gautreau, G., Bazin, A., Gachet, M., Planel, R., Burlot, L., Dubois, M., ... & Vallenet, D. (2020). PPanGGOLiN: depicting microbial diversity via a partitioned pangenome graph. PLoS computational biology, 16(3), e1007732.
+
+- [Mash](https://doi.org/10.1186/s13059-016-0997-x)
+
+  > Ondov, B. D., Treangen, T. J., Melsted, P., Mallonee, A. B., Bergman, N. H., Koren, S., & Phillippy, A. M. (2016). Mash: fast genome and metagenome distance estimation using MinHash. Genome biology, 17(1), 1-14.
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 

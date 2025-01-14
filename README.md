@@ -1,72 +1,68 @@
-[![GitHub Actions CI Status](https://github.com/labgem/pangbank/workflows/nf-core%20CI/badge.svg)](https://github.com/labgem/pangbank/actions?query=workflow%3A%22nf-core+CI%22)
-[![GitHub Actions Linting Status](https://github.com/labgem/pangbank/workflows/nf-core%20linting/badge.svg)](https://github.com/labgem/pangbank/actions?query=workflow%3A%22nf-core+linting%22)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![GitHub Actions CI Status](https://github.com/PanGBank/workflows/nf-core%20CI/badge.svg)](https://github.com/PanGBank/actions?query=workflow%3A%22nf-core+CI%22)
+[![GitHub Actions Linting Status](https://github.com/PanGBank/workflows/nf-core%20linting/badge.svg)](https://github.com/PanGBank/actions?query=workflow%3A%22nf-core+linting%22)
 
-[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
+<!-- [![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.NNNNNNN-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.NNNNNNN) -->
+
+[![GitHub Actions CI Status](https://github.com/labgem/pangbank/actions/workflows/ci.yml/badge.svg)](https://github.com/labgem/pangbank/actions/workflows/ci.yml)
+[![GitHub Actions Linting Status](https://github.com/labgem/pangbank/actions/workflows/linting.yml/badge.svg)](https://github.com/labgem/pangbank/actions/workflows/linting.yml)
+
+<!-- [![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX) -->
+
+[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
+
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.10.1-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Launch on Nextflow Tower](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Nextflow%20Tower-%234256e7)](https://tower.nf/launch?pipeline=https://github.com/labgem/pangbank)
 
 ## Introduction
 
-**labgem/pangbank** is a bioinformatics pipeline that ...
+**PanGBank** is a bioinformatics pipeline that uses PPanGGOLiN to generate pangenomes from a list of input genomes and taxonomy. It then prepares files for the PanGBank API.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
-
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
-
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+1. Parse input genomes and taxonomy, grouping them by species.
+2. Run PPanGGOLiN on the genomes of each species.
+3. Compile the pangenome information into a single file.
+4. Create a mash sketch for all input genomes to easily identify the most appropriate pangenome for an input genome.
+5. Concatenate the amino acid sequences of representative families into a single file for rapid retrieval of pangenomes containing a protein of interest.
 
 ## Usage
 
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
+PanGBank requires two input files:
 
-First, prepare a samplesheet with your input data that looks as follows:
+1. **`--genomes <genome_file_list>`**
+   A TSV file with two columns:
 
-`samplesheet.csv`:
+   - **Column 1:** `Genome_name` (unique name for each genome)
+   - **Column 2:** Path to the corresponding genome file
 
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-```
-
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
+2. **`--taxonomy <genome_taxonomy>`**
+   A TSV file with two columns:
+   - **Column 1:** `Genome_name` (must match the genome names in the `--genomes` file)
+   - **Column 2:** Taxonomy, a list of taxon levels separated by a semicolon (`;`). The last taxon name is considered the species, and genomes will be grouped into species groups for pangenome analysis.
 
 Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 nextflow run labgem/pangbank \
    -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
+   --genomes <genome_file_list> \
+   --taxonomy <genome_taxonomy>
    --outdir <OUTDIR>
 ```
 
 > [!WARNING]
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
-> see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
 ## Credits
 
-labgem/pangbank was originally written by Jean Mainguy.
+**PanGBank** was originally written in Snakemake and has been rewritten in Nextflow by Jean Mainguy.
 
-We thank the following people for their extensive assistance in the development of this pipeline:
+<!-- We thank the following people for their extensive assistance in the development of this pipeline: -->
 
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+<!-- nf-core: If applicable, make list of people who have also contributed -->
 
 ## Contributions and Support
 
@@ -74,14 +70,14 @@ If you would like to contribute to this pipeline, please see the [contributing g
 
 ## Citations
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use labgem/pangbank for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+<!-- TODO : Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
+<!-- If you use PanGBank for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
+<!-- TODO : Add bibliography of tools and data used in your pipeline -->
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
-This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
+This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/main/LICENSE).
 
 > **The nf-core framework for community-curated bioinformatics pipelines.**
 >

@@ -1,0 +1,33 @@
+process QUICKTREE {
+    tag "$meta.id"
+    label 'process_single'
+
+    conda "bioconda::quicktree=2.5"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/quicktree:2.5--h516909a_0':
+        'biocontainers/quicktree:2.5--h516909a_0' }"
+
+
+    input:
+    tuple val(meta), path(phylip_matrix)
+
+    output:
+    tuple val(meta), path("tree.nw")    ,  emit: tree
+    path "versions.yml"               ,  emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    """
+
+    quicktree -in m $phylip_matrix > tree.nw
+
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        quicktree: \$(quicktree -v | sed 's/quicktree //g')
+    END_VERSIONS
+    """
+
+}

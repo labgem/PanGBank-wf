@@ -1,0 +1,49 @@
+draw:
+  # draw the tile plot of the pangenome
+  tile_plot: False
+  # draw the U-curve of the pangenome
+  ucurve: False
+  # draw plots for spots of the pangenome
+  draw_spots: False
+
+write_pangenome:
+  # write a gexf file with all the annotations and all the genes of each gene family
+  gexf: False
+  # write a gexf file with the gene families and basic informations about them
+  light_gexf: False
+  # Writes the graph in a json file format
+  json: False
+  # csv file format as used by Roary, among others. The alternative gene ID will be the partition, if there is one
+  csv: False
+  # tabular file for the gene binary presence absence matrix
+  Rtab: False
+  # tsv files with some statistics for each each gene family
+  stats: True
+  # list of families belonging to each partition, with one file per partitions and one family per line
+  partitions: False
+  # Write a tsv file providing the association between genes and gene families
+  families_tsv: False
+  # Writes the predicted RGP and descriptive metrics in 'plastic_regions.tsv'
+  regions: False
+  # Write spot summary and a list of all RGP in each spot
+  spots: False
+  # List all borders of each spot
+  borders: False
+  # Write a tsv file listing functional modules and the families that belong to them
+  modules: False
+  # writes 2 files comparing the presence of modules within spots
+  spot_modules: False
+  # Compress the files in .gz
+  compress: True
+
+write_genomes:
+  # Generate a tsv file for each genome with pangenome annotations.
+  table: False
+  # Generate a gff file for each genome containing pangenome annotations.
+  gff: False
+  # Generate JSON map files for PROKSEE for each genome containing pangenome annotations to be used in proksee.
+  proksee: False
+  # Compress the files in .gz
+  compress: True
+  # Specify the genomes for which to generate output. You can provide a list of genome names either directly in the command line separated by commas, or by referencing a file containing the list of genome names, with one name per line.
+  genomes: all
