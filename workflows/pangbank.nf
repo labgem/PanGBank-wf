@@ -20,7 +20,9 @@ include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplicatio
 // MODULE: Local modules
 //
 include { PARSE_GENOMES_AND_TAXONOMY } from '../modules/local/parse_genomes_and_taxonomy'
-include { PPANGGOLIN_ALL } from '../modules/local/ppanggolin/all'
+include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_LARGE } from '../modules/local/ppanggolin/all'
+include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_MEDIUM } from '../modules/local/ppanggolin/all'
+include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_SMALL } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_FASTA } from '../modules/local/ppanggolin/fasta'
 include { GATHER_PANGENOME_INFO } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
@@ -87,10 +89,24 @@ workflow PANGBANK {
         ch_multiqc_files = ch_multiqc_files.mix(GENOME_DEREPLICATION.out.multiqc_files)
     }
 
-    PPANGGOLIN_ALL(ch_ppanggo_inputs_meta, ch_ppanggolin_config.toList())
-    ch_versions = ch_versions.mix(PPANGGOLIN_ALL.out.versions)
+    ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
+        large: meta.genomes_count >= params.large_pangenome_cutoff
+        medium: meta.genomes_count >= params.large_pangenome_cutoff / 4
+        small: true
+    }
 
-    PPANGGOLIN_FASTA(PPANGGOLIN_ALL.out.pangenome)
+
+    PPANGGOLIN_ALL_LARGE(ch_species_branched.large, ch_ppanggolin_config.toList())
+    PPANGGOLIN_ALL_MEDIUM(ch_species_branched.medium, ch_ppanggolin_config.toList())
+    PPANGGOLIN_ALL_SMALL(ch_species_branched.small, ch_ppanggolin_config.toList())
+
+    ch_versions = ch_versions.mix(PPANGGOLIN_ALL_SMALL.out.versions)
+    ch_versions = ch_versions.mix(PPANGGOLIN_ALL_MEDIUM.out.versions)
+    ch_versions = ch_versions.mix(PPANGGOLIN_ALL_LARGE.out.versions)
+
+    ch_pangenomes = PPANGGOLIN_ALL_SMALL.out.pangenome.concat(PPANGGOLIN_ALL_MEDIUM.out.pangenome, PPANGGOLIN_ALL_LARGE.out.pangenome)
+
+    PPANGGOLIN_FASTA(ch_pangenomes)
     ch_versions = ch_versions.mix(PPANGGOLIN_FASTA.out.versions)
 
     ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta
@@ -106,7 +122,7 @@ workflow PANGBANK {
     MD5SUM_ON_FILES(ch_ppanggo_inputs_meta)
     ch_versions = ch_versions.mix(MD5SUM_ON_FILES.out.versions)
 
-    ch_pangenome_infos = PPANGGOLIN_ALL.out.pangenome_info.collect()
+    ch_pangenome_infos = PPANGGOLIN_ALL_SMALL.out.pangenome_info.concat(PPANGGOLIN_ALL_MEDIUM.out.pangenome_info, PPANGGOLIN_ALL_LARGE.out.pangenome_info).collect()
 
     GATHER_PANGENOME_INFO(ch_pangenome_infos)
     ch_versions = ch_versions.mix(GATHER_PANGENOME_INFO.out.versions)
