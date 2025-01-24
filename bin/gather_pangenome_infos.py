@@ -101,7 +101,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--genome_stat_dir",
         help="Directory where yaml info file are stored",
-        required=True,
+        required=False,
         type=Path,
     )
 
@@ -138,17 +138,18 @@ def main(argv=None):
         info = get_info_from_yaml(yaml_info)
         name_to_info[info['Name']] = info
 
-    for genome_stat_dir in args.genome_stat_dir.iterdir():
-        if not genome_stat_dir.is_dir():
-            continue
-        genome_stat_file = genome_stat_dir / "genomes_statistics.tsv.gz"
-        name = genome_stat_dir.name
+    if args.genome_stat_dir:
+        for genome_stat_dir in args.genome_stat_dir.iterdir():
+            if not genome_stat_dir.is_dir():
+                continue
+            genome_stat_file = genome_stat_dir / "genomes_statistics.tsv.gz"
+            name = genome_stat_dir.name
 
-        genome_stat_summary = summarize_genome_stat(genome_stat_file)
+            genome_stat_summary = summarize_genome_stat(genome_stat_file)
 
-        info = name_to_info[name]
+            info = name_to_info[name]
 
-        info.update(genome_stat_summary)
+            info.update(genome_stat_summary)
 
 
     write_tsv_from_list_of_dict(args.output, list(name_to_info.values()))
