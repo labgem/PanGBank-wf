@@ -26,6 +26,7 @@ def get_info_from_yaml(yaml_info):
         "RGPs": pangenome_info["RGP"],
         "Spots": pangenome_info["Spots"],
         "Modules": pangenome_info["Modules"]["Number_of_modules"],
+        "Partitions": pangenome_info["Number_of_partitions"],
     }
     return useful_info
 
