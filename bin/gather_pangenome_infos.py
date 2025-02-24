@@ -35,7 +35,6 @@ def summarize_genome_stat(genome_stat_file):
     """
     """
 
-
     df = pd.read_csv(genome_stat_file, sep='\t', comment='#',)
 
     df['Persistent_families_fraction'] = df['Persistent_families'] / df['Families']
@@ -48,7 +47,6 @@ def summarize_genome_stat(genome_stat_file):
     df['Variable_families'] = df['Shell_families'] + df['Cloud_families']
 
     df['Variable_families_fraction'] = df['Variable_families'] / df['Families']
-
 
     columns_to_process = ['Persistent_families_fraction',
                             'Soft_core_families_fraction',
@@ -65,7 +63,29 @@ def summarize_genome_stat(genome_stat_file):
     # Calculate stats for each column
     for column in columns_to_process:
         if column in df.columns:
-            stats = df[column].agg(['min', 'max', 'mean', 'median', 'std']).to_dict()
+            stats = (
+                df[column]
+                .agg(
+                    [
+                        "min",
+                        "max",
+                        "mean",
+                        "median",
+                        "std",
+                        lambda x: x.quantile(0.25),  # Q1
+                        lambda x: x.quantile(0.75),  # Q3
+                    ]
+                )
+                .to_dict()
+            )
+
+            # Assign standard names to Q1 and Q3
+            stats["Q1"] = stats.pop("<lambda_0>")
+            stats["Q3"] = stats.pop("<lambda_1>")
+
+            # Compute IQR
+            stats["IQR"] = stats["Q3"] - stats["Q1"]
+
             for stat_name, value in stats.items():
                 species_stats[f'{stat_name}_{column}'] = value
 
@@ -141,7 +161,6 @@ def main(argv=None):
         info = get_info_from_yaml(yaml_info)
         name_to_info[info['Name']] = info
 
-
     if args.genome_stat_dir:
         for i, genome_stat_dir in enumerate(args.genome_stat_dir.iterdir()):
             if not genome_stat_dir.is_dir():
@@ -150,16 +169,13 @@ def main(argv=None):
             name = genome_stat_dir.name
             logging.info(f"{i}: {genome_stat_file}")
 
-
             genome_stat_summary = summarize_genome_stat(genome_stat_file)
 
             info = name_to_info[name]
 
             info.update(genome_stat_summary)
 
-
     write_tsv_from_list_of_dict(args.output, list(name_to_info.values()))
-
 
 
 if __name__ == "__main__":
