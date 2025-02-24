@@ -63,25 +63,10 @@ def summarize_genome_stat(genome_stat_file):
     # Calculate stats for each column
     for column in columns_to_process:
         if column in df.columns:
-            stats = (
-                df[column]
-                .agg(
-                    [
-                        "min",
-                        "max",
-                        "mean",
-                        "median",
-                        "std",
-                        lambda x: x.quantile(0.25),  # Q1
-                        lambda x: x.quantile(0.75),  # Q3
-                    ]
-                )
-                .to_dict()
-            )
+            stats = df[column].agg(["min", "max", "mean", "median", "std"]).to_dict()
 
-            # Assign standard names to Q1 and Q3
-            stats["Q1"] = stats.pop("<lambda_0>")
-            stats["Q3"] = stats.pop("<lambda_1>")
+            stats["Q1"] = df[column].quantile(0.25)
+            stats["Q3"] = df[column].quantile(0.75)
 
             # Compute IQR
             stats["IQR"] = stats["Q3"] - stats["Q1"]
