@@ -57,7 +57,9 @@ def summarize_genome_stat(genome_stat_file):
                             'Variable_families_fraction',
                             "Fragmentation",
                             "Completeness",
-                            "Contamination"]
+                            "Contamination",
+                            "Genes",
+                            "Contigs"]
 
     species_stats = {}
     # Calculate stats for each column
@@ -133,17 +135,21 @@ def main(argv=None):
 
     name_to_info = {}
 
-    for yaml_info in args.yaml_dir.iterdir():
+    for i, yaml_info in enumerate(args.yaml_dir.iterdir()):
+        logging.info(f"{i}: {yaml_info}")
 
         info = get_info_from_yaml(yaml_info)
         name_to_info[info['Name']] = info
 
+
     if args.genome_stat_dir:
-        for genome_stat_dir in args.genome_stat_dir.iterdir():
+        for i, genome_stat_dir in enumerate(args.genome_stat_dir.iterdir()):
             if not genome_stat_dir.is_dir():
                 continue
             genome_stat_file = genome_stat_dir / "genomes_statistics.tsv.gz"
             name = genome_stat_dir.name
+            logging.info(f"{i}: {genome_stat_file}")
+
 
             genome_stat_summary = summarize_genome_stat(genome_stat_file)
 
