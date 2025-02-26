@@ -9,6 +9,7 @@ lint:
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
     - conf/test_full.config
+    - conf/igenomes.config
   files_unchanged:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-pangbank_logo_light.png
