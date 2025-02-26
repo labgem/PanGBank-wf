@@ -1,5 +1,6 @@
 bump_version: null
 lint:
+  actions_ci: false
   files_exist:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-pangbank_logo_light.png
@@ -23,8 +24,9 @@ lint:
     - manifest.name
     - manifest.homePage
     - params.input
-  actions_ci: false # to remove when vnextflow v23 is dropped.
-nf_core_version: 3.0.2
+  # actions_ci: false # to remove when vnextflow v23 is dropped.
+
+nf_core_version: 3.2.0
 org_path: null
 repository_type: pipeline
 template:
