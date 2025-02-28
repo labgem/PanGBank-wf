@@ -41,6 +41,7 @@ process PPANGGOLIN_ALL {
 
     ppanggolin info -p ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
 
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         ppanggolin: \$(ppanggolin --version | sed 's/ppanggolin //g')

@@ -13,6 +13,7 @@ process PPANGGOLIN_FASTA {
     output:
         tuple val(meta), path("${meta.species}/persistent_nucleotide_families.fasta.gz") , emit: persistent_families_fasta
         tuple val(meta), path("${meta.species}/all_protein_families.faa.gz") , emit: all_families_faa
+        tuple val(meta), path("symblink_pangenome.h5"), emit: pangenomes // used to not launch metadata and fasta on the same pangenome file at the same time
         path "versions.yml", emit: versions
 
     when:
@@ -20,9 +21,9 @@ process PPANGGOLIN_FASTA {
 
     script:
     """
-    ls -l
-
     ppanggolin fasta -p $pangenome  -o ${meta.species} --gene_families persistent --prot_families all --compress
+
+    ln -s $pangenome symblink_pangenome.h5
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

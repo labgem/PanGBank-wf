@@ -163,7 +163,7 @@ def write_metadata_by_species(outdir, sptax_to_genome_metadata):
             continue
 
         genome_metadata = genome_metadata_list[0]
-        assert "Genome" in genome_metadata, "Genome column not found in metadata file"
+        assert "genomes" in genome_metadata, "genomes column not found in metadata file"
 
         sp_outdir = outdir / species
         sp_outdir.mkdir(parents=True, exist_ok=True)
@@ -190,11 +190,11 @@ def parse_metadata_file(genome_metadata_file: Path, genome_accessions_to_taxonom
 
         for metadata_row in reader:
             try:
-                genome_acc = metadata_row.get("Genome")
+                genome_acc = metadata_row.get("genomes")
 
             except KeyError:
                 raise KeyError(
-                    f"Genome column not found in metadata file {genome_metadata_file}"
+                    f"genomes column not found in metadata file {genome_metadata_file}"
                 )
 
             if genome_acc in genome_accessions_to_taxonomy:
@@ -252,7 +252,7 @@ def parse_args(argv=None):
         type=Path,
         required=False,
         help="Path to a metadata file in TSV format corresponding to the input genomes. "
-        "Expected to have a column Genome containing genome accessions.",
+        "Expected to have a column genomes containing genome accessions.",
     )
 
     parser.add_argument(

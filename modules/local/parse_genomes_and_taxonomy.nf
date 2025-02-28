@@ -9,21 +9,25 @@ process PARSE_GENOMES_AND_TAXONOMY {
     input:
     path genomes
     path taxonomy
+    path genome_metadata
     val min_genomes
 
     output:
     path "ppanggolin_input_files/*/input_genomes.tsv.gz"       , emit: ppanggo_inputs
     path "species_summary.tsv"                , emit: summary
+    path "ppanggolin_input_files/*/genome_metadata.tsv.gz", optional: true, emit: genome_metadata
     path "versions.yml"      , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
-    script: // This script is bundled with the pipeline, in labgem/pangbank/bin/
+    script:
+    def genome_metadata_arg = genome_metadata.name != 'NO_FILE' ? "--genome_metadata $genome_metadata" : ''
+
     """
     parse_genomes_and_taxonomy.py --genomes $genomes --taxonomy $taxonomy\
                                     --min_genomes $min_genomes --species_summary_file species_summary.tsv\
-                                    --outdir ppanggolin_input_files
+                                    --outdir ppanggolin_input_files $genome_metadata_arg
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

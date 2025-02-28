@@ -24,6 +24,7 @@ include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_LARGE } from '../modules/local/ppangg
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_MEDIUM } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_SMALL } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_FASTA } from '../modules/local/ppanggolin/fasta'
+include { PPANGGOLIN_METADATA } from '../modules/local/ppanggolin/metadata'
 include { GATHER_PANGENOME_INFO } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
 /*
@@ -65,6 +66,7 @@ workflow PANGBANK {
     PARSE_GENOMES_AND_TAXONOMY(
         ch_input_genomes,
         file(params.taxonomy),
+        file(params.genome_metadata),
         ch_min_genomes
     )
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
@@ -114,6 +116,13 @@ workflow PANGBANK {
         .collectFile(name: 'persistent_fasta_list.txt', newLine: true)
         .map { file -> [[id: "families_persistent_all.msh"], file] }
 
+
+
+    ch_pangenome_and_metadata = groupMetadataAndPangenome(PPANGGOLIN_FASTA.out.pangenomes, PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata)
+        .view { v -> "PANGENOME AND METADATA??>>>> $v" }
+
+    PPANGGOLIN_METADATA(ch_pangenome_and_metadata)
+    ch_versions = ch_versions.mix(PPANGGOLIN_METADATA.out.versions)
 
     MASH_SKETCH(ch_fasta_list_file)
     ch_versions = ch_versions.mix(MASH_SKETCH.out.versions)
@@ -257,6 +266,22 @@ def manage_input_genomes(input_genomes_file) {
     }
 }
 
+// Function to process genome metadata and group it with pangenomes
+def groupMetadataAndPangenome(ch_pangenomes, ch_genome_metadata) {
+    def ch_species_to_metadata = ch_genome_metadata
+        .flatten()
+        .map { genome_metadata_file -> [[species: genome_metadata_file.parent.baseName], genome_metadata_file] }
+    return ch_pangenomes
+        .map { meta, pangenome -> [[species: meta.species], [meta, pangenome]] }
+        .concat(ch_species_to_metadata)
+        .groupTuple(size: 2)
+        .map { tuple ->
+            def (meta_pangenome, genome_metadata_file) = tuple[1]
+            def (meta, pangenome) = meta_pangenome
+            return [meta, pangenome, genome_metadata_file]
+        }
+}
+
 
 
 def create_ppanggo_input_channel(input_file) {
@@ -266,17 +291,13 @@ def create_ppanggo_input_channel(input_file) {
 
 
     meta.species = input_file.parent.getSimpleName()
-    println meta.species
-    println input_file
     meta.genomes_count = input_file.countLines(decompress: true)
-    println meta
 
     def first_line = input_file.withInputStream { stream ->
         new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
             reader.readLine()
         }
     }
-    println first_line
     // Getting the extension of the first genome file
     // def first_line = input_file.withReader { it.readLine() }
     def first_genome_file = first_line.split('\t')[1]
