@@ -116,10 +116,7 @@ workflow PANGBANK {
         .collectFile(name: 'persistent_fasta_list.txt', newLine: true)
         .map { file -> [[id: "families_persistent_all.msh"], file] }
 
-
-
-    ch_pangenome_and_metadata = groupMetadataAndPangenome(PPANGGOLIN_FASTA.out.pangenomes, PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata)
-        .view { v -> "PANGENOME AND METADATA??>>>> $v" }
+    ch_pangenome_and_metadata = groupMetadataAndPangenome(ch_pangenomes, PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata)
 
     PPANGGOLIN_METADATA(ch_pangenome_and_metadata)
     ch_versions = ch_versions.mix(PPANGGOLIN_METADATA.out.versions)

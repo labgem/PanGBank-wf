@@ -22,13 +22,13 @@ process PPANGGOLIN_METADATA {
     script:
 
     """
+    cp ${pangenome} pangenome_with_metdata.h5 # required to copy to not change the original file to avoid issues when resuming
 
-
-    ppanggolin metadata -p ${pangenome} --metadata ${genome_metadata} \\
+    ppanggolin metadata -p pangenome_with_metdata.h5 --metadata ${genome_metadata} \\
                         --source "pangbank_wf"  --assign genomes \\
                         --omit --force  # force in case of resume and omit in case genome are missing because of dereplication
 
-    ln -s ${pangenome} pangenome_with_metdata.h5
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
