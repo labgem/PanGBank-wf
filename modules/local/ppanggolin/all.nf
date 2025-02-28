@@ -24,7 +24,7 @@ process PPANGGOLIN_ALL {
         task.ext.when == null || task.ext.when
 
     script:
-    def input = meta.file_type == "annotation" ? "--anno $genome_file" : "--fasta $genome_file"
+    def input_arg = meta.file_type == "annotation" ? "--anno" : "--fasta"
 
     def tmpdir = ""
     if (params.large_pangenome_tmpdir && meta.genomes_count > params.large_pangenome_cutoff){
@@ -33,9 +33,11 @@ process PPANGGOLIN_ALL {
     else if (params.regular_pangenome_tmpdir && meta.genomes_count <= params.large_pangenome_cutoff) {
         tmpdir =  "--tmpdir ${params.regular_pangenome_tmpdir}"
     }
+    // TODO remove zcat when genome input will be supported by ppanggolin
 
     """
-    ppanggolin all $input --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $tmpdir
+    zcat $genome_file > genomes_file_list.txt
+    ppanggolin all $input_arg  genomes_file_list.txt --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $tmpdir
 
     ppanggolin info -p ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
 

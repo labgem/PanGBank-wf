@@ -12,7 +12,7 @@ process PARSE_GENOMES_AND_TAXONOMY {
     val min_genomes
 
     output:
-    path "ppanggolin_input_files/*.tsv"       , emit: ppanggo_inputs
+    path "ppanggolin_input_files/*/input_genomes.tsv.gz"       , emit: ppanggo_inputs
     path "species_summary.tsv"                , emit: summary
     path "versions.yml"      , emit: versions
 
@@ -23,7 +23,7 @@ process PARSE_GENOMES_AND_TAXONOMY {
     """
     parse_genomes_and_taxonomy.py --genomes $genomes --taxonomy $taxonomy\
                                     --min_genomes $min_genomes --species_summary_file species_summary.tsv\
-                                    --ppanggolin_files_outdir ppanggolin_input_files
+                                    --outdir ppanggolin_input_files
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

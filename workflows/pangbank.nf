@@ -265,11 +265,20 @@ def create_ppanggo_input_channel(input_file) {
     def meta = [:]
 
 
-    meta.species = input_file.getSimpleName()
-    meta.genomes_count = input_file.countLines()
+    meta.species = input_file.parent.getSimpleName()
+    println meta.species
+    println input_file
+    meta.genomes_count = input_file.countLines(decompress: true)
+    println meta
 
+    def first_line = input_file.withInputStream { stream ->
+        new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
+            reader.readLine()
+        }
+    }
+    println first_line
     // Getting the extension of the first genome file
-    def first_line = input_file.withReader { it.readLine() }
+    // def first_line = input_file.withReader { it.readLine() }
     def first_genome_file = first_line.split('\t')[1]
 
     def extension_patern = ~/.*(\.[a-yA-Y]+)(\.gz)?$/

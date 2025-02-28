@@ -13,7 +13,7 @@ process GENOME_SELECTION_FROM_TREE {
     val number_of_genomes
 
     output:
-    tuple val(meta), path("selected_genomes.txt")    ,  emit: selected_genomes
+    tuple val(meta), path("selected_genomes.txt.gz")    ,  emit: selected_genomes
     tuple val(meta), path("cluster_composition.txt")    ,  emit: cluster_composition
     path "versions.yml"      , emit: versions
 
@@ -27,7 +27,7 @@ process GENOME_SELECTION_FROM_TREE {
                                 --number_of_genomes $number_of_genomes \\
                                 --sorted_genomes $sorted_genomes \\
                                 --cluster_composition "cluster_composition.txt" \\
-                                --selected_genomes selected_genomes.txt
+                                --selected_genomes selected_genomes.txt.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

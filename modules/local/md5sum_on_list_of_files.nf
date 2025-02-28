@@ -11,7 +11,7 @@ process MD5SUM_ON_FILES {
         tuple val(meta), path(genome_file)
 
     output:
-        tuple  val(meta), path("genomes_md5sum.tsv")       , emit: genomes_md5sum_files
+        tuple  val(meta), path("genomes_md5sum.tsv.gz")       , emit: genomes_md5sum_files
         path "versions.yml", emit: versions
 
     when:
@@ -20,13 +20,13 @@ process MD5SUM_ON_FILES {
     script:
     """
     # Assign input and output file paths
-    output_file=genomes_md5sum.tsv
+    output_file=genomes_md5sum.tsv.gz
 
     # Create or clear the output file
-    echo -e "name\tfile_name\tmd5_sum" > "\$output_file"
+    echo -e "name\tfile_name\tmd5_sum" | gzip > "\$output_file"
 
     # Read the input file line by line
-    while IFS=\$'\t' read -r genome_name genome_path; do
+    zcat "$genome_file"  | while IFS=\$'\t' read -r genome_name genome_path; do
 
 
         # Calculate the MD5 checksum of the genome file
@@ -36,10 +36,9 @@ process MD5SUM_ON_FILES {
         genome_filename=\$(basename "\$genome_path")
 
         # Write the output to the output file
-        echo -e "\${genome_name}\t\${genome_filename}\t\${md5_sum}" >> "\$output_file"
+        echo -e "\${genome_name}\t\${genome_filename}\t\${md5_sum}"
 
-    done < "$genome_file"
-
+    done  | gzip >> "\$output_file"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
