@@ -17,6 +17,7 @@ process PPANGGOLIN_ALL {
         tuple  val(meta), path("${meta.species}/pangenome.h5")       , emit: pangenome
         path "${meta.species}.yaml"                                  , emit: pangenome_info
         path "${meta.species}/genomes_statistics.tsv*"
+        path "${meta.species}/metadata/*.tsv.gz", optional: true
 
         path "versions.yml", emit: versions
 
@@ -33,14 +34,17 @@ process PPANGGOLIN_ALL {
     else if (params.regular_pangenome_tmpdir && meta.genomes_count <= params.large_pangenome_cutoff) {
         tmpdir =  "--tmpdir ${params.regular_pangenome_tmpdir}"
     }
+
     // TODO remove zcat when genome input will be supported by ppanggolin
 
     """
     zcat $genome_file > genomes_file_list.txt
     ppanggolin all $input_arg  genomes_file_list.txt --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $tmpdir
 
-    ppanggolin info -p ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
+    ppanggolin info --pangenome ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
 
+    # write metadata collected on annotation if any
+    ppanggolin write_metadata --pangenome ${meta.species}/pangenome.h5 --output ${meta.species}/metadata/ --compress
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

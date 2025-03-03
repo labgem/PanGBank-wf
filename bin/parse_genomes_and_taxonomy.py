@@ -167,7 +167,7 @@ def write_metadata_by_species(outdir, sptax_to_genome_metadata):
 
         sp_outdir = outdir / species
         sp_outdir.mkdir(parents=True, exist_ok=True)
-        with gzip.open(sp_outdir / "genome_metadata.tsv.gz", "wt") as flout:
+        with gzip.open(sp_outdir / "genomes_metadata.tsv.gz", "wt") as flout:
             writer = csv.DictWriter(
                 flout,
                 fieldnames=genome_metadata.keys(),
