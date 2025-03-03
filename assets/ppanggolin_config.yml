@@ -1,10 +1,14 @@
 draw:
   # draw the tile plot of the pangenome
-  tile_plot: False
+  tile_plot: True
   # draw the U-curve of the pangenome
-  ucurve: False
+  ucurve: True
   # draw plots for spots of the pangenome
   draw_spots: False
+  # Include a dendrogram for genomes in the tile plot based on the presence/absence of gene families.
+  add_dendrogram: True
+  # Display gene metadata as hover text for each cell in the tile plot.
+  add_metadata: True
 
 write_pangenome:
   # write a gexf file with all the annotations and all the genes of each gene family

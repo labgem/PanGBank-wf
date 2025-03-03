@@ -129,8 +129,13 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(MD5SUM_ON_FILES.out.versions)
 
     ch_pangenome_infos = PPANGGOLIN_ALL_SMALL.out.pangenome_info.concat(PPANGGOLIN_ALL_MEDIUM.out.pangenome_info, PPANGGOLIN_ALL_LARGE.out.pangenome_info).collect()
+    ch_pangenome_genome_stats = PPANGGOLIN_ALL_SMALL.out.genomes_statistics_dir
+                                .concat(PPANGGOLIN_ALL_MEDIUM.out.genomes_statistics_dir, PPANGGOLIN_ALL_LARGE.out.genomes_statistics_dir)
+                                .collect()
 
-    GATHER_PANGENOME_INFO(ch_pangenome_infos)
+    ch_pangenome_genome_stats.view( )
+
+    GATHER_PANGENOME_INFO(ch_pangenome_infos, ch_pangenome_genome_stats)
     ch_versions = ch_versions.mix(GATHER_PANGENOME_INFO.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(GATHER_PANGENOME_INFO.out.summary)
 
