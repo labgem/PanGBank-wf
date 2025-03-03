@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
+Add possibility to add external metadata on genomes and store them in the pangenomes using the input parameter: `--genome_metadata`.
+
 ### `Fixed`
 
 ### `Dependencies`

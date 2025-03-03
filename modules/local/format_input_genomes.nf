@@ -13,7 +13,7 @@ process FORMAT_INPUT_GENOMES {
     path reference_genomes
 
     output:
-    tuple val(meta), path("formatted_selected_genomes.tsv"), emit: genome_selection_ppanggo_input
+    tuple val(meta), path("formatted_selected_genomes.tsv.gz"), emit: genome_selection_ppanggo_input
     path "summary_selection.tsv", emit: dereplication_summary
     path "versions.yml"      , emit: versions
 
@@ -29,7 +29,7 @@ process FORMAT_INPUT_GENOMES {
     echo $reference_genomes
     format_ppanggo_input_from_genome_selection.py --selected_genomes $selected_genomes \\
                                 --genome_name_to_path $genome_name_to_fasta \\
-                                --formatted_genomes formatted_selected_genomes.tsv \\
+                                --formatted_genomes formatted_selected_genomes.tsv.gz \\
                                 $fasta_to_original_path_arg $reference_genomes_arg \\
                                 --summary_selection summary_selection.tsv --species ${meta.id} \\
 

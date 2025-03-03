@@ -12,8 +12,8 @@ process SORT_GENOMES {
         tuple val(meta), path(genome_stat_file)
 
     output:
-        tuple  val(meta), path("sorted_genomes.txt")       , emit: sorted_genomes_list
-        path "sorted_genomes.tsv"                          , emit: sorted_genomes_stats
+        tuple  val(meta), path("sorted_genomes.txt.gz")       , emit: sorted_genomes_list
+        path "sorted_genomes.txt.gz"                          , emit: sorted_genomes_stats
         path "versions.yml"      , emit: versions
 
     when:
@@ -24,8 +24,8 @@ process SORT_GENOMES {
     """
     sort_genomes.py --genome_stats $genome_stat_file \\
                     --sort_by L90 L75 L50 auN \\
-                    --sorted_genome_list sorted_genomes.txt \\
-                    --sorted_genome_stats sorted_genomes.tsv
+                    --sorted_genome_list sorted_genomes.txt.gz \\
+                    --sorted_genome_stats sorted_genomes.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

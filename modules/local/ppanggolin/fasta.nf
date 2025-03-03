@@ -20,8 +20,6 @@ process PPANGGOLIN_FASTA {
 
     script:
     """
-    ls -l
-
     ppanggolin fasta -p $pangenome  -o ${meta.species} --gene_families persistent --prot_families all --compress
 
     cat <<-END_VERSIONS > versions.yml

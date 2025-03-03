@@ -71,6 +71,10 @@
                     "type": "integer",
                     "description": "Maximum number of genomes allowed per species. If a species has more genomes than this threshold, the genomes will be reduced through dereplication to meet the specified limit.",
                     "default": 2000
+                },
+                "genome_metadata": {
+                    "type": "string",
+                    "description": "TSV file containing genome metadata to be associated with genomes in the pangenome. Must include a 'genomes' column specifying genome names for metadata mapping."
                 }
             }
         },
