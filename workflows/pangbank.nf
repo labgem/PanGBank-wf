@@ -73,7 +73,7 @@ workflow PANGBANK {
 
     // Exit the pipeline here :
 
-    if (true) {
+    if (false) {
 
 
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs
