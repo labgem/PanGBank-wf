@@ -4,15 +4,40 @@
 
 ## Introduction
 
-## Input files
+## Input Files
 
-PanGBank takes two input arguments: `--genomes` and `--taxonomy`.
+PanGBank takes two required input files:
 
-- `--genomes`: is a TSV file with two columns: genome name and file path and `--taxonomy` is a TSV file with two columns: genome name and taxonomy (taxon name separated by semicolons).
+- **`--genomes`**: A TSV file with two columns:
 
-```bash
---genomes '[path to the genome file]'  --taxonomy '[path to the taxonomy file]'
-```
+  - **Column 1**: Genome name
+  - **Column 2**: File path to the genome sequence
+
+- **`--taxonomy`**: A TSV file with two columns:
+  - **Column 1**: Genome name (must match names in `--genomes`)
+  - **Column 2**: Taxonomy information (taxon names separated by semicolons)
+
+## Adding External Genome Metadata
+
+PanGBank allows you to associate additional metadata with genomes. This metadata is stored in the pangenome file and can be included in **PPanGGOLiN** outputs. For more details on PPanGGOLiN metadata, refer to its documentation:
+🔗 [PPanGGOLiN Metadata Documentation](https://ppanggolin.readthedocs.io/en/latest/user/metadata.html)
+
+### Metadata File Format
+
+To add metadata, provide a **TSV file** with:
+
+- A **"genomes"** column containing genome names (matching those in `--genomes` and `--taxonomy`).
+- Any additional columns with metadata of your choice.
+
+**Example metadata file:**
+
+| genomes  | Strain | Is_MAGs | Description |
+| -------- | ------ | ------- | ----------- |
+| Genome_1 | A      | False   | Desc_1      |
+| Genome_2 | B      | True    | Desc_2      |
+| Genome_3 | C      | False   | Desc_3      |
+| ...      | ...    | ...     | ...         |
+| Genome_n | N      | False   | Desc_n      |
 
 ## Running the pipeline
 
