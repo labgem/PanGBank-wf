@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 import pandas as pd
 
+
 def get_info_from_yaml(yaml_info):
 
     name = yaml_info.stem
@@ -32,32 +33,37 @@ def get_info_from_yaml(yaml_info):
 
 
 def summarize_genome_stat(genome_stat_file):
-    """
-    """
+    """ """
 
-    df = pd.read_csv(genome_stat_file, sep='\t', comment='#',)
+    df = pd.read_csv(
+        genome_stat_file,
+        sep="\t",
+        comment="#",
+    )
 
-    df['Persistent_families_fraction'] = df['Persistent_families'] / df['Families']
-    df['Soft_core_families_fraction'] = df['Soft_core_families'] / df['Families']
-    df['Exact_core_families_fraction'] = df['Exact_core_families'] / df['Families']
+    df["Persistent_families_fraction"] = df["Persistent_families"] / df["Families"]
+    df["Soft_core_families_fraction"] = df["Soft_core_families"] / df["Families"]
+    df["Exact_core_families_fraction"] = df["Exact_core_families"] / df["Families"]
 
-    df['Shell_families_fraction'] = df['Shell_families'] / df['Families']
-    df['Shell_families_fraction'] = df['Cloud_families'] / df['Families']
+    df["Shell_families_fraction"] = df["Shell_families"] / df["Families"]
+    df["Shell_families_fraction"] = df["Cloud_families"] / df["Families"]
 
-    df['Variable_families'] = df['Shell_families'] + df['Cloud_families']
+    df["Variable_families"] = df["Shell_families"] + df["Cloud_families"]
 
-    df['Variable_families_fraction'] = df['Variable_families'] / df['Families']
+    df["Variable_families_fraction"] = df["Variable_families"] / df["Families"]
 
-    columns_to_process = ['Persistent_families_fraction',
-                            'Soft_core_families_fraction',
-                            'Exact_core_families_fraction',
-                            'Shell_families_fraction',
-                            'Variable_families_fraction',
-                            "Fragmentation",
-                            "Completeness",
-                            "Contamination",
-                            "Genes",
-                            "Contigs"]
+    columns_to_process = [
+        "Persistent_families_fraction",
+        "Soft_core_families_fraction",
+        "Exact_core_families_fraction",
+        "Shell_families_fraction",
+        "Variable_families_fraction",
+        "Fragmentation",
+        "Completeness",
+        "Contamination",
+        "Genes",
+        "Contigs",
+    ]
 
     species_stats = {}
     # Calculate stats for each column
@@ -72,7 +78,7 @@ def summarize_genome_stat(genome_stat_file):
             stats["IQR"] = stats["Q3"] - stats["Q1"]
 
             for stat_name, value in stats.items():
-                species_stats[f'{stat_name}_{column}'] = value
+                species_stats[f"{stat_name}_{column}"] = value
 
     return species_stats
 
@@ -100,18 +106,17 @@ def parse_args(argv=None):
 
     parser.add_argument(
         "--yaml_dir",
-        help="Directory where yaml info file are stored",
+        help="Directory where yaml info files are stored",
         required=True,
         type=Path,
     )
 
     parser.add_argument(
         "--genome_stat_dir",
-        help="Directory where yaml info file are stored",
+        help="Directory where genome stat files are stored",
         required=False,
         type=Path,
     )
-
 
     parser.add_argument(
         "-o",
@@ -144,7 +149,7 @@ def main(argv=None):
         logging.info(f"{i}: {yaml_info}")
 
         info = get_info_from_yaml(yaml_info)
-        name_to_info[info['Name']] = info
+        name_to_info[info["Name"]] = info
 
     if args.genome_stat_dir:
         for i, genome_stat_dir in enumerate(args.genome_stat_dir.iterdir()):
