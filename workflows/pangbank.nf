@@ -71,6 +71,11 @@ workflow PANGBANK {
     )
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
 
+    // Exit the pipeline here :
+
+    if (true) {
+
+
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs
         .flatten()
         .map { create_ppanggo_input_channel(it) }
@@ -139,6 +144,7 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(GATHER_PANGENOME_INFO.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(GATHER_PANGENOME_INFO.out.summary)
 
+    }
     //
     // Collate and save software versions
     //
@@ -149,7 +155,6 @@ workflow PANGBANK {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
-
 
     //
     // MODULE: MultiQC
