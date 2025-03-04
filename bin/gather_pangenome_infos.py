@@ -56,20 +56,23 @@ def summarize_genome_stat(genome_stat_file):
         "Persistent_families_fraction",
         "Soft_core_families_fraction",
         "Exact_core_families_fraction",
-        "Shell_families_fraction",
-        "Variable_families_fraction",
+        # "Shell_families_fraction",
+        # "Variable_families_fraction",
         "Fragmentation",
         "Completeness",
         "Contamination",
-        "Genes",
-        "Contigs",
+        # "Genes",
+        # "Contigs",
     ]
 
     species_stats = {}
+
     # Calculate stats for each column
+    # operations = ["min", "max", "mean", "median", "std"]
+    operations = ["median"]
     for column in columns_to_process:
         if column in df.columns:
-            stats = df[column].agg(["min", "max", "mean", "median", "std"]).to_dict()
+            stats = df[column].agg(operations).to_dict()
 
             stats["Q1"] = df[column].quantile(0.25)
             stats["Q3"] = df[column].quantile(0.75)
@@ -96,7 +99,6 @@ def write_tsv_from_list_of_dict(species_summary_file, species_infos):
 
         writer.writerows(species_infos)
 
-
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -104,14 +106,28 @@ def parse_args(argv=None):
         epilog="Example: python gather_pangenome_infos.py --yaml_dir <yaml_info_dir>",
     )
 
-    parser.add_argument(
-        "--yaml_dir",
+    group1 = parser.add_argument_group("Single file arguments")
+    group1.add_argument(
+        "--yaml_info",
         help="Directory where yaml info files are stored",
-        required=True,
+        required=False,
+        type=Path,
+    )
+    group1.add_argument(
+        "--genome_stat",
+        help="Directory where genome stat files are stored",
+        required=False,
         type=Path,
     )
 
-    parser.add_argument(
+    group2 = parser.add_argument_group("Directory arguments")
+    group2.add_argument(
+        "--yaml_dir",
+        help="Directory where yaml info files are stored",
+        required=False,
+        type=Path,
+    )
+    group2.add_argument(
         "--genome_stat_dir",
         help="Directory where genome stat files are stored",
         required=False,
@@ -134,7 +150,23 @@ def parse_args(argv=None):
         default="INFO",
     )
 
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    # Ensure mutual exclusivity between (yaml_info + genome_stat) and (yaml_dir + genome_stat_dir)
+    single_file_args = args.yaml_info is not None or args.genome_stat is not None
+    dir_args = args.yaml_dir is not None or args.genome_stat_dir is not None
+
+    if single_file_args and dir_args:
+        parser.error(
+            "Cannot mix --yaml_info/--genome_stat with --yaml_dir/--genome_stat_dir. Choose one set."
+        )
+
+    if not single_file_args and not dir_args:
+        parser.error(
+            "You must provide either (--yaml_info and --genome_stat) or (--yaml_dir and --genome_stat_dir)."
+        )
+
+    return args
 
 
 def main(argv=None):
@@ -145,27 +177,38 @@ def main(argv=None):
 
     name_to_info = {}
 
-    for i, yaml_info in enumerate(args.yaml_dir.iterdir()):
-        logging.info(f"{i}: {yaml_info}")
+    if args.yaml_dir:
+        for i, yaml_info in enumerate(args.yaml_dir.iterdir()):
+            logging.info(f"{i}: {yaml_info}")
 
-        info = get_info_from_yaml(yaml_info)
-        name_to_info[info["Name"]] = info
+            info = get_info_from_yaml(yaml_info)
+            name_to_info[info["Name"]] = info
 
-    if args.genome_stat_dir:
-        for i, genome_stat_dir in enumerate(args.genome_stat_dir.iterdir()):
-            if not genome_stat_dir.is_dir():
-                continue
-            genome_stat_file = genome_stat_dir / "genomes_statistics.tsv.gz"
-            name = genome_stat_dir.name
-            logging.info(f"{i}: {genome_stat_file}")
+        if args.genome_stat_dir:
+            for i, genome_stat_dir in enumerate(args.genome_stat_dir.iterdir()):
+                if not genome_stat_dir.is_dir():
+                    continue
+                genome_stat_file = genome_stat_dir / "genomes_statistics.tsv.gz"
+                name = genome_stat_dir.name
+                logging.info(f"{i}: {genome_stat_file}")
 
-            genome_stat_summary = summarize_genome_stat(genome_stat_file)
+                genome_stat_summary = summarize_genome_stat(genome_stat_file)
 
-            info = name_to_info[name]
+                info = name_to_info[name]
 
+                info.update(genome_stat_summary)
+
+        info_to_write = list(name_to_info.values())
+
+    if args.yaml_info:
+        info = get_info_from_yaml(args.yaml_info)
+        if args.genome_stat:
+            genome_stat_summary = summarize_genome_stat(args.genome_stat)
             info.update(genome_stat_summary)
 
-    write_tsv_from_list_of_dict(args.output, list(name_to_info.values()))
+        info_to_write = [info]
+
+    write_tsv_from_list_of_dict(args.output, info_to_write)
 
 
 if __name__ == "__main__":

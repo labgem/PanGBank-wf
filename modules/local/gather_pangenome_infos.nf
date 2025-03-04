@@ -9,7 +9,6 @@ process GATHER_PANGENOME_INFO {
 
     input:
     path "pangenome_infos/*"
-    path "genome_stats/"
 
 
     output:
@@ -21,7 +20,7 @@ process GATHER_PANGENOME_INFO {
 
     script:
     """
-    gather_pangenome_infos.py --yaml_dir pangenome_infos/ --genome_stat_dir genome_stats/ --output pangenome_summary.tsv
+    gather_pangenome_infos.py --yaml_dir pangenome_infos/ --output pangenome_summary.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

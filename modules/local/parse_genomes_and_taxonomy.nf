@@ -14,8 +14,8 @@ process PARSE_GENOMES_AND_TAXONOMY {
 
     output:
     path "ppanggolin_input_files/*/input_genomes.tsv.gz"       , emit: ppanggo_inputs
-    path "species_summary.tsv"                , emit: summary
-    path "ppanggolin_input_files/*/genomes_metadata.tsv.gz", optional: true, emit: genome_metadata
+    path "species_summary.tsv"                                 , emit: summary
+    path "ppanggolin_input_files/*/genomes_metadata.tsv.gz"    , optional: true, emit: genome_metadata
     path "versions.yml"      , emit: versions
 
     when:

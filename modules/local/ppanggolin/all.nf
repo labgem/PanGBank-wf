@@ -16,10 +16,10 @@ process PPANGGOLIN_ALL {
     output:
         tuple  val(meta), path("${meta.species}/pangenome.h5")       , emit: pangenome
         path "${meta.species}.yaml"                                  , emit: pangenome_info
-        path "${meta.species}/genomes_statistics.tsv*"               , emit: genomes_statistics
-        path "${meta.species}/"                                      , emit: genomes_statistics_dir
-        path "${meta.species}/metadata/*.tsv.gz", optional: true
-        path "${meta.species}/tile_plot.html"
+        path "${meta.species}/genomes_statistics.tsv.gz"             , emit: genomes_statistics
+        path "${meta.species}/*.html"
+
+        path "${meta.species}/metadata/*.tsv.gz"                     , optional: true
 
         path "versions.yml", emit: versions
 
