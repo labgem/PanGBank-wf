@@ -99,6 +99,7 @@ def write_tsv_from_list_of_dict(species_summary_file, species_infos):
 
         writer.writerows(species_infos)
 
+
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
     parser = argparse.ArgumentParser(
