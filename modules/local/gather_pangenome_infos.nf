@@ -10,6 +10,7 @@ process GATHER_PANGENOME_INFO {
     input:
     path "pangenome_infos/*"
 
+
     output:
     path "pangenome_summary.tsv", emit: summary
     path "versions.yml", emit: versions

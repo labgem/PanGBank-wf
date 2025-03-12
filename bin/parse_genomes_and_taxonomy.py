@@ -308,6 +308,8 @@ def main(argv=None):
         )
         sys.exit(2)
 
+    uninformative_species = {"s__"}
+
     args.outdir.mkdir(parents=True, exist_ok=True)
 
     logging.info(f"Parsing genome file {args.genomes}")
@@ -327,6 +329,7 @@ def main(argv=None):
         sptax: accs
         for sptax, accs in sptax_to_input_accs.items()
         if len(accs) >= args.min_genomes
+        and sptax.split(";")[-1] not in uninformative_species
     }
 
     filtered_acc_to_sptax = {

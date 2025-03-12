@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
-Add possibility to add external metadata on genomes and store them in the pangenomes using the input parameter: `--genome_metadata`.
+- You can now associate external metadata with genomes using the `--genome_metadata` parameter. These metadata are stored in the pangenome file.
+- Ppanggolin process now produces tile plot to describe pangenome.
 
 ### `Fixed`
 
