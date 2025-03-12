@@ -329,7 +329,7 @@ def main(argv=None):
         sptax: accs
         for sptax, accs in sptax_to_input_accs.items()
         if len(accs) >= args.min_genomes
-        and not sptax.startswith(tuple(uninformative_species))
+        and sptax.split(";")[-1] not in uninformative_species
     }
 
     filtered_acc_to_sptax = {
