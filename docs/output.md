@@ -37,7 +37,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and build pange
     - **`genomes_statistics.tsv.gz`**: A compressed file summarizing the contents of each genome used in pangenome construction. Column descriptions are available in the PPanGGOLiN documentation: [Genome Statistics Table](https://ppanggolin.readthedocs.io/en/latest/user/PangenomeAnalyses/pangenomeAnalyses.html#genome-statistics-table).
     - **`persistent_nucleotide_families.fasta.gz`**: A compressed FASTA file containing the nucleotide sequences of persistent families.
     - **`all_protein_families.faa.gz`**: A compressed FASTA file containing the protein sequences of all families in the pangenome.
-
+    - **`tile_plot.html`**: Tile plot of the pangenome. Visit PPanGGOLiN documentation for more detail : [U-shape plot documentation](https://ppanggolin.readthedocs.io/en/latest/user/PangenomeAnalyses/pangenomeAnalyses.html#tile-plot)
+    - **`Ushaped_plot.html`**: Ushaped plott of families of the pangenome. Visit PPanGGOLiN documentation for more detail : [Tile plot documentation](https://ppanggolin.readthedocs.io/en/latest/user/PangenomeAnalyses/pangenomeAnalyses.html#u-shape-plot)
     - **`metadata/`**: A directory containing metadata associated with the pangenome. This metadata is also stored within the `pangenome.h5` file:
 
       - **`genomes_metadata_from_pangbank_wf_input.tsv.gz`**: A TSV file storing external genome metadata provided as input.
