@@ -27,6 +27,7 @@ include { PPANGGOLIN_FASTA } from '../modules/local/ppanggolin/fasta'
 include { PPANGGOLIN_METADATA } from '../modules/local/ppanggolin/metadata'
 include { GATHER_PANGENOME_INFO } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
+include { MASH_SKETCH } from '../modules/local/mash_sketch'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -35,7 +36,6 @@ include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
 
 // MODULE: Installed directly from nf-core/modules
 
-include { MASH_SKETCH } from '../modules/nf-core/mash/sketch/main'
 include { MULTIQC } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -49,7 +49,6 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pang
 */
 
 workflow PANGBANK {
-
     main:
 
     ch_ppanggolin_config = Channel.fromPath("${projectDir}/assets/ppanggolin_config.yml", checkIfExists: true)
@@ -67,7 +66,7 @@ workflow PANGBANK {
         ch_input_genomes,
         file(params.taxonomy),
         file(params.genome_metadata),
-        ch_min_genomes
+        ch_min_genomes,
     )
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
 
@@ -111,15 +110,16 @@ workflow PANGBANK {
     PPANGGOLIN_FASTA(ch_pangenomes)
     ch_versions = ch_versions.mix(PPANGGOLIN_FASTA.out.versions)
 
-    ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta
-        .map { meta, fasta -> fasta.path }
-        .collectFile(name: 'persistent_fasta_list.txt', newLine: true)
-        .map { file -> [[id: "families_persistent_all.msh"], file] }
 
     ch_pangenome_and_metadata = groupMetadataAndPangenome(ch_pangenomes, PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata)
 
     PPANGGOLIN_METADATA(ch_pangenome_and_metadata)
     ch_versions = ch_versions.mix(PPANGGOLIN_METADATA.out.versions)
+
+    ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta
+        .collect { meta, fasta -> fasta }
+        .map { fasta -> [[id: "families_persistent_all.msh"], fasta] }
+
 
     MASH_SKETCH(ch_fasta_list_file)
     ch_versions = ch_versions.mix(MASH_SKETCH.out.versions)
@@ -129,9 +129,7 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(MD5SUM_ON_FILES.out.versions)
 
     ch_pangenome_infos = PPANGGOLIN_ALL_SMALL.out.pangenome_info.concat(PPANGGOLIN_ALL_MEDIUM.out.pangenome_info, PPANGGOLIN_ALL_LARGE.out.pangenome_info).collect()
-    // ch_pangenome_genome_stats = PPANGGOLIN_ALL_SMALL.out.genomes_statistics_dir
-    //                             .concat(PPANGGOLIN_ALL_MEDIUM.out.genomes_statistics_dir, PPANGGOLIN_ALL_LARGE.out.genomes_statistics_dir)
-    //                             .collect()
+
 
     GATHER_PANGENOME_INFO(ch_pangenome_infos)
     ch_versions = ch_versions.mix(GATHER_PANGENOME_INFO.out.versions)
@@ -143,40 +141,47 @@ workflow PANGBANK {
     softwareVersionsToYAML(ch_versions)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",
-            name:  'pangbank_software_'  + 'mqc_'  + 'versions.yml',
+            name: 'pangbank_software_' + 'mqc_' + 'versions.yml',
             sort: true,
-            newLine: true
-        ).set { ch_collated_versions }
+            newLine: true,
+        )
+        .set { ch_collated_versions }
 
 
     //
     // MODULE: MultiQC
     //
-    ch_multiqc_config        = Channel.fromPath(
-        "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ?
-        Channel.fromPath(params.multiqc_config, checkIfExists: true) :
-        Channel.empty()
-    ch_multiqc_logo          = params.multiqc_logo ?
-        Channel.fromPath(params.multiqc_logo, checkIfExists: true) :
-        Channel.empty()
+    ch_multiqc_config = Channel.fromPath(
+        "${projectDir}/assets/multiqc_config.yml",
+        checkIfExists: true
+    )
+    ch_multiqc_custom_config = params.multiqc_config
+        ? Channel.fromPath(params.multiqc_config, checkIfExists: true)
+        : Channel.empty()
+    ch_multiqc_logo = params.multiqc_logo
+        ? Channel.fromPath(params.multiqc_logo, checkIfExists: true)
+        : Channel.empty()
 
-    summary_params      = paramsSummaryMap(
-        workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = paramsSummaryMap(
+        workflow,
+        parameters_schema: "nextflow_schema.json"
+    )
     ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
-        file(params.multiqc_methods_description, checkIfExists: true) :
-        file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description                = Channel.value(
-        methodsDescriptionText(ch_multiqc_custom_methods_description))
+        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml')
+    )
+    ch_multiqc_custom_methods_description = params.multiqc_methods_description
+        ? file(params.multiqc_methods_description, checkIfExists: true)
+        : file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
+    ch_methods_description = Channel.value(
+        methodsDescriptionText(ch_multiqc_custom_methods_description)
+    )
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
     ch_multiqc_files = ch_multiqc_files.mix(
         ch_methods_description.collectFile(
             name: 'methods_description_mqc.yaml',
-            sort: true
+            sort: true,
         )
     )
 
@@ -191,7 +196,7 @@ workflow PANGBANK {
     ch_multiqc_files = ch_multiqc_files.mix(
         ch_methods_description.collectFile(
             name: 'methods_description_mqc.yaml',
-            sort: true
+            sort: true,
         )
     )
 
@@ -201,12 +206,12 @@ workflow PANGBANK {
         ch_multiqc_custom_config.toList(),
         ch_multiqc_logo.toList(),
         [],
-        []
+        [],
     )
 
     emit:
     multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+    versions = ch_versions // channel: [ path(versions.yml) ]
 }
 
 def manage_input_genomes(input_genomes_file) {
@@ -241,17 +246,23 @@ def manage_input_genomes(input_genomes_file) {
         // If it's a URL, download the files and map them to local paths
         log.info("Downloading genome files from URLs")
 
-        def genome_file_channel = Channel.fromPath(input_genomes_file).splitCsv(header: ['name', 'path'], sep: "\t").map { row ->
-            def file_extension = (row.path =~ extension_pattern)[0][1]
-            ["file_name": "${row.name}${file_extension}", "path": row.path]
-        }.collectFile { row ->
-            ["${row.file_name}", file(row.path).bytes]
-        }.map { path ->
-            def file_extension = (path.name =~ extension_pattern)[0][1]
-            ["name": "${path.name - file_extension}", "path": path]
-        }.collectFile(name: 'input_genomes.txt', newLine: true) { row ->
-            ['input_genomes.txt', "${row.name}\t${row.path}"]
-        }
+        def genome_file_channel = Channel
+            .fromPath(input_genomes_file)
+            .splitCsv(header: ['name', 'path'], sep: "\t")
+            .map { row ->
+                def file_extension = (row.path =~ extension_pattern)[0][1]
+                ["file_name": "${row.name}${file_extension}", "path": row.path]
+            }
+            .collectFile { row ->
+                ["${row.file_name}", file(row.path).bytes]
+            }
+            .map { path ->
+                def file_extension = (path.name =~ extension_pattern)[0][1]
+                ["name": "${path.name - file_extension}", "path": path]
+            }
+            .collectFile(name: 'input_genomes.txt', newLine: true) { row ->
+                ['input_genomes.txt', "${row.name}\t${row.path}"]
+            }
 
         return genome_file_channel
     }
@@ -259,9 +270,12 @@ def manage_input_genomes(input_genomes_file) {
         // If it's a local file, process the file paths directly
         log.info("Processing local genome file paths")
 
-        def genome_file_channel = Channel.fromPath(input_genomes_file).splitCsv(header: ['name', 'path'], sep: "\t").collectFile(name: 'input_genomes.txt', newLine: true) { row ->
-            ['input_genomes.txt', "${row.name}\t${file(row.path)}"]
-        }
+        def genome_file_channel = Channel
+            .fromPath(input_genomes_file)
+            .splitCsv(header: ['name', 'path'], sep: "\t")
+            .collectFile(name: 'input_genomes.txt', newLine: true) { row ->
+                ['input_genomes.txt', "${row.name}\t${file(row.path)}"]
+            }
 
         return genome_file_channel
     }
@@ -322,7 +336,7 @@ def create_ppanggo_input_channel(input_file) {
         ERROR: Please check input genomes -> Genome file (${first_genome_file}) does have an unexpected extension: ${genome_extension}
         Possible value for annotation files: ${annotation_extensions}\
         Fasta files: ${fasta_extensions}
-        """
+        """,
         )
     }
     def input_meta = [meta, input_file]
