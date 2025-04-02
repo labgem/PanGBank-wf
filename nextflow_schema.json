@@ -86,24 +86,8 @@
             "properties": {
                 "large_pangenome_cutoff": {
                     "type": "integer",
-                    "default": 5000,
-                    "description": "Minimum number of genomes for a pangenome to be considered large."
-                },
-                "regular_pangenome_tmpdir": {
-                    "type": "string",
-                    "description": "Name of the tmpdir to use with regular pangenome"
-                },
-                "large_pangenome_tmpdir": {
-                    "type": "string",
-                    "description": "Name of the tmpdir to use with regular pangenome"
-                },
-                "regular_pangenome_queue": {
-                    "type": "string",
-                    "description": "Name of the queue where regular pangenome execution will be scheduled"
-                },
-                "large_pangenome_queue": {
-                    "type": "string",
-                    "description": "Name of the queue where large pangenome execution will be scheduled"
+                    "default": 1000,
+                    "description": "Defines the minimum number of genomes required for a pangenome to be classified as large. This threshold helps determine the resource allocation category for the pangenome creation process. Pangenomes with a genome count above this value are considered large, those between half of this value and the cutoff are medium, and those below half are small. Each category is assigned an appropriate level of computational resources."
                 }
             }
         },
@@ -256,6 +240,12 @@
                     "type": "string",
                     "description": "Custom MultiQC yaml file containing HTML including a methods description.",
                     "fa_icon": "fas fa-cog"
+                },
+                "trace_report_suffix": {
+                    "type": "string",
+                    "fa_icon": "far calendar",
+                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                    "hidden": true
                 }
             }
         }
