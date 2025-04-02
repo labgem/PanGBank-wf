@@ -1,4 +1,4 @@
-process GATHER_PANGENOME_INFO {
+process SUMMARIZE_GENOME_STATS {
     label 'process_single'
 
     // reuse ppanggolin env as it as already been downloaded and used
@@ -8,12 +8,10 @@ process GATHER_PANGENOME_INFO {
         'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
 
     input:
-    path "pangenome_infos/*"
-    path "genome_stats_summaries/*"
-
+    tuple val(meta), path(genome_stat_file)
 
     output:
-    path "pangenome_summary.tsv", emit: summary
+    path  "${meta.species}.yaml", emit: genome_stats_summary
     path "versions.yml", emit: versions
 
     when:
@@ -21,7 +19,7 @@ process GATHER_PANGENOME_INFO {
 
     script:
     """
-    gather_pangenome_infos.py --yaml_info_dir pangenome_infos/ --output pangenome_summary.tsv  --yaml_genome_stats_dir genome_stats_summaries/
+    summarize_genome_stats.py --genome_stats $genome_stat_file --output ${meta.species}.yaml
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

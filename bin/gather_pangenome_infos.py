@@ -9,7 +9,7 @@ import yaml
 import pandas as pd
 
 
-def get_info_from_yaml(yaml_info):
+def get_info_from_yaml_pangenome_info(yaml_info):
 
     name = yaml_info.stem
 
@@ -32,58 +32,27 @@ def get_info_from_yaml(yaml_info):
     return useful_info
 
 
-def summarize_genome_stat(genome_stat_file):
-    """ """
+def get_info_from_yaml_genome_stat_summary(yaml_info):
 
-    df = pd.read_csv(
-        genome_stat_file,
-        sep="\t",
-        comment="#",
-    )
+    name = yaml_info.stem
 
-    df["Persistent_families_fraction"] = df["Persistent_families"] / df["Families"]
-    df["Soft_core_families_fraction"] = df["Soft_core_families"] / df["Families"]
-    df["Exact_core_families_fraction"] = df["Exact_core_families"] / df["Families"]
+    with open(yaml_info, "r") as fh:
+        pangenome_info = yaml.safe_load(fh)
 
-    df["Shell_families_fraction"] = df["Shell_families"] / df["Families"]
-    df["Shell_families_fraction"] = df["Cloud_families"] / df["Families"]
-
-    df["Variable_families"] = df["Shell_families"] + df["Cloud_families"]
-
-    df["Variable_families_fraction"] = df["Variable_families"] / df["Families"]
-
-    columns_to_process = [
+    metric_of_interest = [
         "Persistent_families_fraction",
         "Soft_core_families_fraction",
         "Exact_core_families_fraction",
-        # "Shell_families_fraction",
-        # "Variable_families_fraction",
-        "Fragmentation",
-        "Completeness",
-        "Contamination",
-        # "Genes",
-        # "Contigs",
+        "Shell_families_fraction",
+        "Cloud_families_fraction",
     ]
 
-    species_stats = {}
+    useful_info = {"Name": name}
+    for metric in metric_of_interest:
+        for stat in ["mean", "median"]:
+            useful_info[f"{metric}_{stat}".capitalize()] = pangenome_info[metric][stat]
 
-    # Calculate stats for each column
-    # operations = ["min", "max", "mean", "median", "std"]
-    operations = ["median"]
-    for column in columns_to_process:
-        if column in df.columns:
-            stats = df[column].agg(operations).to_dict()
-
-            stats["Q1"] = df[column].quantile(0.25)
-            stats["Q3"] = df[column].quantile(0.75)
-
-            # Compute IQR
-            stats["IQR"] = stats["Q3"] - stats["Q1"]
-
-            for stat_name, value in stats.items():
-                species_stats[f"{stat_name}_{column}"] = value
-
-    return species_stats
+    return useful_info
 
 
 def write_tsv_from_list_of_dict(species_summary_file, species_infos):
@@ -107,30 +76,15 @@ def parse_args(argv=None):
         epilog="Example: python gather_pangenome_infos.py --yaml_dir <yaml_info_dir>",
     )
 
-    group1 = parser.add_argument_group("Single file arguments")
-    group1.add_argument(
-        "--yaml_info",
+    parser.add_argument(
+        "--yaml_info_dir",
         help="Directory where yaml info files are stored",
-        required=False,
+        required=True,
         type=Path,
     )
-    group1.add_argument(
-        "--genome_stat",
-        help="Directory where genome stat files are stored",
-        required=False,
-        type=Path,
-    )
-
-    group2 = parser.add_argument_group("Directory arguments")
-    group2.add_argument(
-        "--yaml_dir",
-        help="Directory where yaml info files are stored",
-        required=False,
-        type=Path,
-    )
-    group2.add_argument(
-        "--genome_stat_dir",
-        help="Directory where genome stat files are stored",
+    parser.add_argument(
+        "--yaml_genome_stats_dir",
+        help="Directory where summarize genome stat files are stored",
         required=False,
         type=Path,
     )
@@ -153,20 +107,6 @@ def parse_args(argv=None):
 
     args = parser.parse_args(argv)
 
-    # Ensure mutual exclusivity between (yaml_info + genome_stat) and (yaml_dir + genome_stat_dir)
-    single_file_args = args.yaml_info is not None or args.genome_stat is not None
-    dir_args = args.yaml_dir is not None or args.genome_stat_dir is not None
-
-    if single_file_args and dir_args:
-        parser.error(
-            "Cannot mix --yaml_info/--genome_stat with --yaml_dir/--genome_stat_dir. Choose one set."
-        )
-
-    if not single_file_args and not dir_args:
-        parser.error(
-            "You must provide either (--yaml_info and --genome_stat) or (--yaml_dir and --genome_stat_dir)."
-        )
-
     return args
 
 
@@ -178,36 +118,23 @@ def main(argv=None):
 
     name_to_info = {}
 
-    if args.yaml_dir:
-        for i, yaml_info in enumerate(args.yaml_dir.iterdir()):
+    for i, yaml_info in enumerate(args.yaml_info_dir.iterdir()):
+        logging.info(f"{i}: {yaml_info}")
+
+        info = get_info_from_yaml_pangenome_info(yaml_info)
+        name_to_info[info["Name"]] = info
+
+    if args.yaml_genome_stats_dir:
+
+        for i, yaml_genome_stat_summary in enumerate(
+            args.yaml_genome_stats_dir.iterdir()
+        ):
             logging.info(f"{i}: {yaml_info}")
 
-            info = get_info_from_yaml(yaml_info)
-            name_to_info[info["Name"]] = info
+            info = get_info_from_yaml_genome_stat_summary(yaml_genome_stat_summary)
+            name_to_info[info["Name"]].update(info)
 
-        if args.genome_stat_dir:
-            for i, genome_stat_dir in enumerate(args.genome_stat_dir.iterdir()):
-                if not genome_stat_dir.is_dir():
-                    continue
-                genome_stat_file = genome_stat_dir / "genomes_statistics.tsv.gz"
-                name = genome_stat_dir.name
-                logging.info(f"{i}: {genome_stat_file}")
-
-                genome_stat_summary = summarize_genome_stat(genome_stat_file)
-
-                info = name_to_info[name]
-
-                info.update(genome_stat_summary)
-
-        info_to_write = list(name_to_info.values())
-
-    if args.yaml_info:
-        info = get_info_from_yaml(args.yaml_info)
-        if args.genome_stat:
-            genome_stat_summary = summarize_genome_stat(args.genome_stat)
-            info.update(genome_stat_summary)
-
-        info_to_write = [info]
+    info_to_write = list(name_to_info.values())
 
     write_tsv_from_list_of_dict(args.output, info_to_write)
 
