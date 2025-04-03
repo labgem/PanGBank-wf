@@ -6,7 +6,6 @@ import logging
 import sys
 from pathlib import Path
 import yaml
-import pandas as pd
 
 
 def get_info_from_yaml_pangenome_info(yaml_info):
