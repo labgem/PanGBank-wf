@@ -39,16 +39,16 @@ def get_info_from_yaml_genome_stat_summary(yaml_info):
         pangenome_info = yaml.safe_load(fh)
 
     metric_of_interest = [
-        "Persistent_families_fraction",
-        "Soft_core_families_fraction",
-        "Exact_core_families_fraction",
-        "Shell_families_fraction",
-        "Cloud_families_fraction",
+        "Persistent_families",
+        "Soft_core_families",
+        "Exact_core_families",
+        "Shell_families",
+        "Cloud_families",
     ]
 
     useful_info = {"Name": name}
     for metric in metric_of_interest:
-        for stat in ["mean", "median"]:
+        for stat in ["mean"]:
             useful_info[f"{metric}_{stat}".capitalize()] = pangenome_info[metric][stat]
 
     return useful_info

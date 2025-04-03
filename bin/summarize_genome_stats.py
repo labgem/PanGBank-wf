@@ -29,6 +29,11 @@ def summarize_genome_stat(genome_stat_file):
     # df["Variable_families_fraction"] = df["Variable_families"] / df["Families"]
 
     columns_to_process = [
+        "Persistent_families",
+        "Soft_core_families",
+        "Exact_core_families",
+        "Shell_families",
+        "Cloud_families",
         "Persistent_families_fraction",
         "Soft_core_families_fraction",
         "Exact_core_families_fraction",
@@ -39,6 +44,7 @@ def summarize_genome_stat(genome_stat_file):
         "Contamination",
         "Genes",
         "Contigs",
+        "Families",
     ]
 
     species_stats: Dict[str, Dict[str, Union[float, int]]] = {}
@@ -109,7 +115,6 @@ def main(argv=None):
 
     genome_stats_summary = summarize_genome_stat(args.genome_stats)
     dump_dict_to_yaml(genome_stats_summary, args.output)
-
 
 
 if __name__ == "__main__":
