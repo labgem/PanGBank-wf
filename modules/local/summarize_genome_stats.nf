@@ -1,5 +1,7 @@
 process SUMMARIZE_GENOME_STATS {
     label 'process_single'
+    tag "${meta.species}"
+
 
     // reuse ppanggolin env as it as already been downloaded and used
     conda "bioconda::ppanggolin=2.2.1"
