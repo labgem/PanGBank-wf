@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - You can now associate external metadata with genomes using the `--genome_metadata` parameter. These metadata are stored in the pangenome file.
 - Ppanggolin process now produces tile plot to describe pangenome.
 - Add genome in pangenome stats summary at pangenome level.
+- Add proksee json map in the output
 
 ### `Fixed`
 
