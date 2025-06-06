@@ -4,10 +4,10 @@ process PPANGGOLIN_ALL {
 
     tag { "${meta.species}" }
 
-    conda "bioconda::ppanggolin=2.2.1"
+    conda "bioconda::ppanggolin=2.2.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.3--hbcbf7aa_0' :
+        'biocontainers/ppanggolin:2.2.3--hbcbf7aa_0' }"
 
     input:
         tuple val(meta), path(genome_file)
@@ -30,11 +30,8 @@ process PPANGGOLIN_ALL {
     def input_arg = meta.file_type == "annotation" ? "--anno" : "--fasta"
 
 
-    // TODO remove zcat when genome input will be supported by ppanggolin
-
     """
-    zcat $genome_file > genomes_file_list.txt
-    ppanggolin all $input_arg  genomes_file_list.txt --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $args
+    ppanggolin all $input_arg  $genome_file --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $args
 
     ppanggolin info --pangenome ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
 
