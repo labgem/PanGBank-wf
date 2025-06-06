@@ -14,14 +14,12 @@ process PPANGGOLIN_ALL {
         path(ppanggolin_config)
 
     output:
-        tuple  val(meta), path("${meta.species}/pangenome.h5")       , emit: pangenome
-        path "${meta.species}.yaml"                                  , emit: pangenome_info
-        path "${meta.species}/genomes_statistics.tsv.gz"             , emit: genomes_statistics
+        tuple  val(meta), path("${meta.species}/pangenome.h5")          , emit: pangenome
+        tuple  val(meta), path("${meta.species}/genomes_statistics.tsv.gz")  , emit: genomes_statistics
+        path "${meta.species}.yaml"                                     , emit: pangenome_info
+        path "${meta.species}/metadata/*.tsv.gz"                        , optional: true
+        path "versions.yml"                                             , emit: versions
         path "${meta.species}/*.html"
-
-        path "${meta.species}/metadata/*.tsv.gz"                     , optional: true
-
-        path "versions.yml", emit: versions
 
     when:
         task.ext.when == null || task.ext.when
