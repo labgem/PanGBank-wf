@@ -18,6 +18,7 @@ process PPANGGOLIN_ALL {
         tuple  val(meta), path("${meta.species}/genomes_statistics.tsv.gz")  , emit: genomes_statistics
         path "${meta.species}.yaml"                                     , emit: pangenome_info
         path "${meta.species}/metadata/*.tsv.gz"                        , optional: true
+        path "${meta.species}/proksee/*.json*"
         path "versions.yml"                                             , emit: versions
         path "${meta.species}/*.html"
 

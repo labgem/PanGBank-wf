@@ -46,7 +46,7 @@ write_genomes:
   # Generate a gff file for each genome containing pangenome annotations.
   gff: False
   # Generate JSON map files for PROKSEE for each genome containing pangenome annotations to be used in proksee.
-  proksee: False
+  proksee: True
   # Compress the files in .gz
   compress: True
   # Specify the genomes for which to generate output. You can provide a list of genome names either directly in the command line separated by commas, or by referencing a file containing the list of genome names, with one name per line.
