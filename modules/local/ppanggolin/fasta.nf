@@ -33,4 +33,3 @@ process PPANGGOLIN_FASTA {
     """
 
 }
-

@@ -45,4 +45,3 @@ process PPANGGOLIN_ALL {
     """
 
 }
-

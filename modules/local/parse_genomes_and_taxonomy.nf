@@ -35,4 +35,3 @@ process PARSE_GENOMES_AND_TAXONOMY {
     END_VERSIONS
     """
 }
-

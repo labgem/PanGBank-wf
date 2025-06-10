@@ -30,4 +30,3 @@ process GATHER_PANGENOME_INFO {
     """
 
 }
-

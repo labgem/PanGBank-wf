@@ -40,4 +40,3 @@ process FORMAT_INPUT_GENOMES {
     """
 
 }
-

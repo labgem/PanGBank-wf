@@ -30,4 +30,3 @@ process SUMMARIZE_GENOME_STATS {
     """
 
 }
-

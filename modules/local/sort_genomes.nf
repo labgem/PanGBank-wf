@@ -35,4 +35,3 @@ process SORT_GENOMES {
     """
 
 }
-
