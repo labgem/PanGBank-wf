@@ -45,6 +45,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and build pange
 
       - **`<genomes|contig>_metadata_from_annotation_file.tsv.gz`**: A TSV file containing metadata extracted from annotation files (GBFF or GFF) for genomes or contigs.
 
+    - **`proksee/`**: A directory containing proksee JSON map fpr each genome of the pangenome.
+
 </details>
 
 [PPanGGOLiN](https://github.com/labgem/PPanGGOLiN) is a software suite used to create and manipulate prokaryotic pangenomes from a set of either genomic DNA sequences or provided genome annotations. For further reading and documentation see the [PPanGGOLiN documentation](https://ppanggolin.readthedocs.io/).
