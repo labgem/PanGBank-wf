@@ -14,13 +14,29 @@
 
   > Gautreau, G., Bazin, A., Gachet, M., Planel, R., Burlot, L., Dubois, M., ... & Vallenet, D. (2020). PPanGGOLiN: depicting microbial diversity via a partitioned pangenome graph. PLoS computational biology, 16(3), e1007732.
 
-  - [PPanGGOLiN](https://ppanggolin.readthedocs.io)
+- [PanRGP](https://ppanggolin.readthedocs.io)
 
-  > Gautreau, G., Bazin, A., Gachet, M., Planel, R., Burlot, L., Dubois, M., ... & Vallenet, D. (2020). PPanGGOLiN: depicting microbial diversity via a partitioned pangenome graph. PLoS computational biology, 16(3), e1007732.
+  > Bazin, A., Gautreau, G., Médigue, C., Vallenet, D. and Calteau, A., 2020. panRGP: a pangenome-based method to predict genomic islands and explore their diversity. Bioinformatics, 36(Supplement_2), pp.i651-i658.
+
+- [PanModule](https://ppanggolin.readthedocs.io)
+
+  > Bazin, A., Medigue, C., Vallenet, D., & Calteau, A. (2021). panModule: detecting conserved modules in the variable regions of a pangenome graph. bioRxiv, 2021-12.
 
 - [Mash](https://doi.org/10.1186/s13059-016-0997-x)
 
   > Ondov, B. D., Treangen, T. J., Melsted, P., Mallonee, A. B., Bergman, N. H., Koren, S., & Phillippy, A. M. (2016). Mash: fast genome and metagenome distance estimation using MinHash. Genome biology, 17(1), 1-14.
+
+- [QuikTree](https://doi.org/10.1093/bioinformatics/18.11.1546)
+
+> Howe, K., Bateman, A. and Durbin, R., 2002. QuickTree: building huge Neighbour-Joining trees of protein sequences. Bioinformatics, 18(11), pp.1546-1547.
+
+- [SeqFu](https://telatin.github.io/seqfu2/)
+
+> Telatin, A., Fariselli, P. and Birolo, G., 2021. SeqFu: a suite of utilities for the robust and reproducible manipulation of sequence files. Bioengineering, 8(5), p.59.
+
+- [TreeSwift](https://niema.net/TreeSwift/)
+
+  > Moshiri, N., 2020. TreeSwift: A massively scalable Python tree package. SoftwareX, 11, p.100436.
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 
