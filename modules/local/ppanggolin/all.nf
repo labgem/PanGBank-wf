@@ -33,8 +33,9 @@ process PPANGGOLIN_ALL {
     """
     ppanggolin all $input_arg  $genome_file --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $args
 
-    ppanggolin info --pangenome ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
+    ppanggolin metrics --pangenome ${meta.species}/pangenome.h5 --genome_fluidity
 
+    ppanggolin info --pangenome ${meta.species}/pangenome.h5 --content > ${meta.species}.yaml
     # write metadata collected on annotation if any
     ppanggolin write_metadata --pangenome ${meta.species}/pangenome.h5 --output ${meta.species}/metadata/ --compress
 

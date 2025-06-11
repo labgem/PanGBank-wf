@@ -27,6 +27,9 @@ def get_info_from_yaml_pangenome_info(yaml_info):
         "Spots": pangenome_info["Spots"],
         "Modules": pangenome_info["Modules"]["Number_of_modules"],
         "Partitions": pangenome_info["Number_of_partitions"],
+        "Genomes_fluidity_all": pangenome_info["Genomes_fluidity"]["all"],
+        "Genomes_fluidity_shell": pangenome_info["Genomes_fluidity"]["shell"],
+        "Genomes_fluidity_cloud": pangenome_info["Genomes_fluidity"]["cloud"],
     }
     return useful_info
 
