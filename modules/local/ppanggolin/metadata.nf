@@ -4,10 +4,10 @@ process PPANGGOLIN_METADATA {
 
     tag { "${meta.species}" }
 
-    conda "bioconda::ppanggolin=2.2.1"
-    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-        ? 'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1'
-        : 'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1'}"
+    conda "bioconda::ppanggolin=2.2.3"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.3--hbcbf7aa_0' :
+        'biocontainers/ppanggolin:2.2.3--hbcbf7aa_0' }"
 
     input:
     tuple val(meta), path(pangenome), path(genome_metadata)

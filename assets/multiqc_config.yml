@@ -89,7 +89,7 @@ custom_data:
       Modules:
         color: "#ca5c55"
     pconfig:
-      id: ""
+      id: "module_count_bargraph"
       title: "Modules Predicted In The Pangenomes"
       ylab: "Modules"
 
@@ -110,7 +110,7 @@ custom_data:
         name: "discarded_genomes"
         color: "#D81B60"
     pconfig:
-      id: ""
+      id: "genomes_dereplicated_bargraph"
       title: "Genome Distribution After Dereplication"
       ylab: "Genomes"
 
