@@ -148,7 +148,9 @@ def write_ppanggolin_input_files(
 
         with gzip.open(sp_outdir / "input_genomes.tsv.gz", "wt") as flout:
             flout.write(
-                "\n".join(f"{acc}\t{acc_to_genome_file[acc]}" for acc in input_accs)
+                "\n".join(
+                    f"{acc}\t{acc_to_genome_file[acc]}" for acc in sorted(input_accs)
+                )
                 + "\n"
             )
 
