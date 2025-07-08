@@ -6,8 +6,8 @@ process PPANGGOLIN_ALL {
 
     conda "bioconda::ppanggolin=2.2.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.2.3--hbcbf7aa_0' :
-        'biocontainers/ppanggolin:2.2.3--hbcbf7aa_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--hbcbf7aa_0' :
+        'biocontainers/ppanggolin:2.2.4--hbcbf7aa_0' }"
 
     input:
         tuple val(meta), path(genome_file)
