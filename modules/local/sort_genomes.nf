@@ -5,8 +5,8 @@ process SORT_GENOMES {
     // reuse ppanggolin env as it as already been downloaded and used
     conda "bioconda::ppanggolin=2.2.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--hbcbf7aa_0' :
-        'biocontainers/ppanggolin:2.2.4--hbcbf7aa_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
+        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
 
     input:
         tuple val(meta), path(genome_stat_file)
