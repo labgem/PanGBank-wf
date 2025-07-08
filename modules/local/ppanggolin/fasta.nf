@@ -2,16 +2,17 @@ process PPANGGOLIN_FASTA {
     tag "${meta.species}"
     label 'process_single'
 
-    conda "bioconda::ppanggolin=2.2.1"
+    conda "bioconda::ppanggolin=2.2.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
+        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
 
     input:
         tuple val(meta), path(pangenome)
 
     output:
-        tuple val(meta), path("${meta.species}/persistent_nucleotide_families.fasta.gz") , emit: persistent_families_fasta
+        // tuple val(meta), path("${meta.species}/persistent_nucleotide_families.fasta.gz") , emit: persistent_families_fasta
+        tuple val(meta), path("persistent_nucleotide_families/${meta.species}.fasta.gz") , emit: persistent_families_fasta
         tuple val(meta), path("${meta.species}/all_protein_families.faa.gz") , emit: all_families_faa
         path "versions.yml", emit: versions
 
@@ -20,9 +21,10 @@ process PPANGGOLIN_FASTA {
 
     script:
     """
-    ls -l
-
     ppanggolin fasta -p $pangenome  -o ${meta.species} --gene_families persistent --prot_families all --compress
+    mkdir -p persistent_nucleotide_families
+    mv ${meta.species}/persistent_nucleotide_families.fasta.gz persistent_nucleotide_families/${meta.species}.fasta.gz
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -31,4 +33,3 @@ process PPANGGOLIN_FASTA {
     """
 
 }
-

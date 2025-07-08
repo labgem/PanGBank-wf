@@ -63,7 +63,9 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def initialise_lower_triangular_list_of_np_array(size: int) -> list[np.ndarray]:
+def initialise_lower_triangular_list_of_np_array(
+    size: int,
+) -> list[np.ndarray]:
     """
     Initializes a lower triangular list of numpy arrays, where each array contains `1`s.
 
@@ -119,7 +121,7 @@ def parse_mash_dist_result_np_array(
 
 def write_phylip_matrix_from_list_of_arrays(
     number_of_genomes: int,
-    list_of_arrays: List[List[float]],
+    list_of_arrays: list[np.ndarray],
     phylip_matrix_file: str,
     disable_bar: bool = False,
 ) -> None:
@@ -186,7 +188,8 @@ def main(argv=None):
     phylip_matrix_file = args.phylip_matrix
 
     logging.info(f"Parsing sorted genomes from {args.sorted_genomes_file}.")
-    with open(sorted_genomes_file) as fl:
+    proper_open = gzip.open if args.sorted_genomes_file.suffix == ".gz" else open
+    with proper_open(sorted_genomes_file, "rt") as fl:
         genome_to_index = {genome.rstrip(): index for index, genome in enumerate(fl)}
 
     logging.info(

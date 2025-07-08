@@ -2,13 +2,15 @@ process GATHER_PANGENOME_INFO {
     label 'process_single'
 
     // reuse ppanggolin env as it as already been downloaded and used
-    conda "bioconda::ppanggolin=2.2.1"
+    conda "bioconda::ppanggolin=2.2.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
+        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
 
     input:
     path "pangenome_infos/*"
+    path "genome_stats_summaries/*"
+
 
     output:
     path "pangenome_summary.tsv", emit: summary
@@ -19,7 +21,7 @@ process GATHER_PANGENOME_INFO {
 
     script:
     """
-    gather_pangenome_infos.py --yaml_dir pangenome_infos/ --output pangenome_summary.tsv
+    gather_pangenome_infos.py --yaml_info_dir pangenome_infos/ --output pangenome_summary.tsv  --yaml_genome_stats_dir genome_stats_summaries/
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -28,4 +30,3 @@ process GATHER_PANGENOME_INFO {
     """
 
 }
-

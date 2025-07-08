@@ -82,7 +82,8 @@ def write_selected_genomes(selected_genomes: List[str], outfile: Path) -> None:
     :param selected_genomes: A list of selected genome paths.
     :param outfile: Path to the output file where the selected genomes will be written.
     """
-    with open(outfile, "w") as fl:
+    proper_open = gzip.open if outfile.suffix == ".gz" else open
+    with proper_open(outfile, "wt") as fl:
         for genome_path in selected_genomes:
             fl.write(f"{genome_path}\n")
 
@@ -186,7 +187,9 @@ def write_clusters(clusters: List[List[int]], cluster_file: Path) -> None:
     :param clusters: A list of clusters, where each cluster is a list of node indexes.
     :param cluster_file: Path to the output file where the clusters will be written.
     """
-    with open(cluster_file, "w") as fl:
+    proper_open = gzip.open if cluster_file.suffix == ".gz" else open
+
+    with proper_open(cluster_file, "wt") as fl:
         for indexes in clusters:
             fl.write(" ".join(map(str, sorted(indexes))) + "\n")
 
@@ -200,7 +203,9 @@ def parse_genome_name_to_path_file(genome_name_to_path: Path) -> Dict[str, str]:
                                 `<genome_name>\t<genome_path>`.
     :return: A dictionary where the keys are genome paths and the values are genome names.
     """
-    with open(genome_name_to_path, "r") as fl:
+    proper_open = gzip.open if genome_name_to_path.suffix == ".gz" else open
+
+    with proper_open(genome_name_to_path, "rt") as fl:
         path_to_genome_name = {
             line.split("\t")[1].strip(): line.split("\t")[0] for line in fl
         }
@@ -297,7 +302,8 @@ def main(argv=None):
     num_cluster = args.number_of_genomes
     tree_file = args.tree
 
-    with open(sorted_genomes_file) as fl:
+    proper_open = gzip.open if sorted_genomes_file.suffix == ".gz" else open
+    with proper_open(sorted_genomes_file, "rt") as fl:
         index_to_genome = {index: genome.rstrip() for index, genome in enumerate(fl)}
 
     # Select genomes from the tree and obtain the clusters

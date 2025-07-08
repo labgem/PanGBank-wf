@@ -3,17 +3,17 @@ process SORT_GENOMES {
     tag "${meta.id}"
 
     // reuse ppanggolin env as it as already been downloaded and used
-    conda "bioconda::ppanggolin=2.2.1"
+    conda "bioconda::ppanggolin=2.2.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
+        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
 
     input:
         tuple val(meta), path(genome_stat_file)
 
     output:
-        tuple  val(meta), path("sorted_genomes.txt")       , emit: sorted_genomes_list
-        path "sorted_genomes.tsv"                          , emit: sorted_genomes_stats
+        tuple  val(meta), path("sorted_genomes.txt.gz")       , emit: sorted_genomes_list
+        path "sorted_genomes.txt.gz"                          , emit: sorted_genomes_stats
         path "versions.yml"      , emit: versions
 
     when:
@@ -24,8 +24,8 @@ process SORT_GENOMES {
     """
     sort_genomes.py --genome_stats $genome_stat_file \\
                     --sort_by L90 L75 L50 auN \\
-                    --sorted_genome_list sorted_genomes.txt \\
-                    --sorted_genome_stats sorted_genomes.tsv
+                    --sorted_genome_list sorted_genomes.txt.gz \\
+                    --sorted_genome_stats sorted_genomes.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -35,4 +35,3 @@ process SORT_GENOMES {
     """
 
 }
-

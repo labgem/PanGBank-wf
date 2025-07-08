@@ -4,6 +4,7 @@ import argparse
 import logging
 from pathlib import Path
 from typing import Dict, Set
+import gzip
 
 
 def parse_args(argv=None):
@@ -50,7 +51,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--formatted_genomes",
         type=Path,
-        default="ppanggo_input_selected_genomes.tsv",
+        default="ppanggo_input_selected_genomes.tsv.gz",
         help="Path to a TSV file mapping temporary FASTA file paths to their original genome file paths. "
         "This file must have two columns: the first column for temporary FASTA file paths "
         "found in the --genome_name_to_path and --selected_genomes files, "
@@ -65,13 +66,11 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-        "--species",
-        type=str,
-        help="Specify species name",
-        default=None
+        "--species", type=str, help="Specify species name", default=None
     )
 
     return parser.parse_args(argv)
+
 
 def parse_genome_name_to_path_file(genome_name_to_path_file: Path) -> Dict[str, str]:
     """
@@ -82,16 +81,18 @@ def parse_genome_name_to_path_file(genome_name_to_path_file: Path) -> Dict[str, 
                                 `<genome_name>\t<genome_path>`.
     :return: A dictionary where the keys are genome paths and the values are genome names.
     """
-    with open(genome_name_to_path_file, "r") as fl:
+
+    proper_open = gzip.open if genome_name_to_path_file.suffix == ".gz" else open
+    with proper_open(genome_name_to_path_file, "rt") as fl:
         path_to_genome_name = {
             line.split("\t")[1].strip(): line.split("\t")[0] for line in fl
         }
 
     return path_to_genome_name
 
+
 def get_path_of_reference_genomes(
-    reference_genome_names: Set[str],
-    path_to_genome_name: Dict[str, str]
+    reference_genome_names: Set[str], path_to_genome_name: Dict[str, str]
 ) -> Set[str]:
     """
     Retrieve the file paths of reference genomes that match the specified genome names.
@@ -101,10 +102,16 @@ def get_path_of_reference_genomes(
     :return: A set of file paths corresponding to the reference genomes.
     """
     # Identify reference genome names present in the provided genome name mapping
-    current_species_ref_genomes = set(path_to_genome_name.values()) & reference_genome_names
+    current_species_ref_genomes = (
+        set(path_to_genome_name.values()) & reference_genome_names
+    )
 
     # Collect file paths corresponding to the identified reference genome names
-    reference_genome_paths = {path for path, name in path_to_genome_name.items() if name in current_species_ref_genomes}
+    reference_genome_paths = {
+        path
+        for path, name in path_to_genome_name.items()
+        if name in current_species_ref_genomes
+    }
 
     return reference_genome_paths
 
@@ -125,12 +132,15 @@ def main(argv=None):
 
     fasta_to_original_path = args.fasta_to_original_path
 
-    with open(selected_genomes_file) as fl:
+    proper_open = gzip.open if selected_genomes_file.suffix == ".gz" else open
+
+    with proper_open(selected_genomes_file, "rt") as fl:
         selected_genomes = {genome_path.rstrip() for genome_path in fl}
 
     tmp_fasta_to_original_path = {}
     if args.fasta_to_original_path:
-        with open(fasta_to_original_path) as fl:
+        proper_open = gzip.open if fasta_to_original_path.suffix == ".gz" else open
+        with proper_open(fasta_to_original_path, "rt") as fl:
             tmp_fasta_to_original_path = {
                 line.split("\t")[0]: line.split("\t")[1].rstrip() for line in fl
             }
@@ -140,14 +150,22 @@ def main(argv=None):
 
     reference_genome_count = 0
     if args.reference_genomes:
-        with open(args.reference_genomes) as fl:
+        proper_open = gzip.open if args.reference_genomes.suffix == ".gz" else open
+
+        with proper_open(args.reference_genomes, "rt") as fl:
             # Load reference genome names from the file
             reference_genomes = {line.rstrip() for line in fl if line}
-            logging.info(f"Loaded {len(reference_genomes)} reference genome names from {args.reference_genomes}.")
+            logging.info(
+                f"Loaded {len(reference_genomes)} reference genome names from {args.reference_genomes}."
+            )
 
         # Get paths for the specified reference genomes
-        reference_genome_paths = get_path_of_reference_genomes(reference_genomes, path_to_genome_name)
-        logging.info(f"Retrieved {len(reference_genome_paths)} reference genome paths matching the provided input genomes.")
+        reference_genome_paths = get_path_of_reference_genomes(
+            reference_genomes, path_to_genome_name
+        )
+        logging.info(
+            f"Retrieved {len(reference_genome_paths)} reference genome paths matching the provided input genomes."
+        )
 
         # Add the retrieved genome paths to the selected genomes set
         selection_count = len(selected_genomes)
@@ -161,11 +179,12 @@ def main(argv=None):
             f"bringing the total to {new_selection_count}. These genomes were not already in the list."
         )
 
-
     # Write selected genomes to the output file
-    selected_genomes_outfile = args.formatted_genomes
-    logging.info(f"Writing selected genomes to {selected_genomes_outfile}")
-    with open(selected_genomes_outfile, "w") as fl:
+    logging.info(f"Writing selected genomes to {args.formatted_genomes}")
+
+    proper_open = gzip.open if args.formatted_genomes.suffix == ".gz" else open
+
+    with proper_open(args.formatted_genomes, "wt") as fl:
         for genome_path in selected_genomes:
             genome_name = path_to_genome_name[genome_path]
 
@@ -177,19 +196,18 @@ def main(argv=None):
     # Write the cluster composition to the output file
     logging.info(f"Writing summary selection to {args.summary_selection}.")
 
-
     final_selection = len(selected_genomes)
-    selection_no_ref =  final_selection - reference_genome_count
+    selection_no_ref = final_selection - reference_genome_count
     total_genomes = len(path_to_genome_name)
     discarded_genome_count = total_genomes - final_selection
 
     with open(args.summary_selection, "w") as fl:
 
-        fl.write('species\tselected_genomes\treference_genomes\tdiscarded_genomes\n')
-        fl.write(f'{args.species}\t{selection_no_ref}\t{reference_genome_count}\t{discarded_genome_count}\n')
+        fl.write("species\tselected_genomes\treference_genomes\tdiscarded_genomes\n")
+        fl.write(
+            f"{args.species}\t{selection_no_ref}\t{reference_genome_count}\t{discarded_genome_count}\n"
+        )
 
 
 if __name__ == "__main__":
     main()
-
-

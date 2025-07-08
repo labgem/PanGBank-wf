@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 
-def get_info_from_yaml(yaml_info):
+def get_info_from_yaml_pangenome_info(yaml_info):
 
     name = yaml_info.stem
 
@@ -26,7 +26,34 @@ def get_info_from_yaml(yaml_info):
         "RGPs": pangenome_info["RGP"],
         "Spots": pangenome_info["Spots"],
         "Modules": pangenome_info["Modules"]["Number_of_modules"],
+        "Partitions": pangenome_info["Number_of_partitions"],
+        "Genomes_fluidity_all": pangenome_info["Genomes_fluidity"]["all"],
+        "Genomes_fluidity_shell": pangenome_info["Genomes_fluidity"]["shell"],
+        "Genomes_fluidity_cloud": pangenome_info["Genomes_fluidity"]["cloud"],
     }
+    return useful_info
+
+
+def get_info_from_yaml_genome_stat_summary(yaml_info):
+
+    name = yaml_info.stem
+
+    with open(yaml_info, "r") as fh:
+        pangenome_info = yaml.safe_load(fh)
+
+    metric_of_interest = [
+        "Persistent_families",
+        "Soft_core_families",
+        "Exact_core_families",
+        "Shell_families",
+        "Cloud_families",
+    ]
+
+    useful_info = {"Name": name}
+    for metric in metric_of_interest:
+        for stat in ["mean"]:
+            useful_info[f"{metric}_{stat}".capitalize()] = pangenome_info[metric][stat]
+
     return useful_info
 
 
@@ -52,9 +79,15 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-        "--yaml_dir",
-        help="Directory where yaml info file are stored",
+        "--yaml_info_dir",
+        help="Directory where yaml info files are stored",
         required=True,
+        type=Path,
+    )
+    parser.add_argument(
+        "--yaml_genome_stats_dir",
+        help="Directory where summarize genome stat files are stored",
+        required=False,
         type=Path,
     )
 
@@ -74,7 +107,9 @@ def parse_args(argv=None):
         default="INFO",
     )
 
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    return args
 
 
 def main(argv=None):
@@ -83,14 +118,27 @@ def main(argv=None):
 
     logging.basicConfig(level=args.log_level, format="[%(levelname)s] %(message)s")
 
-    collected_infos = []
+    name_to_info = {}
 
-    for yaml_info in args.yaml_dir.iterdir():
+    for i, yaml_info in enumerate(args.yaml_info_dir.iterdir()):
+        logging.info(f"{i}: {yaml_info}")
 
-        info = get_info_from_yaml(yaml_info)
-        collected_infos.append(info)
+        info = get_info_from_yaml_pangenome_info(yaml_info)
+        name_to_info[info["Name"]] = info
 
-    write_tsv_from_list_of_dict(args.output, collected_infos)
+    if args.yaml_genome_stats_dir:
+
+        for i, yaml_genome_stat_summary in enumerate(
+            args.yaml_genome_stats_dir.iterdir()
+        ):
+            logging.info(f"{i}: {yaml_info}")
+
+            info = get_info_from_yaml_genome_stat_summary(yaml_genome_stat_summary)
+            name_to_info[info["Name"]].update(info)
+
+    info_to_write = list(name_to_info.values())
+
+    write_tsv_from_list_of_dict(args.output, info_to_write)
 
 
 if __name__ == "__main__":

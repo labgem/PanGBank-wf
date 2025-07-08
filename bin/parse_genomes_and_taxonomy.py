@@ -143,12 +143,86 @@ def write_ppanggolin_input_files(
     """ """
     for sptax, input_accs in sptax_to_input_accs_filtered.items():
         species = sptax.split(";")[-1].replace(" ", "_")
+        sp_outdir = outdir / species
+        sp_outdir.mkdir(parents=True, exist_ok=True)
 
-        with open(outdir / f"{species}.tsv", "w") as flout:
+        with gzip.open(sp_outdir / "input_genomes.tsv.gz", "wt") as flout:
             flout.write(
-                "\n".join(f"{acc}\t{acc_to_genome_file[acc]}" for acc in input_accs)
+                "\n".join(
+                    f"{acc}\t{acc_to_genome_file[acc]}" for acc in sorted(input_accs)
+                )
                 + "\n"
             )
+
+
+def write_metadata_by_species(outdir, sptax_to_genome_metadata):
+
+    for sptax, genome_metadata_list in sptax_to_genome_metadata.items():
+
+        species = sptax.split(";")[-1].replace(" ", "_")
+
+        if len(genome_metadata_list) == 0:
+            continue
+
+        genome_metadata = genome_metadata_list[0]
+        assert "genomes" in genome_metadata, "genomes column not found in metadata file"
+
+        sp_outdir = outdir / species
+        sp_outdir.mkdir(parents=True, exist_ok=True)
+        with gzip.open(sp_outdir / "genomes_metadata.tsv.gz", "wt") as flout:
+            writer = csv.DictWriter(
+                flout,
+                fieldnames=genome_metadata.keys(),
+                delimiter="\t",
+            )
+
+            writer.writeheader()
+
+            writer.writerows(genome_metadata_list)
+
+
+def parse_metadata_file(genome_metadata_file: Path, genome_accessions_to_taxonomy):
+    """ """
+    open_func = gzip.open if genome_metadata_file.suffix == ".gz" else open
+
+    sptax_to_genome_metadata = defaultdict(list)
+
+    with open_func(genome_metadata_file, mode="rt") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+
+        for metadata_row in reader:
+            try:
+                genome_acc = metadata_row.get("genomes")
+
+            except KeyError:
+                raise KeyError(
+                    f"genomes column not found in metadata file {genome_metadata_file}"
+                )
+
+            if genome_acc in genome_accessions_to_taxonomy:
+                sptax_to_genome_metadata[
+                    genome_accessions_to_taxonomy[genome_acc]
+                ].append((metadata_row))
+
+    return sptax_to_genome_metadata
+
+
+def check_taxonomy_consistency(taxonomies):
+
+    species_to_taxonomies = defaultdict(set)
+    problematic_taxonomies = 0
+
+    for taxonomy in taxonomies:
+        species = taxonomy.split(";")[-1]
+        species_to_taxonomies[species].add(taxonomy)
+
+    for species, taxonomies in species_to_taxonomies.items():
+        if len(taxonomies) > 1:
+            logging.warning(f"Species {species} has multiple taxonomies: {taxonomies}")
+
+            problematic_taxonomies += 1
+    if problematic_taxonomies:
+        raise ValueError(f"{problematic_taxonomies} species have multiple taxonomies.")
 
 
 def parse_args(argv=None):
@@ -176,6 +250,14 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "--genome_metadata",
+        type=Path,
+        required=False,
+        help="Path to a metadata file in TSV format corresponding to the input genomes. "
+        "Expected to have a column genomes containing genome accessions.",
+    )
+
+    parser.add_argument(
         "--min_genomes",
         help="Minimum number of genomes required to build a pangenome.",
         default=15,
@@ -184,8 +266,8 @@ def parse_args(argv=None):
 
     parser.add_argument(
         "-o",
-        "--ppanggolin_files_outdir",
-        help="Directory where ppanggolin input files will be created.",
+        "--outdir",
+        help="Directory where species dir will be create to store ppanggolin input files and genome metadata by species if provided.",
         default="ppanggolin_input_files",
         type=Path,
     )
@@ -228,7 +310,9 @@ def main(argv=None):
         )
         sys.exit(2)
 
-    args.ppanggolin_files_outdir.mkdir(parents=True, exist_ok=True)
+    uninformative_species = {"s__"}
+
+    args.outdir.mkdir(parents=True, exist_ok=True)
 
     logging.info(f"Parsing genome file {args.genomes}")
     acc_to_genome_file = parse_genome_files(args.genomes)
@@ -247,16 +331,35 @@ def main(argv=None):
         sptax: accs
         for sptax, accs in sptax_to_input_accs.items()
         if len(accs) >= args.min_genomes
+        and sptax.split(";")[-1] not in uninformative_species
+    }
+
+    filtered_acc_to_sptax = {
+        acc: sptax
+        for sptax, accs in sptax_to_input_accs_filtered.items()
+        for acc in accs
     }
 
     logging.info(
         f"{len(sptax_to_input_accs_filtered)} species have enough genomes to build a pangenome."
     )
+    check_taxonomy_consistency(sptax_to_input_accs_filtered.keys())
 
-    logging.info(f"Writing ppanggolin input files in {args.ppanggolin_files_outdir}")
+    logging.info(f"Writing ppanggolin input files in {args.outdir}")
     write_ppanggolin_input_files(
-        args.ppanggolin_files_outdir, sptax_to_input_accs_filtered, acc_to_genome_file
+        args.outdir, sptax_to_input_accs_filtered, acc_to_genome_file
     )
+
+    if args.genome_metadata:
+        logging.info(
+            f"Splitting and writing genome metadata by species in {args.outdir}"
+        )
+
+        sptax_to_genome_metadata = parse_metadata_file(
+            args.genome_metadata, filtered_acc_to_sptax
+        )
+
+        write_metadata_by_species(args.outdir, sptax_to_genome_metadata)
 
 
 if __name__ == "__main__":

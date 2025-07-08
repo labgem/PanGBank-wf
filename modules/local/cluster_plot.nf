@@ -1,10 +1,10 @@
 process CLUSTER_PLOT {
     label 'process_single'
 
-    conda "bioconda::ppanggolin=2.2.1"
+    conda "bioconda::ppanggolin=2.2.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
+        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
 
     input:
     path cluster_stat

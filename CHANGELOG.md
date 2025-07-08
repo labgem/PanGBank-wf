@@ -3,6 +3,24 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.0.2 - [date]
+
+### `Added`
+
+- You can now associate external metadata with genomes using the `--genome_metadata` parameter. These metadata are stored in the pangenome file.
+- PPanGGOLiN process now produces tile plot to describe pangenome.
+- Add genome in pangenome stats summary at pangenome level.
+- Add proksee JSON map in the output.
+- Compute genomes fluidity for each pangenome.
+
+### `Fixed`
+
+- Updated the storage of persistent families Mash sketch file to include only relative paths.
+
+### `Dependencies`
+
+### `Deprecated`
+
 ## 0.0.1 - [2025-01-14]
 
 Initial release of labgem/pangbank, created with the [nf-core](https://nf-co.re/) template.

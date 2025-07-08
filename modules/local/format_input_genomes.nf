@@ -3,17 +3,17 @@ process FORMAT_INPUT_GENOMES {
     tag "$meta.id"
 
     // reuse ppanggolin env as it as already been downloaded and used
-    conda "bioconda::ppanggolin=2.2.1"
+    conda "bioconda::ppanggolin=2.2.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.1--py311haab0aaa_1' :
-        'biocontainers/ppanggolin:2.2.1--py311haab0aaa_1' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
+        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
 
     input:
     tuple val(meta), path(selected_genomes), path(genome_name_to_fasta), path(fasta_to_original_path)
     path reference_genomes
 
     output:
-    tuple val(meta), path("formatted_selected_genomes.tsv"), emit: genome_selection_ppanggo_input
+    tuple val(meta), path("formatted_selected_genomes.tsv.gz"), emit: genome_selection_ppanggo_input
     path "summary_selection.tsv", emit: dereplication_summary
     path "versions.yml"      , emit: versions
 
@@ -29,7 +29,7 @@ process FORMAT_INPUT_GENOMES {
     echo $reference_genomes
     format_ppanggo_input_from_genome_selection.py --selected_genomes $selected_genomes \\
                                 --genome_name_to_path $genome_name_to_fasta \\
-                                --formatted_genomes formatted_selected_genomes.tsv \\
+                                --formatted_genomes formatted_selected_genomes.tsv.gz \\
                                 $fasta_to_original_path_arg $reference_genomes_arg \\
                                 --summary_selection summary_selection.tsv --species ${meta.id} \\
 
@@ -40,4 +40,3 @@ process FORMAT_INPUT_GENOMES {
     """
 
 }
-

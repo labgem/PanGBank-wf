@@ -1,10 +1,14 @@
 draw:
   # draw the tile plot of the pangenome
-  tile_plot: False
+  tile_plot: True
   # draw the U-curve of the pangenome
-  ucurve: False
+  ucurve: True
   # draw plots for spots of the pangenome
   draw_spots: False
+  # Include a dendrogram for genomes in the tile plot based on the presence/absence of gene families.
+  add_dendrogram: True
+  # Display gene metadata as hover text for each cell in the tile plot.
+  add_metadata: True
 
 write_pangenome:
   # write a gexf file with all the annotations and all the genes of each gene family
@@ -42,7 +46,7 @@ write_genomes:
   # Generate a gff file for each genome containing pangenome annotations.
   gff: False
   # Generate JSON map files for PROKSEE for each genome containing pangenome annotations to be used in proksee.
-  proksee: False
+  proksee: True
   # Compress the files in .gz
   compress: True
   # Specify the genomes for which to generate output. You can provide a list of genome names either directly in the command line separated by commas, or by referencing a file containing the list of genome names, with one name per line.
