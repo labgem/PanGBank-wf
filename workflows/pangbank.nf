@@ -29,6 +29,8 @@ include { SUMMARIZE_GENOME_STATS } from '../modules/local/summarize_genome_stats
 include { GATHER_PANGENOME_INFO } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
 include { MASH_SKETCH } from '../modules/local/mash_sketch'
+include { INDEX_PANGENOME } from '../modules/local/metapang/index_pangenome'
+include { INDEX_BANK } from '../modules/local/metapang/index_bank'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -77,7 +79,7 @@ workflow PANGBANK {
 
 
 
-    if (!params.skip_dereplication) {
+    if (!params.skip_dereplication && !params.pangenomes) {
 
         ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
             to_dereplicate: meta.genomes_count > params.dereplication_threshold
@@ -91,22 +93,71 @@ workflow PANGBANK {
         ch_multiqc_files = ch_multiqc_files.mix(GENOME_DEREPLICATION.out.multiqc_files)
     }
 
-    ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
-        large: meta.genomes_count >= params.large_pangenome_cutoff
-        medium: meta.genomes_count >= params.large_pangenome_cutoff / 4
-        small: true
+    if (!params.pangenomes) {
+
+        ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
+            large: meta.genomes_count >= params.large_pangenome_cutoff
+            medium: meta.genomes_count >= params.large_pangenome_cutoff / 4
+            small: true
+        }
+
+
+        PPANGGOLIN_ALL_LARGE(ch_species_branched.large, ch_ppanggolin_config.toList())
+        PPANGGOLIN_ALL_MEDIUM(ch_species_branched.medium, ch_ppanggolin_config.toList())
+        PPANGGOLIN_ALL_SMALL(ch_species_branched.small, ch_ppanggolin_config.toList())
+
+        ch_versions = ch_versions.mix(PPANGGOLIN_ALL_SMALL.out.versions)
+        ch_versions = ch_versions.mix(PPANGGOLIN_ALL_MEDIUM.out.versions)
+        ch_versions = ch_versions.mix(PPANGGOLIN_ALL_LARGE.out.versions)
+
+        ch_pangenomes = PPANGGOLIN_ALL_SMALL.out.pangenome.concat(PPANGGOLIN_ALL_MEDIUM.out.pangenome, PPANGGOLIN_ALL_LARGE.out.pangenome)
+    } else {
+        ch_pangenomes = ch_ppanggo_inputs_meta.map { meta, _genome_file -> 
+            [meta, params.pangenomes + '/' + meta.species + '/pangenome.h5']
+        }
     }
 
+    if (params.build_bank_index) {
+        ch_index_bank_input = ch_ppanggo_inputs_meta.map { meta, genome_file ->
+            def paths = genome_file.withInputStream { stream ->
+                new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
+                    reader.readLines().collect {line -> line.split('\t')[1]}.join(' ')
+                }
+            }
+            def species = meta.species
+            return "${species} ${paths}\n"
+        }.collectFile(name: 'index_bank_input.tsv')
 
-    PPANGGOLIN_ALL_LARGE(ch_species_branched.large, ch_ppanggolin_config.toList())
-    PPANGGOLIN_ALL_MEDIUM(ch_species_branched.medium, ch_ppanggolin_config.toList())
-    PPANGGOLIN_ALL_SMALL(ch_species_branched.small, ch_ppanggolin_config.toList())
+        INDEX_BANK(
+            ch_index_bank_input,
+            Channel.value(params.index_bank_kmer_size),
+            Channel.value(params.index_bank_scaled)
+        ) 
 
-    ch_versions = ch_versions.mix(PPANGGOLIN_ALL_SMALL.out.versions)
-    ch_versions = ch_versions.mix(PPANGGOLIN_ALL_MEDIUM.out.versions)
-    ch_versions = ch_versions.mix(PPANGGOLIN_ALL_LARGE.out.versions)
+        ch_index_report = INDEX_BANK.out.stats.collectFile(
+            name: 'metapang_index_summary.tsv', keepHeader: true
+        )
+        ch_versions = ch_versions.mix(INDEX_BANK.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(ch_index_report)
+    }
 
-    ch_pangenomes = PPANGGOLIN_ALL_SMALL.out.pangenome.concat(PPANGGOLIN_ALL_MEDIUM.out.pangenome, PPANGGOLIN_ALL_LARGE.out.pangenome)
+    if (params.build_pangenome_dbg) {
+        ch_genome_pangenome = ch_pangenomes.join(ch_ppanggo_inputs_meta)
+
+        INDEX_PANGENOME(
+            ch_genome_pangenome,
+            Channel.value(params.index_pangenome_kmer_size),
+            Channel.value(params.index_pangenome_annotation_type),
+        )
+
+        ch_dbg_report = INDEX_PANGENOME.out.stats.collectFile(
+            name: 'metapang_dbg_summary.tsv', keepHeader: true, skip: 1
+        )
+        ch_versions = ch_versions.mix(INDEX_PANGENOME.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(ch_dbg_report)
+    }
+
+    if (!params.pangenomes) {
 
     PPANGGOLIN_FASTA(ch_pangenomes)
     ch_versions = ch_versions.mix(PPANGGOLIN_FASTA.out.versions)
@@ -139,6 +190,7 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(GATHER_PANGENOME_INFO.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(GATHER_PANGENOME_INFO.out.summary)
 
+    }
     //
     // Collate and save software versions
     //
