@@ -78,6 +78,50 @@
                 }
             }
         },
+        "metapang_options": {
+            "title": "MetaPang options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "pangenomes": {
+                    "type": "string",
+                    "description": "Path to a directory containing precomputed pangenomes in PPanGGoLiN format. If provided, the pipeline will skip the pangenome construction step and directly proceed to indexing using MetaPang.",
+                    "default": null
+                },
+                "build_bank_index": {
+                    "type": "boolean",
+                    "description": "Build a search index for the pangenome database using MetaPang.",
+                    "default": false
+                },
+                "index_bank_kmer_size": {
+                    "type": "integer",
+                    "description": "K-mer size to use for bank indexing.",
+                    "default": 31
+                },
+                "index_bank_scaled": {
+                    "type": "integer",
+                    "description": "",
+                    "default": 1000
+                },
+                "build_pangenome_dbg": {
+                    "type": "boolean",
+                    "description": "Build a de Bruijn graph (DBG) representation of the pangenomes using MetaPang.",
+                    "default": true
+                },
+                "index_pangenome_kmer_size": {
+                    "type": "integer",
+                    "description": "K-mer size to use for pangenome indexing.",
+                    "default": 31
+                },
+                "index_pangenome_annotation_type": {
+                    "type": "string",
+                    "description": "Type of annotation to use for pangenome construction.",
+                    "default": "rd_brwt",
+                    "enum": ["rainbowfish", "rd_brwt", "rd_sparse"]
+                }
+            }
+        },
         "ressources_options": {
             "title": "Ressources options",
             "type": "object",

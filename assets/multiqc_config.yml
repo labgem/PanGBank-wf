@@ -18,6 +18,15 @@ run_modules:
   - custom_content
 
 custom_data:
+  order:
+    - summary_pangenome
+    - genomes
+    - partitions
+    - spots
+    - modules
+    - dereplication
+    - summary_metapang_dbg
+
   summary_pangenome:
     section_name: "Pangenome summary table"
     description: "This table provides an overview of key metrics describing the pangenome and its structural components."
@@ -114,6 +123,40 @@ custom_data:
       title: "Genome Distribution After Dereplication"
       ylab: "Genomes"
 
+  summary_metapang_dbg:
+    section_name: "Pangenome DBG stats"
+    description: "This table shows the size of the De Bruijn Graph files for each species."
+    plot_type: "table"
+    pconfig:
+      id: "summary_dbg_metrics"
+      title: "Summary of De Bruijn Graph metrics"
+      namespace: "De Bruijn Graph metrics"
+    headers:
+      Species:
+        description: "The species name."
+      DBG size:
+        description: "Size of the De Bruijn Graph in megabytes."
+        format: "{:,.2f}"
+      Annotation size:
+        description: "Size of DBG annotations in megabytes."
+        format: "{:,.2f}"
+
+
+  summary_metapang_index:
+    section_name: "Bank index stats"
+    description: "This table shows the size of the bank index files."
+    plot_type: "table"
+    pconfig:
+      id: "summary_index_metrics"
+      title: "Summary of index metrics"
+      namespace: "Index metrics"
+    headers:
+      File:
+        description: "Filename."
+      Size:
+        description: "Size in megabytes."
+        format: "{:,.4f}"
+
 sp:
   summary_pangenome:
     fn: "pangenome_summary.tsv"
@@ -132,3 +175,9 @@ sp:
     shared: true
   dereplication:
     fn: "dereplication_summary.tsv"
+  summary_metapang_index:
+    fn: "metapang_index_summary.tsv"
+    shared: true
+  summary_metapang_dbg:
+    fn: "metapang_dbg_summary.tsv"
+    shared: true
