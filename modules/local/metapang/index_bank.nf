@@ -16,7 +16,7 @@ process INDEX_BANK {
         
     script:
     """
-    metapang index bank --input ${index_bank_input_tsv} --output bank_index --threads ${task.cpus}
+    metapang index bank --input ${index_bank_input_tsv} --output bank_index --threads ${task.cpus} --kmer-size ${kmer_size} --scaled ${scaled} 
 
     SIZEG=\$(stat -c%s "bank_index/genome_index.sbt.zip")
     SIZEP=\$(stat -c%s "bank_index/pangenome_index.sbt.zip")

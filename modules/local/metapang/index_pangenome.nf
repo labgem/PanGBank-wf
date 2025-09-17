@@ -36,6 +36,8 @@ process INDEX_PANGENOME {
     echo -e "Species\tDBG size\tAnnotation size" > stats.txt
     echo -e "${meta.species}\t\$SIZE_DBG\t\$SIZE_ANNODBG" >> stats.txt
 
+    rm -rf ${meta.species}_tmp
+
     awk 'BEGIN {OFS="\t"} {if (NR > 1) {\$2 = \$2 / (1024*1024); \$3 = \$3 / (1024*1024)}; print}' stats.txt > stats_tmp.txt
     mv stats_tmp.txt stats.txt
     
