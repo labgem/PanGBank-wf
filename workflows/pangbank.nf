@@ -119,13 +119,35 @@ workflow PANGBANK {
 
     if (params.build_bank_index) {
         ch_index_bank_input = ch_ppanggo_inputs_meta.map { meta, genome_file ->
-            def paths = genome_file.withInputStream { stream ->
-                new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
-                    reader.readLines().collect {line -> line.split('\t')[1]}.join(' ')
+            // When building the index from an existing collection of pangenomes, genome_file contains
+            // all input genomes and it is not filtered by the dereplication process. In that case,
+            // we filter the md5sum file containing the list of genomes used to build the pangenome.
+            if (params.pangenomes) {
+                def md5file = file("${params.pangenomes}/${meta.species}/genomes_md5sum.tsv.gz")
+                def valid = md5file.withInputStream { stream ->
+                    new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
+                        reader.readLines().collect { line -> line.split('\t')[0] }.toSet()
+                    }
                 }
+
+                def paths = genome_file.withInputStream { stream ->
+                    new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
+                        reader.readLines()
+                              .findAll { line -> valid.contains(line.split('\t')[0]) }
+                              .collect { line -> line.split('\t')[1] }
+                              .join(' ')
+                    }
+                }
+                return "${meta.species} ${paths}\n"
             }
-            def species = meta.species
-            return "${species} ${paths}\n"
+            else {
+                def paths = genome_file.withInputStream { stream ->
+                    new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
+                        reader.readLines().collect {line -> line.split('\t')[1]}.join(' ')
+                    }
+                }
+                return "${meta.species} ${paths}\n"
+            }
         }.collectFile(name: 'index_bank_input.tsv')
 
         INDEX_BANK(
@@ -142,7 +164,32 @@ workflow PANGBANK {
     }
 
     if (params.build_pangenome_dbg) {
-        ch_genome_pangenome = ch_pangenomes.join(ch_ppanggo_inputs_meta)
+        if (params.pangenomes) {
+            def outdir = workflow.workDir.resolve("dbg/inputs")
+            outdir.mkdirs()
+            
+            ch_filtered_genomes = ch_ppanggo_inputs_meta.map { meta, genome_file -> 
+                def md5file = file("${params.pangenomes}/${meta.species}/genomes_md5sum.tsv.gz")
+                def filtered_lines = genome_file.withInputStream { stream ->
+                    new java.util.zip.GZIPInputStream(stream).withReader("UTF-8") { reader ->
+                        def genome_lines = reader.readLines()
+                        def valid_ids = md5file.withInputStream { opt_stream ->
+                            new java.util.zip.GZIPInputStream(opt_stream).withReader("UTF-8") { opt_reader ->
+                                opt_reader.readLines().collect { line -> line.split('\t')[0] }
+                            }
+                        }
+                        genome_lines.findAll { line -> line.split('\t')[0] in valid_ids }
+                    }
+                }
+                def filtered_file = file("${outdir}/${meta.species}_filtered_genomes.tsv")
+                filtered_file.text = filtered_lines.join('\n')
+                return [meta, filtered_file]
+            }
+            ch_genome_pangenome = ch_pangenomes.join(ch_filtered_genomes)
+        }
+        else {
+            ch_genome_pangenome = ch_pangenomes.join(ch_ppanggo_inputs_meta)
+        }
 
         INDEX_PANGENOME(
             ch_genome_pangenome,
