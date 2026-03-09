@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Added`
 
 - Array specific profile inside custom config to improve overall cluster usage and increases scheduler friendliness
+- Added support for TSV files containing genome-to-translation table mappings via the `--translation_tables` parameter. This allows to specify the correct translation table to use for a pangenome.
 
-## 0.0.2 - [date]
+## 0.0.2 - [2025-07-08]
 
 ### `Added`
 
