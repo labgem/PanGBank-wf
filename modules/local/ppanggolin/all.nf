@@ -28,10 +28,11 @@ process PPANGGOLIN_ALL {
     script:
     def args = task.ext.args ?: ''
     def input_arg = meta.file_type == "annotation" ? "--anno" : "--fasta"
+    def translation_table_arg = meta.translation_table ? "--translation_table ${meta.translation_table}" : ''
 
 
     """
-    ppanggolin all $input_arg  $genome_file --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $args
+    ppanggolin all $input_arg  $genome_file --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $args $translation_table_arg
 
     ppanggolin metrics --pangenome ${meta.species}/pangenome.h5 --genome_fluidity
 
