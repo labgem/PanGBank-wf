@@ -26,7 +26,7 @@ process PARSE_GENOMES_AND_TAXONOMY {
 
     script:
     def genome_metadata_arg = genome_metadata.name != 'NO_FILE' ? "--genome_metadata $genome_metadata" : ''
-    def genome_translation_tables_arg = translation_tables.name != 'NO_FILE' ? "--genome_translation_table $translation_tables" : ''
+    def genome_translation_tables_arg = translation_tables.name != 'NO_FILE_2' ? "--genome_translation_table $translation_tables" : ''
 
     """
     parse_genomes_and_taxonomy.py --genomes $genomes --taxonomy $taxonomy\
