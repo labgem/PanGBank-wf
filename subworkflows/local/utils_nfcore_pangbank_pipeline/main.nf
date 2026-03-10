@@ -55,6 +55,30 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate parameters and generate parameter summary to stdout
     //
+
+
+    beforeText = """
+-\033[2m----------------------------------------------------\033[0m-
+
+\033[0;34m _____             _____ \033[0;32m ____              _  __ \033[0m
+\033[0;34m|  __ \\           / ____|\033[0;32m|  _ \\            | |/ / \033[0m
+\033[0;34m| |__) |_ _ _ __ | |  __ \033[0;32m| |_) | __ _ _ __ | ' /  \033[0m
+\033[0;34m|  ___/ _` | '_ \\| | |_ |\033[0;32m|  _ < / _` | '_ \\|  <   \033[0m
+\033[0;34m| |  | (_| | | | | |__| |\033[0;32m| |_) | (_| | | | | . \\  \033[0m
+\033[0;34m|_|   \\__,_|_| |_|\\_____|\033[0;32m|____/ \\__,_|_| |_|_|\\_\\ \033[0m
+
+\033[0;35m ${workflow.manifest.name} ${workflow.manifest.version}\033[0m
+-\033[2m----------------------------------------------------\033[0m-
+"""
+
+
+    afterText = """${workflow.manifest.doi ? "* The pipeline\n" : ""}${workflow.manifest.doi.tokenize(",").collect { "  https://doi.org/${it.trim().replace('https://doi.org/','')}"}.join("\n")}${workflow.manifest.doi ? "\n" : ""}
+* The nf-core framework
+    https://doi.org/10.1038/s41587-020-0439-x
+
+* Software dependencies
+    https://github.com/${workflow.manifest.name}/blob/master/CITATIONS.md
+"""
     command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samplesheet.csv --outdir <OUTDIR>"
 
     UTILS_NFSCHEMA_PLUGIN (
@@ -64,8 +88,8 @@ workflow PIPELINE_INITIALISATION {
         help,
         help_full,
         show_hidden,
-        "",
-        "",
+        beforeText,
+        afterText,
         command
     )
 
