@@ -73,13 +73,13 @@ workflow PANGBANK {
 
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs
         .flatten()
-        .map { create_ppanggo_input_channel(it) }
+        .map {it -> create_ppanggo_input_channel(it) }
 
 
 
     if (!params.skip_dereplication) {
 
-        ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
+        ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, _genome_file ->
             to_dereplicate: meta.genomes_count > params.dereplication_threshold
             other: true
         }
@@ -91,7 +91,7 @@ workflow PANGBANK {
         ch_multiqc_files = ch_multiqc_files.mix(GENOME_DEREPLICATION.out.multiqc_files)
     }
 
-    ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
+    ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, _genome_file ->
         large: meta.genomes_count >= params.large_pangenome_cutoff
         medium: meta.genomes_count >= params.large_pangenome_cutoff / 4
         small: true
@@ -121,7 +121,7 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(PPANGGOLIN_METADATA.out.versions)
 
     ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta
-        .collect { meta, fasta -> fasta }
+        .collect { _meta, fasta -> fasta }
         .map { fasta -> [[id: "families_persistent_all.msh"], fasta] }
 
 
@@ -142,7 +142,7 @@ workflow PANGBANK {
     //
     // Collate and save software versions
     //
-    def topic_versions = Channel.topic("versions")
+    def topic_versions = channel.topic("versions")
         .distinct()
         .branch { entry ->
             versions_file: entry instanceof Path
