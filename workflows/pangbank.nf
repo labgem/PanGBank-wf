@@ -67,6 +67,7 @@ workflow PANGBANK {
         ch_input_genomes,
         file(params.taxonomy),
         file(params.genome_metadata),
+        file(params.translation_tables),
         ch_min_genomes,
     )
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
@@ -75,7 +76,7 @@ workflow PANGBANK {
         .flatten()
         .map {it -> create_ppanggo_input_channel(it) }
 
-
+    ch_ppanggo_inputs_meta = addTranslationTable(ch_ppanggo_inputs_meta, PARSE_GENOMES_AND_TAXONOMY.out.species_translation_tables)
 
     if (!params.skip_dereplication) {
 
@@ -314,12 +315,27 @@ def groupMetadataAndPangenome(ch_pangenomes, ch_genome_metadata) {
 }
 
 
+def addTranslationTable(ch_ppanggo_inputs_meta, species_translation_tables) {
+
+    def ch_species_meta_trans_table = species_translation_tables.splitCsv(sep: '\t', header: ['species', 'translation_table'])
+                                .map { row -> [row.species,row.translation_table] }
+
+    ch_ppanggo_inputs_meta
+        .map { meta, input_file -> [meta.species, [meta, input_file]] }
+        .concat(ch_species_meta_trans_table)
+        .groupTuple(size: 2, remainder:true)
+        .map { tuple ->
+            def (meta_input, translation_table) = tuple[1]
+            def (meta, pangenome) = meta_input
+            meta.translation_table = translation_table
+            return [meta, pangenome]
+        }
+}
 
 def create_ppanggo_input_channel(input_file) {
 
     // create meta map
     def meta = [:]
-
 
     meta.species = input_file.parent.getSimpleName()
     meta.genomes_count = input_file.countLines(decompress: true)
