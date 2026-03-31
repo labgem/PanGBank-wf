@@ -2,10 +2,10 @@ process PARSE_GENOMES_AND_TAXONOMY {
     label 'process_single'
 
     // reuse ppanggolin env as it as already been downloaded and used
-    conda "bioconda::ppanggolin=2.2.4"
+    conda "bioconda::ppanggolin=2.3.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
-        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.3.0--py312h247cb63_0' :
+        'biocontainers/ppanggolin:2.3.0--py312h247cb63_0' }"
 
     input:
     path genomes
