@@ -8,7 +8,7 @@ import argparse
 import csv
 import logging
 import sys
-from collections import defaultdict
+from collections import defaultdict, Counter
 from pathlib import Path
 import gzip
 
@@ -207,6 +207,71 @@ def parse_metadata_file(genome_metadata_file: Path, genome_accessions_to_taxonom
     return sptax_to_genome_metadata
 
 
+def parse_translation_table_file(
+    translation_table_file: Path, genome_accessions_to_taxonomy: dict[str, str]
+) -> dict[str, list[int]]:
+    """
+    Parse translation table file and associate translation tables with species taxonomy.
+
+    Args:
+        translation_table_file: Path to TSV file containing genome accessions and translation tables
+        genome_accessions_to_taxonomy: Dictionary mapping genome accessions to their taxonomy strings
+
+    Returns:
+        Dictionary mapping species taxonomy to list of translation tables for each genome
+    """
+    open_func = gzip.open if translation_table_file.suffix == ".gz" else open
+
+    sptax_to_translation_table = defaultdict(list)
+
+    with open_func(translation_table_file, mode="rt") as f:
+
+        reader = csv.DictReader(
+            f, delimiter="\t", fieldnames=["genomes", "translation_table"]
+        )
+
+        for row in reader:
+            genome_acc = row.get("genomes")
+
+            if genome_acc in genome_accessions_to_taxonomy:
+
+                translation_table = row.get("translation_table")
+                if translation_table is None or not translation_table.isdigit():
+                    logging.debug(
+                        f"Invalid translation table value for genome {genome_acc}: {translation_table}. Skipping."
+                    )
+                    continue
+
+                sptax_to_translation_table[
+                    genome_accessions_to_taxonomy[genome_acc]
+                ].append(translation_table)
+
+    logging.info(
+        f"Parsed translation table for {sum(len(tables) for tables in sptax_to_translation_table.values())} genomes across {len(sptax_to_translation_table)} species."
+    )
+    return sptax_to_translation_table
+
+
+def write_translation_table_by_species(outdir, sptax_to_translation_table):
+
+    with open(outdir / "species_to_translation_tables.tsv", "wt") as flout:
+
+        for sptax, translation_table_list in sptax_to_translation_table.items():
+
+            species = sptax.split(";")[-1].replace(" ", "_")
+
+            if len(translation_table_list) == 0:
+                continue
+            if len(Counter(translation_table_list)) > 1:
+                logging.warning(
+                    f"Species {species} has multiple translation tables: {Counter(translation_table_list)}. The most common one will be used."
+                )
+            most_common_translation_table = Counter(translation_table_list).most_common(
+                1
+            )[0][0]
+            flout.write(f"{species}\t{most_common_translation_table}\n")
+
+
 def check_taxonomy_consistency(taxonomies):
 
     species_to_taxonomies = defaultdict(set)
@@ -255,6 +320,13 @@ def parse_args(argv=None):
         required=False,
         help="Path to a metadata file in TSV format corresponding to the input genomes. "
         "Expected to have a column genomes containing genome accessions.",
+    )
+
+    parser.add_argument(
+        "--genome_translation_table",
+        type=Path,
+        required=False,
+        help="Path with genome accessions and their corresponding translation table in TSV format. ",
     )
 
     parser.add_argument(
@@ -361,6 +433,16 @@ def main(argv=None):
 
         write_metadata_by_species(args.outdir, sptax_to_genome_metadata)
 
+    if args.genome_translation_table:
+        logging.info(
+            f"Splitting and writing translation table by species in {args.outdir}"
+        )
+
+        sptax_to_translation_table = parse_translation_table_file(
+            args.genome_translation_table, filtered_acc_to_sptax
+        )
+
+        write_translation_table_by_species(args.outdir, sptax_to_translation_table)
 
 if __name__ == "__main__":
     sys.exit(main())

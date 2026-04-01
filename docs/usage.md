@@ -9,7 +9,6 @@
 PanGBank takes two required input files:
 
 - **`--genomes`**: A TSV file with two columns:
-
   - **Column 1**: Genome name
   - **Column 2**: File path to the genome sequence
 
@@ -38,6 +37,33 @@ To add metadata, provide a **TSV file** with:
 | Genome_3 | C      | False   | Desc_3      |
 | ...      | ...    | ...     | ...         |
 | Genome_n | N      | False   | Desc_n      |
+
+Specify the file with `--genome_metadata`
+
+## Specifying Translation Tables
+
+You can specify the translation table to use for gene calling and protein translation when building the pangenome. This ensures that gene prediction and protein sequences are correct for each species.
+
+If genomes within a pangenome have different translation tables specified, the most common one will be used for that species.
+
+### Translation Table File Format
+
+To specify translation tables, provide a **TSV file** with two columns:
+
+- **Column 1**: Genome name (must match names in `--genomes` and `--taxonomy`)
+- **Column 2**: Translation table number (integer value, e.g., 11 for bacterial code, 4 for Mycoplasma)
+
+**Example translation table file:**
+
+| genomes  | translation_table |
+| -------- | ----------------- |
+| Genome_1 | 11                |
+| Genome_2 | 4                 |
+| Genome_3 | 11                |
+| ...      | ...               |
+| Genome_n | 11                |
+
+Specify the file with `--translation_tables`
 
 ## Running the pipeline
 
@@ -134,7 +160,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 - `shifter`
   - A generic configuration profile to be used with [Shifter](https://nersc.gitlab.io/development/shifter/how-to-use/)
 - `charliecloud`
-  - A generic configuration profile to be used with [Charliecloud](https://hpc.github.io/charliecloud/)
+  - A generic configuration profile to be used with [Charliecloud](https://charliecloud.io/)
 - `apptainer`
   - A generic configuration profile to be used with [Apptainer](https://apptainer.org/)
 - `wave`

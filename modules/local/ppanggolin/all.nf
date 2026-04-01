@@ -4,10 +4,10 @@ process PPANGGOLIN_ALL {
 
     tag { "${meta.species}" }
 
-    conda "bioconda::ppanggolin=2.2.4"
+    conda "bioconda::ppanggolin=2.3.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
-        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.3.0--py312h247cb63_0' :
+        'biocontainers/ppanggolin:2.3.0--py312h247cb63_0' }"
 
     input:
         tuple val(meta), path(genome_file)
@@ -28,10 +28,11 @@ process PPANGGOLIN_ALL {
     script:
     def args = task.ext.args ?: ''
     def input_arg = meta.file_type == "annotation" ? "--anno" : "--fasta"
+    def translation_table_arg = meta.translation_table ? "--translation_table ${meta.translation_table}" : ''
 
 
     """
-    ppanggolin all $input_arg  $genome_file --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $args
+    ppanggolin all $input_arg  $genome_file --output ${meta.species} --config $ppanggolin_config  --cpu $task.cpus  $args $translation_table_arg
 
     ppanggolin metrics --pangenome ${meta.species}/pangenome.h5 --genome_fluidity
 

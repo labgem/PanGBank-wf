@@ -52,13 +52,13 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pang
 workflow PANGBANK {
     main:
 
-    ch_ppanggolin_config = Channel.fromPath("${projectDir}/assets/ppanggolin_config.yml", checkIfExists: true)
+    ch_ppanggolin_config = channel.fromPath("${projectDir}/assets/ppanggolin_config.yml", checkIfExists: true)
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
-    ch_min_genomes = Channel.value(params.min_genomes)
+    ch_min_genomes = channel.value(params.min_genomes)
 
-    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = channel.empty()
 
     ch_input_genomes = manage_input_genomes(file(params.genomes))
 
@@ -67,19 +67,20 @@ workflow PANGBANK {
         ch_input_genomes,
         file(params.taxonomy),
         file(params.genome_metadata),
+        file(params.translation_tables),
         ch_min_genomes,
     )
     ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
 
     ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs
         .flatten()
-        .map { create_ppanggo_input_channel(it) }
+        .map {it -> create_ppanggo_input_channel(it) }
 
-
+    ch_ppanggo_inputs_meta = addTranslationTable(ch_ppanggo_inputs_meta, PARSE_GENOMES_AND_TAXONOMY.out.species_translation_tables)
 
     if (!params.skip_dereplication) {
 
-        ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
+        ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, _genome_file ->
             to_dereplicate: meta.genomes_count > params.dereplication_threshold
             other: true
         }
@@ -91,7 +92,7 @@ workflow PANGBANK {
         ch_multiqc_files = ch_multiqc_files.mix(GENOME_DEREPLICATION.out.multiqc_files)
     }
 
-    ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, genome_file ->
+    ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, _genome_file ->
         large: meta.genomes_count >= params.large_pangenome_cutoff
         medium: meta.genomes_count >= params.large_pangenome_cutoff / 4
         small: true
@@ -121,7 +122,7 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(PPANGGOLIN_METADATA.out.versions)
 
     ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta
-        .collect { meta, fasta -> fasta }
+        .collect { _meta, fasta -> fasta }
         .map { fasta -> [[id: "families_persistent_all.msh"], fasta] }
 
 
@@ -142,7 +143,25 @@ workflow PANGBANK {
     //
     // Collate and save software versions
     //
-    softwareVersionsToYAML(ch_versions)
+    def topic_versions = channel.topic("versions")
+        .distinct()
+        .branch { entry ->
+            versions_file: entry instanceof Path
+            versions_tuple: true
+        }
+
+    def topic_versions_string = topic_versions.versions_tuple
+        .map { process, tool, version ->
+            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+        }
+        .groupTuple(by:0)
+        .map { process, tool_versions ->
+            tool_versions.unique().sort()
+            "${process}:\n${tool_versions.join('\n')}"
+        }
+
+    softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
+        .mix(topic_versions_string)
         .collectFile(
             storeDir: "${params.outdir}/pipeline_info",
             name: 'pangbank_software_' + 'mqc_' + 'versions.yml',
@@ -155,31 +174,25 @@ workflow PANGBANK {
     //
     // MODULE: MultiQC
     //
-    ch_multiqc_config = Channel.fromPath(
-        "${projectDir}/assets/multiqc_config.yml",
-        checkIfExists: true
-    )
-    ch_multiqc_custom_config = params.multiqc_config
-        ? Channel.fromPath(params.multiqc_config, checkIfExists: true)
-        : Channel.empty()
-    ch_multiqc_logo = params.multiqc_logo
-        ? Channel.fromPath(params.multiqc_logo, checkIfExists: true)
-        : Channel.empty()
+    ch_multiqc_config        = channel.fromPath(
+        "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    ch_multiqc_custom_config = params.multiqc_config ?
+        channel.fromPath(params.multiqc_config, checkIfExists: true) :
+        channel.empty()
+    ch_multiqc_logo          = params.multiqc_logo ?
+        channel.fromPath(params.multiqc_logo, checkIfExists: true) :
+        channel.empty()
 
-    summary_params = paramsSummaryMap(
-        workflow,
-        parameters_schema: "nextflow_schema.json"
-    )
-    ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
+    summary_params      = paramsSummaryMap(
+        workflow, parameters_schema: "nextflow_schema.json")
+    ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
     ch_multiqc_files = ch_multiqc_files.mix(
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml')
-    )
-    ch_multiqc_custom_methods_description = params.multiqc_methods_description
-        ? file(params.multiqc_methods_description, checkIfExists: true)
-        : file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description = Channel.value(
-        methodsDescriptionText(ch_multiqc_custom_methods_description)
-    )
+        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
+        file(params.multiqc_methods_description, checkIfExists: true) :
+        file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
+    ch_methods_description                = channel.value(
+        methodsDescriptionText(ch_multiqc_custom_methods_description))
 
     ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
     ch_multiqc_files = ch_multiqc_files.mix(
@@ -192,7 +205,7 @@ workflow PANGBANK {
     ch_multiqc_custom_methods_description = params.multiqc_methods_description
         ? file(params.multiqc_methods_description, checkIfExists: true)
         : file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description = Channel.value(
+    ch_methods_description = channel.value(
         methodsDescriptionText(ch_multiqc_custom_methods_description)
     )
 
@@ -250,7 +263,7 @@ def manage_input_genomes(input_genomes_file) {
         // If it's a URL, download the files and map them to local paths
         log.info("Downloading genome files from URLs")
 
-        def genome_file_channel = Channel
+        def genome_file_channel = channel
             .fromPath(input_genomes_file)
             .splitCsv(header: ['name', 'path'], sep: "\t")
             .map { row ->
@@ -274,7 +287,7 @@ def manage_input_genomes(input_genomes_file) {
         // If it's a local file, process the file paths directly
         log.info("Processing local genome file paths")
 
-        def genome_file_channel = Channel
+        def genome_file_channel = channel
             .fromPath(input_genomes_file)
             .splitCsv(header: ['name', 'path'], sep: "\t")
             .collectFile(name: 'input_genomes.txt', newLine: true) { row ->
@@ -302,12 +315,27 @@ def groupMetadataAndPangenome(ch_pangenomes, ch_genome_metadata) {
 }
 
 
+def addTranslationTable(ch_ppanggo_inputs_meta, species_translation_tables) {
+
+    def ch_species_meta_trans_table = species_translation_tables.splitCsv(sep: '\t', header: ['species', 'translation_table'])
+                                .map { row -> [row.species,row.translation_table] }
+
+    ch_ppanggo_inputs_meta
+        .map { meta, input_file -> [meta.species, [meta, input_file]] }
+        .concat(ch_species_meta_trans_table)
+        .groupTuple(size: 2, remainder:true)
+        .map { tuple ->
+            def (meta_input, translation_table) = tuple[1]
+            def (meta, pangenome) = meta_input
+            meta.translation_table = translation_table
+            return [meta, pangenome]
+        }
+}
 
 def create_ppanggo_input_channel(input_file) {
 
     // create meta map
     def meta = [:]
-
 
     meta.species = input_file.parent.getSimpleName()
     meta.genomes_count = input_file.countLines(decompress: true)
