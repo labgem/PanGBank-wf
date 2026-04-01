@@ -3,10 +3,10 @@ process SORT_GENOMES {
     tag "${meta.id}"
 
     // reuse ppanggolin env as it as already been downloaded and used
-    conda "bioconda::ppanggolin=2.2.4"
+    conda "bioconda::ppanggolin=2.3.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ppanggolin:2.2.4--h0fa9677_0' :
-        'biocontainers/ppanggolin:2.2.4--h0fa9677_0' }"
+        'https://depot.galaxyproject.org/singularity/ppanggolin%3A2.3.0--py312h247cb63_0' :
+        'biocontainers/ppanggolin:2.3.0--py312h247cb63_0' }"
 
     input:
         tuple val(meta), path(genome_stat_file)
@@ -30,7 +30,7 @@ process SORT_GENOMES {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
+        pandas: \$(python -c "import pandas; print(pandas.__version__)")
     END_VERSIONS
     """
 

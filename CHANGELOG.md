@@ -3,12 +3,16 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.0.3 - [Unreleased]
+## 0.0.3 - [2025-03-30]
 
 ### `Added`
 
 - Array specific profile inside custom config to improve overall cluster usage and increases scheduler friendliness
 - Added support for TSV files containing genome-to-translation table mappings via the `--translation_tables` parameter. This allows to specify the correct translation table to use for a pangenome.
+
+### `Changed`
+
+- Update PPanGGOLiN version to 2.3.0
 
 ## 0.0.2 - [2025-07-08]
 
