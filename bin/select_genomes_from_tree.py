@@ -214,7 +214,11 @@ def parse_genome_name_to_path_file(genome_name_to_path: Path) -> Dict[str, str]:
 
 
 def select_genome_from_tree(
-    tree_file: Path, num_cluster: int, method: str, index_to_genome: Dict[int, str]
+    tree_file: Path,
+    num_cluster: int,
+    method: str,
+    index_to_genome: Dict[int, str],
+    genome_to_index: Dict[str, int],
 ) -> Tuple[List[str], List[List[int]]]:
     """
     Selects representative genomes from a phylogenetic tree by clustering its nodes.
@@ -223,6 +227,7 @@ def select_genome_from_tree(
     :param num_cluster: Number of clusters to generate from the tree.
     :param method: Clustering method to use for splitting the tree.
     :param index_to_genome: A dictionary mapping tree node indexes to genome names.
+    :param genome_to_index: A dictionary mapping genome names to their indexes.
     :return: A tuple containing a list of selected genome names and a list of clusters
              (each cluster is a list of node indexes).
     """
@@ -242,7 +247,21 @@ def select_genome_from_tree(
 
     for node in node_clusters:
         # Get the indexes of all leaves in the current cluster
-        cluster_indexes = [int(leaf.label) for leaf in node.traverse_leaves()]
+        # Handle both string labels (genome names) and integer labels (indexes)
+        cluster_indexes = []
+        for leaf in node.traverse_leaves():
+            try:
+                # Try to interpret label as an integer index
+                leaf_index = int(leaf.label)
+            except ValueError:
+                # Label is a string (genome name), convert to index
+                if leaf.label not in genome_to_index:
+                    raise ValueError(
+                        f"Genome '{leaf.label}' not found in sorted genomes file"
+                    )
+                leaf_index = genome_to_index[leaf.label]
+            cluster_indexes.append(leaf_index)
+
         clusters.append(cluster_indexes)
 
         # Select the genome corresponding to the smallest index in the cluster
@@ -306,9 +325,14 @@ def main(argv=None):
     with proper_open(sorted_genomes_file, "rt") as fl:
         index_to_genome = {index: genome.rstrip() for index, genome in enumerate(fl)}
 
+    # Create reverse mapping: genome name to index
+    genome_name_to_index = {
+        genome.split("/")[-1]: index for index, genome in index_to_genome.items()
+    }
+
     # Select genomes from the tree and obtain the clusters
     selected_genomes, clusters = select_genome_from_tree(
-        tree_file, num_cluster, args.method, index_to_genome
+        tree_file, num_cluster, args.method, index_to_genome, genome_name_to_index
     )
 
     # Write selected genomes to the output file

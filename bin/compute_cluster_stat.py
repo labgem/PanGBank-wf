@@ -66,7 +66,7 @@ def count_distances(distances: List[float]):
 
 
 def get_intra_and_inter_cluster_distances(
-    phylip_matrix_file: Path, clusters: List[List[str]]
+    phylip_matrix_file: Path, clusters: List[List[str | int]]
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Calculate intra- and inter-cluster distances from a Phylip matrix file.
@@ -83,7 +83,6 @@ def get_intra_and_inter_cluster_distances(
         for cluster_id, cluster in enumerate(clusters)
         for genome_id in cluster
     }
-
     intra_cluster_distances = []
     inter_cluster_distances = []
 
@@ -99,9 +98,8 @@ def get_intra_and_inter_cluster_distances(
 
         # Parse the pairwise distance lines
         for i, distance_line in enumerate(file):
-            distances = distance_line.strip().split("\t")[
-                1:
-            ]  # Skip the genome ID column
+
+            distances = distance_line.strip().split()[1:]  # Skip the genome ID column
 
             for j, distance in enumerate(distances):
                 # Classify the distance as intra- or inter-cluster

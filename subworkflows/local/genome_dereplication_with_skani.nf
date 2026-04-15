@@ -9,6 +9,8 @@ include { MASH_SKETCH as MASH_SKETCH_GENOMES } from '../../modules/nf-core/mash/
 include { SORT_GENOMES } from '../../modules/local/sort_genomes'
 include { MASH_DIST_TO_PHYLIP } from '../../modules/local/mash_distance_in_phylip'
 
+include { SKANI_TRIANGLE } from '../../modules/local/skani_triangle.nf'
+
 include { QUICKTREE } from '../../modules/local/quicktree'
 include { GENOME_SELECTION_FROM_TREE } from '../../modules/local/genome_selection_from_tree'
 include { ANY2FASTA } from '../../modules/local/any2fasta'
@@ -76,27 +78,22 @@ workflow GENOME_DEREPLICATION {
     SORT_GENOMES(SEQFU_STATS_FROM_FILE.out.stats)
     ch_versions = ch_versions.mix(SORT_GENOMES.out.versions)
 
-    // Compute pairwise Mash distances for all genomes.
-    MASH_SKETCH_GENOMES(ch_species_to_path_file)
-    ch_versions = ch_versions.mix(MASH_SKETCH_GENOMES.out.versions)
 
-    // Combine Mash sketches with sorted genome lists for further processing.
-    ch_species_sketch_genome_list = MASH_SKETCH_GENOMES.out.mash
+    ch_species_path_and_sorted_genomes = ch_species_to_path_file
         .concat(SORT_GENOMES.out.sorted_genomes_list)
         .groupTuple()
         .map { meta, files ->
-            def mash_sketch = files[0]
+            def path_file = files[0]
             def genome_list = files[1]
-            [meta, mash_sketch, genome_list]
+            [meta, path_file, genome_list]
         }
 
 
-    // Convert Mash distances to a PHYLIP matrix format.
-    MASH_DIST_TO_PHYLIP(ch_species_sketch_genome_list)
-    ch_versions = ch_versions.mix(MASH_DIST_TO_PHYLIP.out.versions)
+    SKANI_TRIANGLE(ch_species_path_and_sorted_genomes)
+    ch_versions = ch_versions.mix(SKANI_TRIANGLE.out.versions)
 
     // Build a phylogenetic tree from the distance matrix.
-    QUICKTREE(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
+    QUICKTREE(SKANI_TRIANGLE.out.phylip_matrix)
     ch_versions = ch_versions.mix(QUICKTREE.out.versions)
 
     // Combine the tree with sorted genomes for clustering.
@@ -132,7 +129,7 @@ workflow GENOME_DEREPLICATION {
 
     // Compute cluster statistics and generate a cluster composition file.
     ch_cluster_compo_and_phylip_matrix = GENOME_SELECTION_FROM_TREE.out.cluster_composition
-        .concat(MASH_DIST_TO_PHYLIP.out.phylip_matrix)
+        .concat(SKANI_TRIANGLE.out.phylip_matrix)
         .groupTuple(size: 2)
         .map { meta, cluster_compo_and_phylip_matrix ->
             [meta, cluster_compo_and_phylip_matrix[0], cluster_compo_and_phylip_matrix[1]]
@@ -142,10 +139,10 @@ workflow GENOME_DEREPLICATION {
 
     // Generate plots from cluster statistics.
     ch_cluster_stat = CLUSTER_STAT.out.cluster_stat
-        .map { meta, cluster_stat -> cluster_stat }
+        .map { _meta, cluster_stat -> cluster_stat }
         .collectFile(skip: 1, keepHeader: true, name: 'cluster_stat.tsv')
     ch_distance_count = CLUSTER_STAT.out.distance_count
-        .map { meta, distance_count -> distance_count }
+        .map { _meta, distance_count -> distance_count }
         .collectFile(skip: 1, keepHeader: true, name: 'distance_count.tsv')
 
     CLUSTER_PLOT(ch_cluster_stat, ch_distance_count)
@@ -157,7 +154,7 @@ workflow GENOME_DEREPLICATION {
     ch_meta_and_selected_genomes = ch_sp_to_original_meta
         .concat(FORMAT_INPUT_GENOMES.out.genome_selection_ppanggo_input)
         .groupTuple(size: 2)
-        .map { sp, meta_and_selected_genomes ->
+        .map { _sp, meta_and_selected_genomes ->
             def meta = meta_and_selected_genomes[0]
             def selected_genomes = meta_and_selected_genomes[1]
             meta.genomes_count = selected_genomes.countLines()

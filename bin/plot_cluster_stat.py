@@ -102,7 +102,7 @@ def make_box_plot_figure(df_distance_metric: pd.DataFrame) -> go.Figure:
     # Customize layout and appearance
     fig.update_layout(
         xaxis_title="Species",
-        yaxis_title="Mash Distances",
+        yaxis_title="Distances",
         template="plotly_white",
         boxmode="group",  # Group boxes for better comparison
     )
@@ -124,7 +124,7 @@ def build_density_table(
     :param smoothing_parameter: Smoothing parameter for the Gaussian KDE. Smaller values lead to sharper curves.
     :return: A DataFrame containing smoothed density values and their corresponding distances.
              Columns:
-             - "Mash distance": Normalized distances after KDE.
+             - "Distance": Normalized distances after KDE.
              - "Density": Smoothed density values.
     """
     multiplier = 10000  # Scale factor for more precise integer calculations
@@ -143,8 +143,7 @@ def build_density_table(
 
     # Build density data
     density_info = {
-        "Mash distance": x_vals
-        / multiplier,  # Normalize distances back to original scale
+        "Distance": x_vals / multiplier,  # Normalize distances back to original scale
         "Density": density(x_vals),
     }
 
@@ -163,7 +162,7 @@ def build_density_table_per_sp_and_type(df_count: pd.DataFrame) -> pd.DataFrame:
                      - "type": Type of distance (e.g., "intra_cluster", "inter_cluster").
     :return: A combined DataFrame containing smoothed density values for all species and types.
              Columns:
-             - "Mash distance": Normalized distances.
+             - "Distance": Normalized distances.
              - "Density": Smoothed density values.
              - "type": Distance type (e.g., "intra_cluster", "inter_cluster", "all").
              - "sp": Species identifier.
@@ -176,7 +175,6 @@ def build_density_table_per_sp_and_type(df_count: pd.DataFrame) -> pd.DataFrame:
 
     # Combine aggregated counts with the original count table
     df_count = pd.concat([df_count, df_count_all])
-
     df_density_list = []
 
     # Build density tables for each species and distance type
@@ -197,7 +195,11 @@ def build_density_table_per_sp_and_type(df_count: pd.DataFrame) -> pd.DataFrame:
             df_density_list.append(df_density_type)
 
     # Combine density tables for all species and types
-    return pd.concat(df_density_list)
+    if df_density_list:
+        return pd.concat(df_density_list)
+    else:
+        logging.warning("No density tables were created due to insufficient data.")
+        return pd.DataFrame(columns=["Distance", "Density", "type", "sp"])
 
 
 def make_cluster_distance_density_plots_per_sp(
@@ -211,7 +213,7 @@ def make_cluster_distance_density_plots_per_sp(
                        Expected columns:
                        - "sp": Species identifier.
                        - "type": Distance type ("intra_cluster", "inter_cluster", "all").
-                       - "Mash distance": X-axis values for the density plot.
+                       - "Distance": X-axis values for the density plot.
                        - "Density": Y-axis density values.
     :return: A dictionary mapping species names to their corresponding Plotly area plots.
     """
@@ -233,14 +235,14 @@ def make_cluster_distance_density_plots_per_sp(
         # Create area plot
         fig = px.area(
             df_density_sp,
-            x="Mash distance",
+            x="Distance",
             y="Density",
             color="Distance category",
             facet_row="Distance category",
             category_orders={
                 "Distance category": ["all", "intra_cluster", "inter_cluster"]
             },
-            title=f"{sp}: Mash distance distribution",
+            title=f"{sp}: Distance distribution",
             color_discrete_map=color_discrete_map,
         )
         fig = fig.update_traces(line=dict(width=2), opacity=0.7)
@@ -254,7 +256,7 @@ def make_distance_density_plots(
     df_density: pd.DataFrame, sorted_species: List[str]
 ) -> Dict[str, plotly.graph_objects.Figure]:
     """
-    Creates density plots for all species, showing general Mash distance distributions.
+    Creates density plots for all species, showing general distance distributions.
     Generates two types of plots:
     1. Area plots with species as facets.
     2. Line plots stacked for all species.
@@ -263,7 +265,7 @@ def make_distance_density_plots(
                        Expected columns:
                        - "sp": Species identifier.
                        - "type": Distance type ("all").
-                       - "Mash distance": X-axis values for the density plot.
+                       - "Distance": X-axis values for the density plot.
                        - "Density": Y-axis density values.
     :param sorted_species: List of species names sorted in the desired order for the plots.
     :return: A dictionary mapping output filenames to their corresponding Plotly figures.
@@ -286,10 +288,10 @@ def make_distance_density_plots(
     # Area plot with species as facets
     fig_sp_row = px.area(
         df_density_all,
-        x="Mash distance",
+        x="Distance",
         y="Density",
         color="sp",
-        title="Mash distance distribution",
+        title="Distance distribution",
         color_discrete_map=color_discrete_map,
         facet_row="sp",
         category_orders={"sp": sorted_species},
@@ -298,18 +300,18 @@ def make_distance_density_plots(
     # Line plot for all species
     fig_line_stacked = px.line(
         df_density_all,
-        x="Mash distance",
+        x="Distance",
         y="Density",
         color="sp",
-        title="Mash distance distribution",
+        title="Distance distribution",
         color_discrete_map=color_discrete_map,
         category_orders={"sp": sorted_species},
     )
 
     # Map output filenames to figures
     name_to_fig = {
-        "mash_distance_density_plot_sp_row.html": fig_sp_row,
-        "mash_distance_density_plot_lines.html": fig_line_stacked,
+        "distance_density_plot_sp_row.html": fig_sp_row,
+        "distance_density_plot_lines.html": fig_line_stacked,
     }
 
     return name_to_fig

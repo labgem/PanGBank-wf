@@ -14,7 +14,8 @@
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplication'
+// include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplication'
+include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplication_with_skani'
 
 //
 // MODULE: Local modules
@@ -86,6 +87,8 @@ workflow PANGBANK {
         }
 
         GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
+
+        // GENOME_DEREPLICATION_WITH_SKANI(ch_species_branched.to_dereplicate)
 
         ch_ppanggo_inputs_meta = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
         ch_versions = ch_versions.mix(GENOME_DEREPLICATION.out.versions)
