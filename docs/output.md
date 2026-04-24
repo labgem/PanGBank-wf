@@ -42,7 +42,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and build pange
 
       - **`<genomes|contig>_metadata_from_annotation_file.tsv.gz`**: A TSV file containing metadata extracted from annotation files (GBFF or GFF) for genomes or contigs.
 
-    - **`proksee/`**: A directory containing proksee JSON map fpr each genome of the pangenome.
+    - **`proksee/`**: A directory containing proksee JSON map for each genome of the pangenome.
 
 </details>
 
