@@ -20,6 +20,7 @@ include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplicatio
 // MODULE: Local modules
 //
 include { PARSE_GENOMES_AND_TAXONOMY } from '../modules/local/parse_genomes_and_taxonomy'
+include { PUBLISH_INPUT_GENOMES } from '../modules/local/publish_input_genomes'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_LARGE } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_MEDIUM } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_SMALL } from '../modules/local/ppanggolin/all'
@@ -96,6 +97,11 @@ workflow PANGBANK {
         ch_versions = ch_versions.mix(GENOME_DEREPLICATION.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(GENOME_DEREPLICATION.out.multiqc_files)
     }
+
+    // Publish the definitive input_genomes.tsv.gz for every species to pangenomes/<sp>/.
+    // Running this on the final merged channel (after dereplication) ensures a single
+    // deterministic source of truth and avoids publish races on -resume.
+    PUBLISH_INPUT_GENOMES(ch_ppanggo_inputs_meta)
 
     ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, _genome_file ->
         large: meta.genomes_count >= params.large_pangenome_cutoff
