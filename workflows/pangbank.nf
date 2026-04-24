@@ -76,6 +76,11 @@ workflow PANGBANK {
         .flatten()
         .map {it -> create_ppanggo_input_channel(it) }
 
+    ch_species_to_metadata = PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata
+        .flatten()
+        .map { genome_metadata_file -> [[id: genome_metadata_file.parent.baseName], genome_metadata_file] }
+
+
     ch_ppanggo_inputs_meta = addTranslationTable(ch_ppanggo_inputs_meta, PARSE_GENOMES_AND_TAXONOMY.out.species_translation_tables)
 
     if (!params.skip_dereplication) {
@@ -85,7 +90,7 @@ workflow PANGBANK {
             other: true
         }
 
-        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
+        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate, ch_species_to_metadata)
 
         ch_ppanggo_inputs_meta = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
         ch_versions = ch_versions.mix(GENOME_DEREPLICATION.out.versions)
@@ -116,7 +121,7 @@ workflow PANGBANK {
     SUMMARIZE_GENOME_STATS(ch_genomes_statistics)
     ch_versions = ch_versions.mix(SUMMARIZE_GENOME_STATS.out.versions)
 
-    ch_pangenome_and_metadata = groupMetadataAndPangenome(ch_pangenomes, PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata)
+    ch_pangenome_and_metadata = groupMetadataAndPangenome(ch_pangenomes, ch_species_to_metadata)
 
     PPANGGOLIN_METADATA(ch_pangenome_and_metadata)
     ch_versions = ch_versions.mix(PPANGGOLIN_METADATA.out.versions)
@@ -299,12 +304,12 @@ def manage_input_genomes(input_genomes_file) {
 }
 
 // Function to process genome metadata and group it with pangenomes
-def groupMetadataAndPangenome(ch_pangenomes, ch_genome_metadata) {
-    def ch_species_to_metadata = ch_genome_metadata
-        .flatten()
-        .map { genome_metadata_file -> [[species: genome_metadata_file.parent.baseName], genome_metadata_file] }
+def groupMetadataAndPangenome(ch_pangenomes, ch_meta_to_metadata) {
+    def ch_species_to_metadata = ch_meta_to_metadata
+        .map { meta, metadata_file -> [meta.id, metadata_file] }
+
     return ch_pangenomes
-        .map { meta, pangenome -> [[species: meta.species], [meta, pangenome]] }
+        .map { meta, pangenome -> [meta.species, [meta, pangenome]] }
         .concat(ch_species_to_metadata)
         .groupTuple(size: 2)
         .map { tuple ->

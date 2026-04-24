@@ -9,11 +9,11 @@ process SORT_GENOMES {
         'biocontainers/ppanggolin:2.3.0--py312h247cb63_0' }"
 
     input:
-        tuple val(meta), path(genome_stat_file)
+        tuple val(meta), path(genome_name_to_path), path(genome_stat_file), path(genome_metadata_file)
 
     output:
         tuple  val(meta), path("sorted_genomes.txt.gz")       , emit: sorted_genomes_list
-        path "sorted_genomes.txt.gz"                          , emit: sorted_genomes_stats
+        path "sorted_genomes.tsv.gz"                          , emit: sorted_genomes_stats
         path "versions.yml"      , emit: versions
 
     when:
@@ -21,11 +21,15 @@ process SORT_GENOMES {
 
     script:
 
+    def genome_metadata_args = genome_metadata_file.name != 'NO_FILE' ? "--genome_metadata $genome_metadata_file --completeness_sorting" : ''
+
     """
-    sort_genomes.py --genome_stats $genome_stat_file \\
-                    --sort_by L90 L75 L50 auN \\
+    sort_genomes.py --genome_name_to_path input_genomes.tsv.gz \\
+                    --genome_stats $genome_stat_file \\
                     --sorted_genome_list sorted_genomes.txt.gz \\
-                    --sorted_genome_stats sorted_genomes.tsv.gz
+                    --sorted_genome_stats sorted_genomes.tsv.gz \\
+                    $genome_metadata_args
+
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
