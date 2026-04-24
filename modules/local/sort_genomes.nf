@@ -24,7 +24,7 @@ process SORT_GENOMES {
     def genome_metadata_args = genome_metadata_file.name != 'NO_FILE' ? "--genome_metadata $genome_metadata_file --completeness_sorting" : ''
 
     """
-    sort_genomes.py --genome_name_to_path input_genomes.tsv.gz \\
+    sort_genomes.py --genome_name_to_path $genome_name_to_path \\
                     --genome_stats $genome_stat_file \\
                     --sorted_genome_list sorted_genomes.txt.gz \\
                     --sorted_genome_stats sorted_genomes.tsv.gz \\
