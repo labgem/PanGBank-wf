@@ -121,7 +121,7 @@ workflow GENOME_DEREPLICATION {
         .map { meta, files ->
             def selected_genomes = files[0]
             def genome_name_to_path = files[1]
-            def fasta_to_original_input = files.size() <= 2 ? file("NO_FILE") : files[2]
+            def fasta_to_original_input = files.size() <= 2 ?  file("${projectDir}/assets/NO_FILE") : files[2]
             [meta, selected_genomes, genome_name_to_path, fasta_to_original_input]
         }
     FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path, ch_reference_genomes)
