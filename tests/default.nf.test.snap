@@ -1,7 +1,7 @@
 {
     "test from fna and dereplication": {
         "content": [
-            41,
+            44,
             {
                 "CLUSTER_PLOT": {
                     "python": "3.12.13",
@@ -76,21 +76,32 @@
                 "genome_dereplication/s__Borrelia_miyamotoi/cluster_stat.tsv",
                 "genome_dereplication/s__Borrelia_miyamotoi/distance_count.tsv",
                 "genome_dereplication/s__Borrelia_miyamotoi/genome_stat.tsv",
+                "genome_dereplication/s__Borrelia_miyamotoi/original_input_genomes.tsv.gz",
+                "genome_dereplication/s__Borrelia_miyamotoi/selected_genomes.txt.gz",
+                "genome_dereplication/s__Borrelia_miyamotoi/sorted_genomes.tsv.gz",
+                "genome_dereplication/s__Borrelia_miyamotoi/sorted_genomes.txt.gz",
                 "genome_dereplication/s__Borrelia_miyamotoi/summary_selection.tsv",
+                "genome_dereplication/s__Borrelia_miyamotoi/tree.nw",
                 "genome_dereplication/s__Chlamydia_trachomatis",
                 "genome_dereplication/s__Chlamydia_trachomatis/cluster_stat.tsv",
                 "genome_dereplication/s__Chlamydia_trachomatis/distance_count.tsv",
                 "genome_dereplication/s__Chlamydia_trachomatis/genome_stat.tsv",
+                "genome_dereplication/s__Chlamydia_trachomatis/original_input_genomes.tsv.gz",
+                "genome_dereplication/s__Chlamydia_trachomatis/selected_genomes.txt.gz",
+                "genome_dereplication/s__Chlamydia_trachomatis/sorted_genomes.tsv.gz",
+                "genome_dereplication/s__Chlamydia_trachomatis/sorted_genomes.txt.gz",
                 "genome_dereplication/s__Chlamydia_trachomatis/summary_selection.tsv",
+                "genome_dereplication/s__Chlamydia_trachomatis/tree.nw",
                 "genome_dereplication/s__Mycoplasmoides_pneumoniae",
                 "genome_dereplication/s__Mycoplasmoides_pneumoniae/cluster_stat.tsv",
                 "genome_dereplication/s__Mycoplasmoides_pneumoniae/distance_count.tsv",
                 "genome_dereplication/s__Mycoplasmoides_pneumoniae/genome_stat.tsv",
+                "genome_dereplication/s__Mycoplasmoides_pneumoniae/original_input_genomes.tsv.gz",
+                "genome_dereplication/s__Mycoplasmoides_pneumoniae/selected_genomes.txt.gz",
+                "genome_dereplication/s__Mycoplasmoides_pneumoniae/sorted_genomes.tsv.gz",
+                "genome_dereplication/s__Mycoplasmoides_pneumoniae/sorted_genomes.txt.gz",
                 "genome_dereplication/s__Mycoplasmoides_pneumoniae/summary_selection.tsv",
-                "input_genomes",
-                "input_genomes/s__Borrelia_miyamotoi.tsv.gz",
-                "input_genomes/s__Chlamydia_trachomatis.tsv.gz",
-                "input_genomes/s__Mycoplasmoides_pneumoniae.tsv.gz",
+                "genome_dereplication/s__Mycoplasmoides_pneumoniae/tree.nw",
                 "mash_sketch",
                 "mash_sketch/families_persistent_all.msh",
                 "multiqc",
@@ -209,11 +220,11 @@
                 "species_summary.tsv"
             ]
         ],
+        "timestamp": "2026-04-24T16:48:41.075083823",
         "meta": {
-            "nf-test": "0.9.2",
+            "nf-test": "0.9.5",
             "nextflow": "25.10.4"
-        },
-        "timestamp": "2026-04-01T09:53:11.159224097"
+        }
     },
     "test from gbff": {
         "content": [
@@ -244,10 +255,6 @@
                 }
             },
             [
-                "input_genomes",
-                "input_genomes/s__Borrelia_miyamotoi.tsv.gz",
-                "input_genomes/s__Chlamydia_trachomatis.tsv.gz",
-                "input_genomes/s__Mycoplasmoides_pneumoniae.tsv.gz",
                 "mash_sketch",
                 "mash_sketch/families_persistent_all.msh",
                 "multiqc",
@@ -382,15 +389,15 @@
                 "species_summary.tsv"
             ]
         ],
+        "timestamp": "2026-04-24T16:45:04.014740785",
         "meta": {
-            "nf-test": "0.9.2",
+            "nf-test": "0.9.5",
             "nextflow": "25.10.4"
-        },
-        "timestamp": "2026-04-01T09:49:48.124562917"
+        }
     },
     "test from fna": {
         "content": [
-            16,
+            19,
             {
                 "GATHER_PANGENOME_INFO": {
                     "python": "3.12.13"
@@ -418,10 +425,6 @@
                 }
             },
             [
-                "input_genomes",
-                "input_genomes/s__Borrelia_miyamotoi.tsv.gz",
-                "input_genomes/s__Chlamydia_trachomatis.tsv.gz",
-                "input_genomes/s__Mycoplasmoides_pneumoniae.tsv.gz",
                 "mash_sketch",
                 "mash_sketch/families_persistent_all.msh",
                 "multiqc",
@@ -548,10 +551,10 @@
                 "species_summary.tsv"
             ]
         ],
+        "timestamp": "2026-04-24T16:46:58.517051152",
         "meta": {
-            "nf-test": "0.9.2",
+            "nf-test": "0.9.5",
             "nextflow": "25.10.4"
-        },
-        "timestamp": "2026-04-01T09:51:42.701923806"
+        }
     }
 }
