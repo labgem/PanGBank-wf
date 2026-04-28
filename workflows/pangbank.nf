@@ -30,6 +30,8 @@ include { SUMMARIZE_GENOME_STATS } from '../modules/local/summarize_genome_stats
 include { GATHER_PANGENOME_INFO } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
 include { MASH_SKETCH } from '../modules/local/mash_sketch'
+include { FIND_GTDB_SPLIT_SPECIES } from '../modules/local/find_gtdb_split_species.nf'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -43,6 +45,7 @@ include { paramsSummaryMap } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_pangbank_pipeline'
+include { SKANI_TRIANGLE } from 'nf-core/skani/triangle'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,6 +65,27 @@ workflow PANGBANK {
     ch_multiqc_files = channel.empty()
 
     ch_input_genomes = manage_input_genomes(file(params.genomes))
+
+    if (params.merge_gtdb_splits) {
+        FIND_GTDB_SPLIT_SPECIES(
+            file(params.genome_metadata)
+            params.genome_min_checkm,
+            params.genome_min_checkm2,
+            params.representative_min_checkm,
+            params.representative_min_checkm2,
+            params.min_genomes
+        )
+
+        ch_split_species = FIND_GTDB_SPLIT_SPECIES.out.genome_list_files
+        ch_genome_fasta = manage_input_genomes(file(params.genome_fasta))
+        MERGE_GTDB_SPLIT_SPECIES(
+            ch_split_species,
+            ch_genome_fasta,
+            params.gtdb_merge_threshold
+        )
+    }
+
+    error "WIP"
 
     // PREPARE SPECIES: Check species that have enough genome to build a pangenome
     PARSE_GENOMES_AND_TAXONOMY(
