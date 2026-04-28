@@ -1,0 +1,7 @@
+FROM mambaorg/micromamba:1.5.0
+
+RUN micromamba create -y -n skani_env \
+    python=3.11 pandas numpy networkx skani -c conda-forge -c bioconda && \
+    micromamba clean -a -y
+
+ENV PATH=/opt/conda/envs/skani_env/bin:$PATH
