@@ -24,7 +24,7 @@ workflow GTDB_SPLIT_SPECIES {
 
     MERGE_GTDB_SPLIT_SPECIES(
         ch_split_species.map { f -> tuple([id: f.baseName], f) },
-        genome_fasta.broadcast(),
+        Channel.value(genome_fasta).
         params.gtdb_merge_threshold
     )
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES.out.versions)
