@@ -71,7 +71,7 @@ workflow PANGBANK {
 
     if (params.merge_gtdb_splits) {
         ch_genome_fasta = manage_input_genomes(file(params.genome_fasta))
-        GTDB_SPLIT_SPECIES(ch_genome_fasta)
+        GTDB_SPLIT_SPECIES(ch_input_genomes, ch_genome_fasta)
         ch_versions = ch_versions.mix(GTDB_SPLIT_SPECIES.out.versions)
     }
 

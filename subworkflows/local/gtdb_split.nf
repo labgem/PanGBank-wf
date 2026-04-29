@@ -3,6 +3,7 @@ include { MERGE_GTDB_SPLIT_SPECIES } from '../../modules/local/merge_gtdb_split_
 
 workflow GTDB_SPLIT_SPECIES {
     take:
+    input_genomes
     genome_fasta
 
     main:
@@ -10,6 +11,7 @@ workflow GTDB_SPLIT_SPECIES {
 
     FIND_GTDB_SPLIT_SPECIES(
         file(params.genome_metadata),
+        input_genomes,
         params.genome_min_checkm,
         params.genome_min_checkm2,
         params.representative_min_checkm,

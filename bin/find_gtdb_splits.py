@@ -110,13 +110,28 @@ def filter_pangbank(metadata: pd.DataFrame, metaspecies: dict[str, GTDBMetaSpeci
 
     return metadata[keep], ok_species_no_splits
 
+def filter_input_genome(metadata: pd.DataFrame, genomes: set[str]) -> pd.DataFrame:
+    filtered = metadata[metadata["genomes"].isin(genomes)]
+    print(f"Genome input filtering: removing {len(metadata) - len(filtered)}/{len(metadata)} genomes")
+    return filtered
+
 def filter(metadata_path: Path,
+           genomes: Path,
            min_checkm_repr: float,
            min_checkm2_repr: float,
            min_checkm: float,
            min_checkm2: float,
            min_genome_count: int) -> tuple[pd.DataFrame, dict[str, GTDBMetaSpecies], list[str]]:
+
+    s_genomes = set()
+    with open(genomes) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                s_genomes.add(line.split("\t")[0].strip())
+
     metadata = parse_gtdb_metadata(metadata_path)
+    metadata = filter_input_genome(metadata, s_genomes)
     metadata = filter_representative(metadata, min_checkm_repr, min_checkm2_repr)
     metadata = filter_genome(metadata, min_checkm, min_checkm2)
     metaspecies = find_metaspecies(metadata, min_genome_count)
@@ -134,6 +149,14 @@ def parse_args(argv=None):
 
     parser.add_argument(
         "--metadata-file",
+        type=Path,
+        required=True,
+        metavar="FILE",
+        help=""
+    )
+
+    parser.add_argument(
+        "--used-genomes",
         type=Path,
         required=True,
         metavar="FILE",
@@ -196,8 +219,10 @@ def main():
     output = args.output_directory
     output.mkdir(parents=True, exist_ok=True)
 
+    genomes = args.used_genomes
+
     def process(path: Path):
-        metadata, metaspecies, ok_no_splits = filter(path, args.genome_min_checkm, args.genome_min_checkm2,
+        metadata, metaspecies, ok_no_splits = filter(path, genomes, args.genome_min_checkm, args.genome_min_checkm2,
                                                            args.representative_min_checkm, args.representative_min_checkm2, args.min_genome_count)
         out = output
         out.mkdir(exist_ok=True)
