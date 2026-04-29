@@ -12,6 +12,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
     output:
     path "${genome_list.baseName}.clusters", emit: split_clusters
     path "${genome_list.baseName}.genomes.clusters", emit: genome_clusters
+    path "versions.yml", emit: versions
 
     script:
     """
@@ -22,19 +23,19 @@ process MERGE_GTDB_SPLIT_SPECIES {
 
     awk '
        NR==FNR {
-           path_to_id[$2] = $1
+           path_to_id[\$2] = \$1
            next
        }
        NR==1 {
            for (i=2; i<=NF; i++) {
                if ($i in path_to_id) {
-                   $i = path_to_id[$i]
+                   $i = path_to_id[\$i]
                }
            }
        }
        {
-           if ($1 in path_to_id) {
-               $1 = path_to_id[$1]
+           if (\$1 in path_to_id) {
+               \$1 = path_to_id[\$1]
            }
            print
        }

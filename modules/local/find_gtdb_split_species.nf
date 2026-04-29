@@ -11,6 +11,7 @@ process FIND_GTDB_SPLIT_SPECIES {
 
     output:
     path "gtdb_splits/meta/*.list", emit: genome_list_files
+    path "versions.yml", emit: versions
 
     script:
     """
