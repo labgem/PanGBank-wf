@@ -15,7 +15,6 @@ process FORMAT_INPUT_GENOMES {
     output:
     tuple val(meta), path("formatted_selected_genomes.tsv.gz"), emit: genome_selection_ppanggo_input
     path "summary_selection.tsv", emit: dereplication_summary
-    path "original_input_genomes.tsv.gz", emit: original_input_genomes
     path "versions.yml"      , emit: versions
 
 
@@ -33,8 +32,6 @@ process FORMAT_INPUT_GENOMES {
                                 --formatted_genomes formatted_selected_genomes.tsv.gz \\
                                 $fasta_to_original_path_arg $reference_genomes_arg \\
                                 --summary_selection summary_selection.tsv --species ${meta.id} \\
-
-    cp -L $genome_name_to_fasta original_input_genomes.tsv.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
