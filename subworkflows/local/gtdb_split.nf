@@ -13,9 +13,7 @@ workflow GTDB_SPLIT_SPECIES {
         file(params.genome_metadata),
         input_genomes,
         params.genome_min_checkm,
-        params.genome_min_checkm2,
         params.representative_min_checkm,
-        params.representative_min_checkm2,
         params.min_genomes
     )
     ch_versions = ch_versions.mix(FIND_GTDB_SPLIT_SPECIES.out.versions)

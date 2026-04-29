@@ -11,7 +11,7 @@ from dataclasses import dataclass
 def parse_gtdb_metadata(path: Path) -> pd.DataFrame:
     return pd.read_csv(path, sep="\t")
 
-def filter_representative(metadata: pd.DataFrame, min_checkm: float, min_checkm2: float) -> pd.DataFrame:
+def filter_representative(metadata: pd.DataFrame, min_checkm: float) -> pd.DataFrame:
     """Apply checkm/checkm2 completeness filtering on representative genomes"""
     rm = set()
     nr = 0
@@ -20,7 +20,7 @@ def filter_representative(metadata: pd.DataFrame, min_checkm: float, min_checkm2
         if acc == row["gtdb_genome_representative"]:
             nr += 1
             cm, cm2 = row["checkm_completeness"], row["checkm2_completeness"]
-            if cm < min_checkm or cm2 < min_checkm2:
+            if max(cm, cm2) < min_checkm:
                 rm.add(acc)
 
     filtered = metadata[
@@ -32,11 +32,10 @@ def filter_representative(metadata: pd.DataFrame, min_checkm: float, min_checkm2
 
     return filtered
 
-def filter_genome(metadata: pd.DataFrame, min_checkm: float, min_checkm2: float) -> pd.DataFrame:
+def filter_genome(metadata: pd.DataFrame, min_checkm: float) -> pd.DataFrame:
     """Apply checkm/checkm2 completeness filtering on all genomes"""
     filtered = metadata[
-        (metadata["checkm_completeness"] >= min_checkm) &
-        (metadata["checkm2_completeness"] >= min_checkm2)
+        metadata[["checkm_completeness", "checkm2_completeness"]].max(axis=1) >= min_checkm
     ]
     print(f"Genome filtering: removing {len(metadata) - len(filtered)}/{len(metadata)} genomes")
     return filtered
@@ -118,9 +117,7 @@ def filter_input_genome(metadata: pd.DataFrame, genomes: set[str]) -> pd.DataFra
 def filter(metadata_path: Path,
            genomes: Path,
            min_checkm_repr: float,
-           min_checkm2_repr: float,
            min_checkm: float,
-           min_checkm2: float,
            min_genome_count: int) -> tuple[pd.DataFrame, dict[str, GTDBMetaSpecies], list[str]]:
 
     s_genomes = set()
@@ -132,8 +129,8 @@ def filter(metadata_path: Path,
 
     metadata = parse_gtdb_metadata(metadata_path)
     metadata = filter_input_genome(metadata, s_genomes)
-    metadata = filter_representative(metadata, min_checkm_repr, min_checkm2_repr)
-    metadata = filter_genome(metadata, min_checkm, min_checkm2)
+    metadata = filter_representative(metadata, min_checkm_repr)
+    metadata = filter_genome(metadata, min_checkm)
     metaspecies = find_metaspecies(metadata, min_genome_count)
     metadata, ok_no_splits = filter_pangbank(metadata, metaspecies, min_genome_count)
     return metadata, metaspecies, ok_no_splits
@@ -142,8 +139,8 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Find split species using GTDB metadata files.",
         epilog="Example: python find_gtdb_splits.py --metadata-file <path> --ar-metadata-file <path>"
-        "--genome-min-checkm <int> --genome-min-checkm2 <int>"
-        "--representative-min-checkm <int> --representative-min-checkm <int>"
+        "--genome-min-checkm <int> "
+        "--representative-min-checkm <int> "
         "--min-genome-count <int> --output-directory <path>",
     )
 
@@ -172,23 +169,7 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-        "--genome-min-checkm2",
-        type=int,
-        required=True,
-        metavar="INT",
-        help=""
-    )
-
-    parser.add_argument(
         "--representative-min-checkm",
-        type=int,
-        required=True,
-        metavar="INT",
-        help=""
-    )
-
-    parser.add_argument(
-        "--representative-min-checkm2",
         type=int,
         required=True,
         metavar="INT",
@@ -220,8 +201,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
 
     def process(path: Path):
-        metadata, metaspecies, ok_no_splits = filter(path, args.used_genomes, args.genome_min_checkm, args.genome_min_checkm2,
-                                                           args.representative_min_checkm, args.representative_min_checkm2, args.min_genome_count)
+        metadata, metaspecies, ok_no_splits = filter(path, args.used_genomes, args.representative_min_checkm, args.genome_min_checkm, args.min_genome_count)
         out = output
         out.mkdir(exist_ok=True)
         metadata.to_csv(out / f"meta.filtered.tsv", sep="\t")
