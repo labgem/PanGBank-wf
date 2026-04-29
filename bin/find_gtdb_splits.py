@@ -161,19 +161,15 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-        "--genome-min-checkm",
-        type=int,
-        required=True,
-        metavar="INT",
-        help=""
+        "--genome-min-completeness", type=int, required=True, metavar="INT", help=""
     )
 
     parser.add_argument(
-        "--representative-min-checkm",
+        "--representative-min-completeness",
         type=int,
         required=True,
         metavar="INT",
-        help=""
+        help="",
     )
 
     parser.add_argument(
