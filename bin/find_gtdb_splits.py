@@ -219,10 +219,8 @@ def main():
     output = args.output_directory
     output.mkdir(parents=True, exist_ok=True)
 
-    genomes = args.used_genomes
-
     def process(path: Path):
-        metadata, metaspecies, ok_no_splits = filter(path, genomes, args.genome_min_checkm, args.genome_min_checkm2,
+        metadata, metaspecies, ok_no_splits = filter(path, args.used_genomes, args.genome_min_checkm, args.genome_min_checkm2,
                                                            args.representative_min_checkm, args.representative_min_checkm2, args.min_genome_count)
         out = output
         out.mkdir(exist_ok=True)
