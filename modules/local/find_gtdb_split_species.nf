@@ -1,6 +1,8 @@
 process FIND_GTDB_SPLIT_SPECIES {
     label 'process_single'
 
+    container "ghcr.io/labgem/pangbank-wf:merge-split"
+
     input:
     path metadata_file
     val genome_min_checkm
