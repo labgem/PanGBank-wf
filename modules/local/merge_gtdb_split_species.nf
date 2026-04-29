@@ -1,6 +1,6 @@
 process MERGE_GTDB_SPLIT_SPECIES {
     tag "$genome_list.baseName"
-    label 'process_single'
+    label 'process_medium'
 
     container "ghcr.io/labgem/pangbank-wf:merge-split2"
 
