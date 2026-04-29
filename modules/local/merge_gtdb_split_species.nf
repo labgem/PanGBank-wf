@@ -5,7 +5,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
     container "ghcr.io/labgem/pangbank-wf:merge-split2"
 
     input:
-    path genome_list
+    tuple val(meta), path(genome_list)
     path genome_paths
     val threshold
 
