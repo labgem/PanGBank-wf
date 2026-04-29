@@ -12,8 +12,8 @@ workflow GTDB_SPLIT_SPECIES {
     FIND_GTDB_SPLIT_SPECIES(
         file(params.genome_metadata),
         input_genomes,
-        params.genome_min_checkm,
-        params.representative_min_checkm,
+        params.genome_min_completeness,
+        params.representative_min_completeness,
         params.min_genomes
     )
     ch_versions = ch_versions.mix(FIND_GTDB_SPLIT_SPECIES.out.versions)
@@ -23,7 +23,7 @@ workflow GTDB_SPLIT_SPECIES {
     MERGE_GTDB_SPLIT_SPECIES(
         ch_split_species.flatten().map { f -> tuple([id: f.baseName], f) },
         genome_fasta.collect(),
-        params.gtdb_merge_threshold
+        params.gtdb_merge_ani_threshold
     )
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES.out.versions)
 

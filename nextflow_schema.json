@@ -80,11 +80,14 @@
                     "type": "string",
                     "description": "TSV file with two columns: genome name and translation tables."
                 },
-                "gtdb_merge_threshold": { "type": "integer", "description": "" },
-                "genome_min_checkm": { "type": "integer", "description": "", "default": 70 },
-                "representative_min_checkm": { "type": "integer", "description": "", "default": 85 },
-                "genome_fasta": { "type": "string", "description": ""},
-                "merge_gtdb_splits": {"type": "boolean", "description":""}
+                "gtdb_merge_ani_threshold": { "type": "integer", "description": "", "default": 95 },
+                "genome_fasta": {
+                    "type": "string",
+                    "description": "A file like 'genomes' but containing only fasta files. Used in the merge GTDB splits process to avoid having to re-parse annotation files for GTDB genomes that are being merged."
+                },
+                "genome_min_completeness": { "type": "integer", "description": "", "default": 70 },
+                "representative_min_completeness": { "type": "integer", "description": "", "default": 85 },
+                "merge_gtdb_splits": { "type": "boolean", "description": "", "default": false }
             }
         },
         "ressources_options": {

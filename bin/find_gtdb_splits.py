@@ -139,8 +139,8 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Find split species using GTDB metadata files.",
         epilog="Example: python find_gtdb_splits.py --metadata-file <path> --ar-metadata-file <path>"
-        "--genome-min-checkm <int> "
-        "--representative-min-checkm <int> "
+        "--genome-min-completeness <int> "
+        "--representative-min-completeness <int> "
         "--min-genome-count <int> --output-directory <path>",
     )
 
@@ -201,12 +201,18 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
 
     def process(path: Path):
-        metadata, metaspecies, ok_no_splits = filter(path, args.used_genomes, args.representative_min_checkm, args.genome_min_checkm, args.min_genome_count)
+        metadata, metaspecies, ok_no_splits = filter(
+            path,
+            args.used_genomes,
+            args.representative_min_completeness,
+            args.genome_min_completeness,
+            args.min_genome_count,
+        )
         out = output
         out.mkdir(exist_ok=True)
-        metadata.to_csv(out / f"meta.filtered.tsv", sep="\t")
+        metadata.to_csv(out / "meta.filtered.tsv", sep="\t")
 
-        with open(out / f"metaspecies.tsv", "w") as fo:
+        with open(out / "metaspecies.tsv", "w") as fo:
             for k, m in metaspecies.items():
                 fo.write(f"{k}\t{';'.join(m.splits)}\n")
 
@@ -242,6 +248,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-
