@@ -28,8 +28,8 @@ process MERGE_GTDB_SPLIT_SPECIES {
        }
        NR==1 {
            for (i=2; i<=NF; i++) {
-               if ($i in path_to_id) {
-                   $i = path_to_id[\$i]
+               if (\$i in path_to_id) {
+                   \$i = path_to_id[\$i]
                }
            }
        }
