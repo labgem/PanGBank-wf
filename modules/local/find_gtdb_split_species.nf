@@ -25,7 +25,7 @@ process FIND_GTDB_SPLIT_SPECIES {
                         --representative-min-checkm $representative_min_checkm \
                         --representative-min-checkm2 $representative_min_checkm2 \
                         --min-genome-count $min_genomes \
-                        --output-directory ./gtdb_splits
+                        --output-directory ./gtdb_splits > find.info
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
