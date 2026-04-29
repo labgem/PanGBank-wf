@@ -79,7 +79,14 @@
                 "translation_tables": {
                     "type": "string",
                     "description": "TSV file with two columns: genome name and translation tables."
-                }
+                },
+                "gtdb_merge_threshold": { "type": "integer", "description": "" },
+                "genome_min_checkm": { "type": "integer", "description": "", "default": 70 },
+                "genome_min_checkm2": { "type": "integer", "description": "", "default": 70 },
+                "representative_min_checkm": { "type": "integer", "description": "", "default": 85 },
+                "representative_min_checkm2": { "type": "integer", "description": "", "default": 85 },
+                "genome_fasta": { "type": "string", "description": ""},
+                "merge_gtdb_splits": {"type": "boolean", "description":""}
             }
         },
         "ressources_options": {
