@@ -144,17 +144,26 @@ def main():
     G = construct_graph(df, float(args.threshold))
     clusters = find_clusters(G)
 
+    n = 0
     with open(f"{args.prefix}.clusters", "w") as f, open(f"{args.prefix}.genomes.clusters", "w") as f2:
         for i, cluster in enumerate(clusters):
-            f.write(f"{args.prefix}_{i}\t")
-            s = ",".join(cluster)
-            f.write(s + "\n")
-
-            f2.write(f"{args.prefix}_{i}\t")
             all_genomes = []
             for split in cluster:
                 all_genomes.extend(species_to_acc[split])
+
+            if len(cluster) == 1:
+                cname = list(cluster)[0]
+            else:
+                cname = f"{args.prefix}_{n}"
+                n += 1
+
+            f.write(f"{cname}\t")
+            s = ",".join(cluster)
+            f.write(s + f"\t{len(all_genomes)}\n")
+
+            f2.write(f"{args.prefix}_{i}\t")
             f2.write(",".join(all_genomes))
+            f2.write(f"\t{len(all_genomes)}\n")
 
 if __name__ == "__main__":
     sys.exit(main())
