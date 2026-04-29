@@ -21,8 +21,9 @@ workflow GTDB_SPLIT_SPECIES {
     ch_versions = ch_versions.mix(FIND_GTDB_SPLIT_SPECIES.out.versions)
 
     ch_split_species = FIND_GTDB_SPLIT_SPECIES.out.genome_list_files
+
     MERGE_GTDB_SPLIT_SPECIES(
-        ch_split_species,
+        ch_split_species.flatten().map { split_species_file -> [[id: split_species_file.baseName], split_species_file] },
         genome_fasta,
         params.gtdb_merge_threshold
     )
