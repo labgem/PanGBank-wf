@@ -3,6 +3,17 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## dev
+
+### `Added`
+
+- The original input genome list (before dereplication) is now saved to `genome_dereplication/<species>/original_input_genomes.tsv` for traceability.
+- When `--genome_metadata` is provided, genomes are now sorted by completeness before cluster representative selection during dereplication. The completeness score is derived as `floor(max(checkm2_completeness, checkm_completeness))`. The full sort order is: `max_completeness` (desc), `L90` (asc), `L75` (asc), `L50` (asc), `auN` (desc).
+
+### `Fixed`
+
+- Fixed a non-deterministic publish race where the pre-dereplication `input_genomes.tsv.gz` could overwrite the post-dereplication one on `-resume`. A dedicated `PUBLISH_INPUT_GENOMES` step now writes the final file for all species from a single point in the DAG.
+
 ## 0.0.3 - [2025-04-01]
 
 ### `Added`

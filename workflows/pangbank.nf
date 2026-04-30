@@ -20,6 +20,7 @@ include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplicatio
 // MODULE: Local modules
 //
 include { PARSE_GENOMES_AND_TAXONOMY } from '../modules/local/parse_genomes_and_taxonomy'
+include { PUBLISH_INPUT_GENOMES } from '../modules/local/publish_input_genomes'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_LARGE } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_MEDIUM } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_SMALL } from '../modules/local/ppanggolin/all'
@@ -76,6 +77,11 @@ workflow PANGBANK {
         .flatten()
         .map {it -> create_ppanggo_input_channel(it) }
 
+    ch_species_to_metadata = PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata
+        .flatten()
+        .map { genome_metadata_file -> [[id: genome_metadata_file.parent.baseName], genome_metadata_file] }
+
+
     ch_ppanggo_inputs_meta = addTranslationTable(ch_ppanggo_inputs_meta, PARSE_GENOMES_AND_TAXONOMY.out.species_translation_tables)
 
     if (!params.skip_dereplication) {
@@ -85,12 +91,17 @@ workflow PANGBANK {
             other: true
         }
 
-        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate)
+        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate, ch_species_to_metadata)
 
         ch_ppanggo_inputs_meta = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
         ch_versions = ch_versions.mix(GENOME_DEREPLICATION.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(GENOME_DEREPLICATION.out.multiqc_files)
     }
+
+    // Publish the definitive input_genomes.tsv.gz for every species to pangenomes/<sp>/.
+    // Running this on the final merged channel (after dereplication) ensures a single
+    // deterministic source of truth and avoids publish races on -resume.
+    PUBLISH_INPUT_GENOMES(ch_ppanggo_inputs_meta)
 
     ch_species_branched = ch_ppanggo_inputs_meta.branch { meta, _genome_file ->
         large: meta.genomes_count >= params.large_pangenome_cutoff
@@ -116,7 +127,7 @@ workflow PANGBANK {
     SUMMARIZE_GENOME_STATS(ch_genomes_statistics)
     ch_versions = ch_versions.mix(SUMMARIZE_GENOME_STATS.out.versions)
 
-    ch_pangenome_and_metadata = groupMetadataAndPangenome(ch_pangenomes, PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata)
+    ch_pangenome_and_metadata = groupMetadataAndPangenome(ch_pangenomes, ch_species_to_metadata)
 
     PPANGGOLIN_METADATA(ch_pangenome_and_metadata)
     ch_versions = ch_versions.mix(PPANGGOLIN_METADATA.out.versions)
@@ -299,12 +310,12 @@ def manage_input_genomes(input_genomes_file) {
 }
 
 // Function to process genome metadata and group it with pangenomes
-def groupMetadataAndPangenome(ch_pangenomes, ch_genome_metadata) {
-    def ch_species_to_metadata = ch_genome_metadata
-        .flatten()
-        .map { genome_metadata_file -> [[species: genome_metadata_file.parent.baseName], genome_metadata_file] }
+def groupMetadataAndPangenome(ch_pangenomes, ch_meta_to_metadata) {
+    def ch_species_to_metadata = ch_meta_to_metadata
+        .map { meta, metadata_file -> [meta.id, metadata_file] }
+
     return ch_pangenomes
-        .map { meta, pangenome -> [[species: meta.species], [meta, pangenome]] }
+        .map { meta, pangenome -> [meta.species, [meta, pangenome]] }
         .concat(ch_species_to_metadata)
         .groupTuple(size: 2)
         .map { tuple ->
