@@ -1,4 +1,4 @@
-process PARSE_GENOMES_AND_TAXONOMY {
+process PREPARE_PPANGGOLIN_INPUTS {
     label 'process_single'
 
     // reuse ppanggolin env as it as already been downloaded and used
@@ -12,6 +12,7 @@ process PARSE_GENOMES_AND_TAXONOMY {
     path taxonomy
     path genome_metadata
     path translation_tables
+    path gtdb_cluster
     val min_genomes
 
     output:
@@ -27,11 +28,13 @@ process PARSE_GENOMES_AND_TAXONOMY {
     script:
     def genome_metadata_arg = genome_metadata.name != 'NO_FILE' ? "--genome_metadata $genome_metadata" : ''
     def genome_translation_tables_arg = translation_tables.name != 'NO_FILE_2' ? "--genome_translation_table $translation_tables" : ''
+    def gtdb_cluster_arg = gtdb_cluster.name != 'NO_FILE_3' ? "--species_to_merge $gtdb_cluster" : ''
 
     """
-    parse_genomes_and_taxonomy.py --genomes $genomes --taxonomy $taxonomy\
+    prepare_ppanggolin_inputs.py --genomes $genomes --taxonomy $taxonomy\
                                     --min_genomes $min_genomes --species_summary_file species_summary.tsv\
-                                    --outdir ppanggolin_input_files $genome_metadata_arg $genome_translation_tables_arg
+                                    --outdir ppanggolin_input_files \
+                                    $genome_metadata_arg $genome_translation_tables_arg $gtdb_cluster_arg
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

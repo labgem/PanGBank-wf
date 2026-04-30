@@ -6,7 +6,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
 
     input:
     tuple val(meta), path(genome_list)
-    path genome_paths
+    path genome_to_fna_paths
     val threshold
 
     output:
@@ -17,7 +17,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
     script:
     """
     awk 'NR==FNR { ids[\$NF]; next } \$1 in ids { print \$2 }' \
-           $genome_list $genome_paths > skani_input.list
+           $genome_list $genome_to_fna_paths > skani_input.list
 
     skani triangle -t $task.cpus -l ./skani_input.list --medium -o ${genome_list.baseName}.tsv
 
@@ -39,7 +39,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
            }
            print
        }
-    ' OFS='\\t' $genome_paths ${genome_list.baseName}.tsv > ${genome_list.baseName}.clean.tsv
+    ' OFS='\\t' $genome_to_fna_paths ${genome_list.baseName}.tsv > ${genome_list.baseName}.clean.tsv
 
 
     merge_gtdb_splits.py --genome-list $genome_list \

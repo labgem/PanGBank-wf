@@ -5,16 +5,17 @@ workflow GTDB_SPLIT_SPECIES {
     take:
     input_genomes
     genome_fasta
+    taxonomy
+    min_genomes
+
 
     main:
     ch_versions = channel.empty()
 
     FIND_GTDB_SPLIT_SPECIES(
-        file(params.genome_metadata),
         input_genomes,
-        params.genome_min_completeness,
-        params.representative_min_completeness,
-        params.min_genomes
+        taxonomy,
+        min_genomes
     )
     ch_versions = ch_versions.mix(FIND_GTDB_SPLIT_SPECIES.out.versions)
 
@@ -27,8 +28,10 @@ workflow GTDB_SPLIT_SPECIES {
     )
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES.out.versions)
 
+    split_clusters = MERGE_GTDB_SPLIT_SPECIES.out.split_clusters.collectFile(name: 'split_clusters.tsv').ifEmpty(file("$projectDir/assets/NO_FILE_3"))
+
     emit:
-    split_clusters = MERGE_GTDB_SPLIT_SPECIES.out.split_clusters
+    split_clusters = split_clusters
     genome_clusters = MERGE_GTDB_SPLIT_SPECIES.out.genome_clusters
     versions = ch_versions
 
