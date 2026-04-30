@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
-- The original input genome list (before dereplication) is now saved to `genome_dereplication/<species>/original_input_genomes.tsv` for traceability.
 - When `--genome_metadata` is provided, genomes are now sorted by completeness before cluster representative selection during dereplication. The completeness score is derived as `floor(max(checkm2_completeness, checkm_completeness))`. The full sort order is: `max_completeness` (desc), `L90` (asc), `L75` (asc), `L50` (asc), `auN` (desc).
+- New `FILTER_GENOMES` process to filter input genomes based on CheckM/CheckM2 completeness scores. Activated with `--genome_quality_filtering`. Two thresholds are available: `--genome_min_completeness` (default: 70) for all input genomes and `--representative_min_completeness` (default: 85) for representative genomes to filter out species that have a poor quality representative genome.
+- New `GTDB_SPLIT_SPECIES` subworkflow to detect and merge GTDB split species — species that GTDB splits but are genomically close enough to build a single pangenome. Activated with `--merge_gtdb_splits`. The ANI threshold for merging is controlled by `--gtdb_merge_ani_threshold` (default: 95).
+- `PREPARE_PPANGGOLIN_INPUTS` (renamed from `PARSE_GENOMES_AND_TAXONOMY`) now handles merging of GTDB split species into metaspecies before writing per-species input files. Merged genomes are written to the metaspecies directory. A `pangenome_taxonomy.txt` file is written in each species output directory recording the pangenome-level taxonomy.
+- Output files for genome preprocessing are now grouped under `genome_preprocessing/` with three sub-folders: `genome_filtering/`, `merge_gtdb_split/`, and `genome_dereplication/`.
 
 ### `Fixed`
 
