@@ -38,14 +38,14 @@
                 "MD5SUM_ON_FILES": {
                     "md5sum": 8.3
                 },
-                "PARSE_GENOMES_AND_TAXONOMY": {
-                    "python": "3.12.13"
-                },
                 "PPANGGOLIN_ALL_SMALL": {
                     "ppanggolin": "2.3.0"
                 },
                 "PPANGGOLIN_FASTA": {
                     "ppanggolin": "2.3.0"
+                },
+                "PREPARE_PPANGGOLIN_INPUTS": {
+                    "python": "3.12.13"
                 },
                 "QUICKTREE": {
                     "quicktree": 2.5
@@ -65,40 +65,42 @@
                 }
             },
             [
-                "genome_dereplication",
-                "genome_dereplication/plots",
-                "genome_dereplication/plots/distance_box_plot.html",
-                "genome_dereplication/plots/mash_distance_density_plot_lines.html",
-                "genome_dereplication/plots/mash_distance_density_plot_sp_row.html",
-                "genome_dereplication/plots/s__Chlamydia_trachomatis_cluster_distances_density_plot.html",
-                "genome_dereplication/plots/s__Mycoplasmoides_pneumoniae_cluster_distances_density_plot.html",
-                "genome_dereplication/s__Borrelia_miyamotoi",
-                "genome_dereplication/s__Borrelia_miyamotoi/cluster_stat.tsv",
-                "genome_dereplication/s__Borrelia_miyamotoi/distance_count.tsv",
-                "genome_dereplication/s__Borrelia_miyamotoi/genome_stat.tsv",
-                "genome_dereplication/s__Borrelia_miyamotoi/selected_genomes.txt.gz",
-                "genome_dereplication/s__Borrelia_miyamotoi/sorted_genomes.tsv.gz",
-                "genome_dereplication/s__Borrelia_miyamotoi/sorted_genomes.txt.gz",
-                "genome_dereplication/s__Borrelia_miyamotoi/summary_selection.tsv",
-                "genome_dereplication/s__Borrelia_miyamotoi/tree.nw",
-                "genome_dereplication/s__Chlamydia_trachomatis",
-                "genome_dereplication/s__Chlamydia_trachomatis/cluster_stat.tsv",
-                "genome_dereplication/s__Chlamydia_trachomatis/distance_count.tsv",
-                "genome_dereplication/s__Chlamydia_trachomatis/genome_stat.tsv",
-                "genome_dereplication/s__Chlamydia_trachomatis/selected_genomes.txt.gz",
-                "genome_dereplication/s__Chlamydia_trachomatis/sorted_genomes.tsv.gz",
-                "genome_dereplication/s__Chlamydia_trachomatis/sorted_genomes.txt.gz",
-                "genome_dereplication/s__Chlamydia_trachomatis/summary_selection.tsv",
-                "genome_dereplication/s__Chlamydia_trachomatis/tree.nw",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/cluster_stat.tsv",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/distance_count.tsv",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/genome_stat.tsv",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/selected_genomes.txt.gz",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/sorted_genomes.tsv.gz",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/sorted_genomes.txt.gz",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/summary_selection.tsv",
-                "genome_dereplication/s__Mycoplasmoides_pneumoniae/tree.nw",
+                "genome_preprocessing",
+                "genome_preprocessing/genome_dereplication",
+                "genome_preprocessing/genome_dereplication/plots",
+                "genome_preprocessing/genome_dereplication/plots/distance_box_plot.html",
+                "genome_preprocessing/genome_dereplication/plots/mash_distance_density_plot_lines.html",
+                "genome_preprocessing/genome_dereplication/plots/mash_distance_density_plot_sp_row.html",
+                "genome_preprocessing/genome_dereplication/plots/s__Chlamydia_trachomatis_cluster_distances_density_plot.html",
+                "genome_preprocessing/genome_dereplication/plots/s__Mycoplasmoides_pneumoniae_cluster_distances_density_plot.html",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/cluster_stat.tsv",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/distance_count.tsv",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/genome_stat.tsv",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/selected_genomes.txt.gz",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/sorted_genomes.tsv.gz",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/sorted_genomes.txt.gz",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/summary_selection.tsv",
+                "genome_preprocessing/genome_dereplication/s__Borrelia_miyamotoi/tree.nw",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/cluster_stat.tsv",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/distance_count.tsv",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/genome_stat.tsv",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/selected_genomes.txt.gz",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/sorted_genomes.tsv.gz",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/sorted_genomes.txt.gz",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/summary_selection.tsv",
+                "genome_preprocessing/genome_dereplication/s__Chlamydia_trachomatis/tree.nw",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/cluster_stat.tsv",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/distance_count.tsv",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/genome_stat.tsv",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/selected_genomes.txt.gz",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/sorted_genomes.tsv.gz",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/sorted_genomes.txt.gz",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/summary_selection.tsv",
+                "genome_preprocessing/genome_dereplication/s__Mycoplasmoides_pneumoniae/tree.nw",
+                "genome_preprocessing/species_summary.tsv",
                 "mash_sketch",
                 "mash_sketch/families_persistent_all.msh",
                 "multiqc",
@@ -155,6 +157,7 @@
                 "pangenomes/s__Borrelia_miyamotoi/info.yaml",
                 "pangenomes/s__Borrelia_miyamotoi/input_genomes.tsv.gz",
                 "pangenomes/s__Borrelia_miyamotoi/pangenome.h5",
+                "pangenomes/s__Borrelia_miyamotoi/pangenome_taxonomy.txt",
                 "pangenomes/s__Borrelia_miyamotoi/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Borrelia_miyamotoi/proksee",
                 "pangenomes/s__Borrelia_miyamotoi/proksee/GCF_009734065.1.json.gz",
@@ -177,6 +180,7 @@
                 "pangenomes/s__Chlamydia_trachomatis/info.yaml",
                 "pangenomes/s__Chlamydia_trachomatis/input_genomes.tsv.gz",
                 "pangenomes/s__Chlamydia_trachomatis/pangenome.h5",
+                "pangenomes/s__Chlamydia_trachomatis/pangenome_taxonomy.txt",
                 "pangenomes/s__Chlamydia_trachomatis/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Chlamydia_trachomatis/proksee",
                 "pangenomes/s__Chlamydia_trachomatis/proksee/GCF_000068585.1.json.gz",
@@ -199,6 +203,7 @@
                 "pangenomes/s__Mycoplasmoides_pneumoniae/info.yaml",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/input_genomes.tsv.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/pangenome.h5",
+                "pangenomes/s__Mycoplasmoides_pneumoniae/pangenome_taxonomy.txt",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee/GCF_001296735.1.json.gz",
@@ -213,11 +218,10 @@
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee/GCF_030924815.1.json.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/tile_plot.html",
                 "pipeline_info",
-                "pipeline_info/pangbank_software_mqc_versions.yml",
-                "species_summary.tsv"
+                "pipeline_info/pangbank_software_mqc_versions.yml"
             ]
         ],
-        "timestamp": "2026-04-24T16:48:41.075083823",
+        "timestamp": "2026-04-30T16:55:46.396722514",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
@@ -235,14 +239,14 @@
                 "MD5SUM_ON_FILES": {
                     "md5sum": 8.3
                 },
-                "PARSE_GENOMES_AND_TAXONOMY": {
-                    "python": "3.12.13"
-                },
                 "PPANGGOLIN_ALL_SMALL": {
                     "ppanggolin": "2.3.0"
                 },
                 "PPANGGOLIN_FASTA": {
                     "ppanggolin": "2.3.0"
+                },
+                "PREPARE_PPANGGOLIN_INPUTS": {
+                    "python": "3.12.13"
                 },
                 "SUMMARIZE_GENOME_STATS": {
                     "python": "3.12.13"
@@ -252,6 +256,8 @@
                 }
             },
             [
+                "genome_preprocessing",
+                "genome_preprocessing/species_summary.tsv",
                 "mash_sketch",
                 "mash_sketch/families_persistent_all.msh",
                 "multiqc",
@@ -303,6 +309,7 @@
                 "pangenomes/s__Borrelia_miyamotoi/metadata",
                 "pangenomes/s__Borrelia_miyamotoi/metadata/genomes_metadata_from_annotation_file.tsv.gz",
                 "pangenomes/s__Borrelia_miyamotoi/pangenome.h5",
+                "pangenomes/s__Borrelia_miyamotoi/pangenome_taxonomy.txt",
                 "pangenomes/s__Borrelia_miyamotoi/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Borrelia_miyamotoi/proksee",
                 "pangenomes/s__Borrelia_miyamotoi/proksee/GCF_009734045.1.json.gz",
@@ -333,6 +340,7 @@
                 "pangenomes/s__Chlamydia_trachomatis/metadata/contigs_metadata_from_annotation_file.tsv.gz",
                 "pangenomes/s__Chlamydia_trachomatis/metadata/genomes_metadata_from_annotation_file.tsv.gz",
                 "pangenomes/s__Chlamydia_trachomatis/pangenome.h5",
+                "pangenomes/s__Chlamydia_trachomatis/pangenome_taxonomy.txt",
                 "pangenomes/s__Chlamydia_trachomatis/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Chlamydia_trachomatis/proksee",
                 "pangenomes/s__Chlamydia_trachomatis/proksee/GCF_000068525.2.json.gz",
@@ -363,6 +371,7 @@
                 "pangenomes/s__Mycoplasmoides_pneumoniae/metadata/contigs_metadata_from_annotation_file.tsv.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/metadata/genomes_metadata_from_annotation_file.tsv.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/pangenome.h5",
+                "pangenomes/s__Mycoplasmoides_pneumoniae/pangenome_taxonomy.txt",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee/GCF_001296735.1.json.gz",
@@ -382,11 +391,10 @@
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee/GCF_030925355.1.json.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/tile_plot.html",
                 "pipeline_info",
-                "pipeline_info/pangbank_software_mqc_versions.yml",
-                "species_summary.tsv"
+                "pipeline_info/pangbank_software_mqc_versions.yml"
             ]
         ],
-        "timestamp": "2026-04-24T16:45:04.014740785",
+        "timestamp": "2026-04-30T16:52:17.110393553",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
@@ -405,14 +413,14 @@
                 "MD5SUM_ON_FILES": {
                     "md5sum": 8.3
                 },
-                "PARSE_GENOMES_AND_TAXONOMY": {
-                    "python": "3.12.13"
-                },
                 "PPANGGOLIN_ALL_SMALL": {
                     "ppanggolin": "2.3.0"
                 },
                 "PPANGGOLIN_FASTA": {
                     "ppanggolin": "2.3.0"
+                },
+                "PREPARE_PPANGGOLIN_INPUTS": {
+                    "python": "3.12.13"
                 },
                 "SUMMARIZE_GENOME_STATS": {
                     "python": "3.12.13"
@@ -422,6 +430,8 @@
                 }
             },
             [
+                "genome_preprocessing",
+                "genome_preprocessing/species_summary.tsv",
                 "mash_sketch",
                 "mash_sketch/families_persistent_all.msh",
                 "multiqc",
@@ -471,6 +481,7 @@
                 "pangenomes/s__Borrelia_miyamotoi/info.yaml",
                 "pangenomes/s__Borrelia_miyamotoi/input_genomes.tsv.gz",
                 "pangenomes/s__Borrelia_miyamotoi/pangenome.h5",
+                "pangenomes/s__Borrelia_miyamotoi/pangenome_taxonomy.txt",
                 "pangenomes/s__Borrelia_miyamotoi/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Borrelia_miyamotoi/proksee",
                 "pangenomes/s__Borrelia_miyamotoi/proksee/GCF_009734045.1.json.gz",
@@ -498,6 +509,7 @@
                 "pangenomes/s__Chlamydia_trachomatis/info.yaml",
                 "pangenomes/s__Chlamydia_trachomatis/input_genomes.tsv.gz",
                 "pangenomes/s__Chlamydia_trachomatis/pangenome.h5",
+                "pangenomes/s__Chlamydia_trachomatis/pangenome_taxonomy.txt",
                 "pangenomes/s__Chlamydia_trachomatis/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Chlamydia_trachomatis/proksee",
                 "pangenomes/s__Chlamydia_trachomatis/proksee/GCF_000068525.2.json.gz",
@@ -525,6 +537,7 @@
                 "pangenomes/s__Mycoplasmoides_pneumoniae/info.yaml",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/input_genomes.tsv.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/pangenome.h5",
+                "pangenomes/s__Mycoplasmoides_pneumoniae/pangenome_taxonomy.txt",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/persistent_nucleotide_families.fasta.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee/GCF_001296735.1.json.gz",
@@ -544,11 +557,10 @@
                 "pangenomes/s__Mycoplasmoides_pneumoniae/proksee/GCF_030925355.1.json.gz",
                 "pangenomes/s__Mycoplasmoides_pneumoniae/tile_plot.html",
                 "pipeline_info",
-                "pipeline_info/pangbank_software_mqc_versions.yml",
-                "species_summary.tsv"
+                "pipeline_info/pangbank_software_mqc_versions.yml"
             ]
         ],
-        "timestamp": "2026-04-24T16:46:58.517051152",
+        "timestamp": "2026-04-30T16:54:11.591104932",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
