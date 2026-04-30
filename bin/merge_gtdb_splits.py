@@ -152,13 +152,13 @@ def main():
                 all_genomes.extend(species_to_acc[split])
 
             if len(cluster) == 1:
-                cname = list(cluster)[0]
+                cname = list(cluster)[0].replace(" ", "_")
             else:
                 cname = f"{args.prefix}_{n}"
                 n += 1
 
             f.write(f"{cname}\t")
-            s = ",".join(cluster)
+            s = ";".join(cluster)
             f.write(s + f"\t{len(all_genomes)}\n")
 
             f2.write(f"{args.prefix}_{i}\t")
@@ -167,6 +167,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-

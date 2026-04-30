@@ -11,8 +11,8 @@ process FILTER_GENOMES {
 
     output:
     path "genome_quality_filtering.info", emit: genome_quality_filtering_info
-    path "genome_filtering/input_genomes.filtered.tsv", emit: filtered_genome_input
-    path "genome_filtering/genome_metadata.filtered.tsv", emit: filtered_genome_metadata
+    path "input_genomes.filtered.tsv", emit: filtered_genome_input
+    path "genome_metadata.filtered.tsv", emit: filtered_genome_metadata
     path "versions.yml", emit: versions
 
     script:
@@ -21,7 +21,7 @@ process FILTER_GENOMES {
                         --input-genomes $input_genomes \
                         --genome-min-completeness $genome_min_completeness \
                         --representative-min-completeness $representative_min_completeness \
-                        --output-directory ./genome_filtering/ > genome_quality_filtering.info
+                        --output-directory ./ > genome_quality_filtering.info
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

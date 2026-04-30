@@ -20,6 +20,7 @@ process PREPARE_PPANGGOLIN_INPUTS {
     path "species_summary.tsv"                                 , emit: summary
     path "ppanggolin_input_files/*/genomes_metadata.tsv.gz"    , optional: true, emit: genome_metadata
     path "ppanggolin_input_files/species_to_translation_tables.tsv"    , optional: true, emit: species_translation_tables
+    path "ppanggolin_input_files/*/pangenome_taxonomy.txt"
     path "versions.yml"      , emit: versions
 
     when:

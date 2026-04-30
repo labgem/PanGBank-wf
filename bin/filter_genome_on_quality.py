@@ -71,7 +71,13 @@ def filter_genomes(metadata_path: Path,
     print(f"Starting quality filtering: {n_input} input genomes, {len(metadata)} entries in GTDB metadata")
 
     metadata = filter_input_genome(metadata, set(input_genomes["genomes"]), label="Metadata restricted to input genomes")
-    metadata = filter_representative(metadata, min_checkm_completeness_repr)
+    if "gtdb_genome_representative" in metadata.columns:
+        metadata = filter_representative(metadata, min_checkm_completeness_repr)
+    else:
+        print(
+            "Warning: no 'gtdb_genome_representative' column found in metadata, skipping representative filtering"
+        )
+
     metadata = filter_genome(metadata, min_checkm_completeness)
 
     input_genomes = filter_input_genome(input_genomes, set(metadata["genomes"]), label="Input genomes matching quality-filtered metadata")

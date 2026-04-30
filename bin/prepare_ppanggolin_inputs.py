@@ -6,11 +6,10 @@
 
 import argparse
 import logging
+import re
 import sys
 from pathlib import Path
 import pandas as pd
-
-# TODO check circular contig when input genomes are in fasta and add them in ppanggolin input files
 
 
 def parse_genome_files(genomes_paths_file, check_files_existence=True) -> pd.DataFrame:
@@ -29,7 +28,7 @@ def parse_genome_files(genomes_paths_file, check_files_existence=True) -> pd.Dat
         if not missing.empty:
             for row in missing.itertuples():
                 logging.error(
-                    f"Genome file '{row.path}' at line {row.Index + 1} of '{genomes_paths_file}' was not found!"
+                    f"Genome file '{row.path}' at line {row.Index + 1} of '{genomes_paths_file}' was not found!"  # type: ignore
                 )
             sys.exit(2)
 
@@ -47,6 +46,19 @@ def parse_taxonomy_file(taxonomy_file) -> pd.DataFrame:
     )
 
 
+def parse_species_to_merge_file(species_to_merge_file, min_genomes) -> pd.DataFrame:
+    """Return a DataFrame with columns ['meta_sp_dir_name', 'species_to_merge']."""
+    logging.info(f"Parsing species to merge file {species_to_merge_file}")
+    df = pd.read_csv(
+        species_to_merge_file,
+        sep="\t",
+        names=["meta_sp_dir_name", "species_to_merge", "genome_count"],
+        dtype=str,
+    )
+    df = df.loc[df["genome_count"].astype(int) >= min_genomes]
+    return df
+
+
 def associate_genomes_and_taxonomy(
     genomes_df: pd.DataFrame, taxonomy_df: pd.DataFrame
 ) -> pd.DataFrame:
@@ -54,7 +66,7 @@ def associate_genomes_and_taxonomy(
     Match input genomes to their taxonomy.
 
     Returns:
-        matched_df: one row per genome with columns ['name', 'path', 'taxonomy']
+        matched_df: one row per genome with columns ['name', 'path', 'taxonomy', 'sp_dir_name']
     """
     # Strip assembly version suffix so GCA_X.1 and GCA_X.2 match the same genome
     tax = taxonomy_df.copy()
@@ -79,7 +91,11 @@ def associate_genomes_and_taxonomy(
             + "\n".join(f"  - {name}" for name in dup_names)
         )
 
-    matched_df = merged[["name", "path", "taxonomy"]].copy()
+    merged["sp_dir_name"] = (
+        merged["taxonomy"].str.split(";").str[-1].str.strip().str.replace(" ", "_")
+    )
+
+    matched_df = merged[["name", "path", "taxonomy", "sp_dir_name"]].copy()
 
     # Ensure no species maps to more than one taxonomy string
     species_col = matched_df["taxonomy"].str.split(";").str[-1]
@@ -103,6 +119,35 @@ def filter_input_genome(genome_df: pd.DataFrame, genomes: set[str]) -> pd.DataFr
         f"({len(genome_df) - len(filtered)} not found in taxonomy)"
     )
     return filtered
+
+
+def apply_species_merging(
+    matched_df: pd.DataFrame, species_to_merge_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Reassign taxonomy and sp_dir_name for genomes belonging to merged species.
+
+    Returns a copy of matched_df with updated 'taxonomy', 'sp_dir_name', and an
+    'original_taxonomy' column preserving the pre-merge value.
+    """
+    result = matched_df.copy()
+    result["original_taxonomy"] = result["taxonomy"]
+
+    for meta_sp_dir_name, species_to_merge, pangenome_taxonomy in species_to_merge_df[
+        ["meta_sp_dir_name", "species_to_merge", "pangenome_taxonomy"]
+    ].itertuples(index=False):
+        logging.info(
+            f"Merging species {species_to_merge} into {meta_sp_dir_name} (metaspecies)"
+        )
+        for sp in species_to_merge.split(";"):
+            filt = result["taxonomy"].str.endswith(f";{sp}")
+            result.loc[filt, "taxonomy"] = pangenome_taxonomy
+            result.loc[filt, "sp_dir_name"] = meta_sp_dir_name
+
+    logging.info(
+        f"After merging, matched_df contains {result['taxonomy'].nunique()} unique taxonomies."
+    )
+    return result
 
 
 def write_species_summary(
@@ -137,7 +182,10 @@ def write_species_summary(
             "build_pangenome",
             "taxonomy",
         ]
-    ]
+    ].sort_values(
+        ["build_pangenome", "input_sp_genome", "species"],
+        ascending=[False, False, True],
+    )
 
     summary_df.to_csv(species_summary_file, sep="\t", index=False)
 
@@ -160,9 +208,11 @@ def filter_genomes_for_pangenome(
 
 def write_ppanggolin_input_files(outdir, filtered_df: pd.DataFrame):
     logging.info(f"Writing ppanggolin input files in {outdir}")
-    for taxonomy, group in filtered_df.groupby("taxonomy"):
-        species = taxonomy.split(";")[-1].replace(" ", "_")
-        sp_outdir = outdir / species
+    for (sp_dir_name, taxonomy), group in filtered_df.groupby(
+        ["sp_dir_name", "taxonomy"]
+    ):
+        sp_outdir = outdir / sp_dir_name
+        print(">>>>", taxonomy, "||||", sp_dir_name, len(group))
         sp_outdir.mkdir(parents=True, exist_ok=True)
         group[["name", "path"]].sort_values("name").to_csv(
             sp_outdir / "input_genomes.tsv.gz",
@@ -171,17 +221,17 @@ def write_ppanggolin_input_files(outdir, filtered_df: pd.DataFrame):
             header=False,
             compression="gzip",
         )
+        with open(sp_outdir / "pangenome_taxonomy.txt", "w") as f:
+            f.write(str(taxonomy) + "\n")
 
 
 def write_metadata_by_species(outdir, genome_metadata_df: pd.DataFrame):
     logging.info(f"Splitting and writing genome metadata by species in {outdir}")
-    for sptax, group in genome_metadata_df.groupby("_sptax"):
-
-        species = sptax.split(";")[-1].replace(" ", "_")
-        sp_outdir = outdir / species
+    for sp_dir_name, group in genome_metadata_df.groupby("sp_dir_name"):
+        sp_outdir = outdir / sp_dir_name
         sp_outdir.mkdir(parents=True, exist_ok=True)
 
-        group.drop(columns=["_sptax"]).to_csv(
+        group.drop(columns=["sp_dir_name"]).to_csv(
             sp_outdir / "genomes_metadata.tsv.gz",
             sep="\t",
             index=False,
@@ -190,8 +240,13 @@ def write_metadata_by_species(outdir, genome_metadata_df: pd.DataFrame):
 
 
 def parse_metadata_file(
-    genome_metadata_file: Path, taxonomy_map: pd.Series
+    genome_metadata_file: Path, genome_df: pd.DataFrame
 ) -> pd.DataFrame:
+    """
+    Parse metadata file and attach sp_dir_name from genome_df.
+
+    genome_df must have columns ['name', 'sp_dir_name'].
+    """
     df = pd.read_csv(genome_metadata_file, sep="\t", dtype=str, keep_default_na=False)
 
     if "genomes" not in df.columns:
@@ -199,24 +254,27 @@ def parse_metadata_file(
             f"genomes column not found in metadata file {genome_metadata_file}"
         )
 
-    df = df[df["genomes"].isin(taxonomy_map.index)].copy()
-    df["_sptax"] = df["genomes"].map(taxonomy_map)
-
+    df = df[df["genomes"].isin(genome_df["name"])].copy()
+    df = df.merge(
+        genome_df[["name", "sp_dir_name"]].rename(columns={"name": "genomes"}),
+        on="genomes",
+        how="left",
+    )
     return df
 
 
 def parse_translation_table_file(
-    translation_table_file: Path, taxonomy_map: pd.Series
+    translation_table_file: Path, genome_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
     Parse translation table file and associate translation tables with species taxonomy.
 
     Args:
         translation_table_file: Path to TSV file containing genome accessions and translation tables
-        taxonomy_map: Series indexed by genome name, mapping to taxonomy string
+        genome_df: DataFrame with columns ['name', 'taxonomy', 'sp_dir_name']
 
     Returns:
-        DataFrame with columns ['name', 'translation_table', 'taxonomy']
+        DataFrame with columns ['name', 'translation_table', 'taxonomy', 'sp_dir_name']
     """
     logging.info(f"Parsing translation table file {translation_table_file}")
     df = pd.read_csv(
@@ -233,8 +291,12 @@ def parse_translation_table_file(
         logging.debug(f"Invalid translation table value for genome {name}. Skipping.")
     df = df[~invalid_mask]
 
-    df = df[df["name"].isin(taxonomy_map.index)].copy()
-    df["taxonomy"] = df["name"].map(taxonomy_map)
+    df = df[df["name"].isin(genome_df["name"])].copy()
+    df = df.merge(
+        genome_df[["name", "taxonomy", "sp_dir_name"]],
+        on="name",
+        how="left",
+    )
 
     logging.info(
         f"Parsed translation table for {len(df)} genomes across {df['taxonomy'].nunique()} species."
@@ -242,17 +304,49 @@ def parse_translation_table_file(
     return df
 
 
+def compute_pangenome_taxonomy(
+    species_to_merge_df: pd.DataFrame, genome_taxonomy_df: pd.DataFrame
+) -> pd.DataFrame:
+    """For each metaspecies, compute a consensus taxonomy based on the taxonomies of the species to merge."""
+    # Map species name (last rank of taxonomy) → full taxonomy string
+    tax_unique = genome_taxonomy_df[["taxonomy"]].drop_duplicates().copy()
+    tax_unique["species"] = tax_unique["taxonomy"].str.split(";").str[-1].str.strip()
+    species_to_tax = tax_unique.set_index("species")["taxonomy"].to_dict()
+
+    def compute_consensus_taxonomy(species_to_merge: str) -> str:
+        species_list = [s.strip() for s in species_to_merge.split(";")]
+        try:
+            full_taxonomies = [species_to_tax[s] for s in species_list]
+        except KeyError as e:
+            raise ValueError(f"Species {e} not found in taxonomy file") from e
+
+        # Strip GTDB letter suffix from each rank of each taxonomy, then verify consensus
+        pangenome_taxonomies = {rm_suffix(tax) for tax in full_taxonomies}
+        if len(pangenome_taxonomies) != 1:
+            raise ValueError(
+                f"Inconsistent pangenome taxonomies for {species_to_merge!r}: {pangenome_taxonomies}"
+            )
+        return pangenome_taxonomies.pop()
+
+    result = species_to_merge_df.copy()
+    result["pangenome_taxonomy"] = result["species_to_merge"].apply(
+        compute_consensus_taxonomy
+    )
+    return result
+
+
 def write_translation_table_by_species(outdir, translation_df: pd.DataFrame):
     logging.info(f"Splitting and writing translation table by species in {outdir}")
     rows = []
-    for taxonomy, group in translation_df.groupby("taxonomy"):
-        species = taxonomy.split(";")[-1].replace(" ", "_")
+    for (sp_dir_name, taxonomy), group in translation_df.groupby(
+        ["sp_dir_name", "taxonomy"]
+    ):
         counts = group["translation_table"].value_counts()
         if len(counts) > 1:
             logging.warning(
-                f"Species {species} has multiple translation tables: {counts.to_dict()}. The most common one will be used."
+                f"Species {sp_dir_name} has multiple translation tables: {counts.to_dict()}. The most common one will be used."
             )
-        rows.append(f"{species}\t{counts.index[0]}\n")
+        rows.append(f"{sp_dir_name}\t{counts.index[0]}\n")
     (outdir / "species_to_translation_tables.tsv").write_text("".join(rows))
 
 
@@ -272,6 +366,11 @@ def existing_parent(value: str) -> Path:
             f"parent directory does not exist: {path.parent}"
         )
     return path
+
+
+def rm_suffix(species: str) -> str:
+    """Remove _[A-Z]+ suffix from species name"""
+    return re.sub(r"_[A-Za-z]+$", "", species)
 
 
 def parse_args(argv=None):
@@ -370,6 +469,21 @@ def main(argv=None):
 
     matched_df = associate_genomes_and_taxonomy(genome_path_df, genome_taxonomy_df)
 
+    if args.species_to_merge:
+        species_to_merge_df = parse_species_to_merge_file(
+            args.species_to_merge, args.min_genomes
+        )
+        species_to_merge_df = compute_pangenome_taxonomy(
+            species_to_merge_df, genome_taxonomy_df
+        )
+        logging.info(
+            "Species to merge:\n"
+            + species_to_merge_df[
+                ["meta_sp_dir_name", "species_to_merge", "pangenome_taxonomy"]
+            ].to_csv(sep="\t", index=False)
+        )
+        matched_df = apply_species_merging(matched_df, species_to_merge_df)
+
     write_species_summary(
         args.species_summary_file, matched_df, genome_taxonomy_df, args.min_genomes
     )
@@ -378,18 +492,15 @@ def main(argv=None):
     filtered_df = filter_genomes_for_pangenome(
         matched_df, args.min_genomes, uninformative_species
     )
-
     write_ppanggolin_input_files(args.outdir, filtered_df)
 
-    taxonomy_map = filtered_df.set_index("name")["taxonomy"]
-
     if args.genome_metadata:
-        metadata_df = parse_metadata_file(args.genome_metadata, taxonomy_map)
+        metadata_df = parse_metadata_file(args.genome_metadata, filtered_df)
         write_metadata_by_species(args.outdir, metadata_df)
 
     if args.genome_translation_table:
         translation_df = parse_translation_table_file(
-            args.genome_translation_table, taxonomy_map
+            args.genome_translation_table, filtered_df
         )
         write_translation_table_by_species(args.outdir, translation_df)
 

@@ -68,7 +68,7 @@ workflow PANGBANK {
 
     ch_input_genomes = manage_input_genomes(file(params.genomes))
 
-    if (params.genomes_quality_filtering) {
+    if (params.genome_quality_filtering) {
 
         if (file(params.genome_metadata).name == 'NO_FILE') {
             error "genome_quality_filtering is enabled but no genome_metadata file was provided. Please set --genome_metadata."
