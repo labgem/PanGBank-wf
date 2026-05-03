@@ -145,6 +145,9 @@ def main():
     clusters = find_clusters(G)
 
     n = 0
+    n_merged_splits = 0
+    n_singleton_splits = 0
+    n_merged_clusters = 0
     with open(f"{args.prefix}.clusters", "w") as f, open(f"{args.prefix}.genomes.clusters", "w") as f2:
         for i, cluster in enumerate(clusters):
             all_genomes = []
@@ -153,17 +156,26 @@ def main():
 
             if len(cluster) == 1:
                 cname = list(cluster)[0].replace(" ", "_")
+                n_singleton_splits += 1
             else:
                 cname = f"{args.prefix}_{n}"
                 n += 1
+                n_merged_splits += len(cluster)
+                n_merged_clusters += 1
 
             f.write(f"{cname}\t")
             s = ";".join(cluster)
             f.write(s + f"\t{len(all_genomes)}\n")
 
-            f2.write(f"{args.prefix}_{i}\t")
-            f2.write(",".join(all_genomes))
+            f2.write(f"{cname}\t")
+            f2.write(";".join(all_genomes))
             f2.write(f"\t{len(all_genomes)}\n")
+
+    with open(f"{args.prefix}.merge_summary.tsv", "w") as f:
+        f.write("metaspecies\tmerged_splits\tsingleton_splits\tmerged_clusters\n")
+        f.write(
+            f"{args.prefix}\t{n_merged_splits}\t{n_singleton_splits}\t{n_merged_clusters}\n"
+        )
 
 if __name__ == "__main__":
     sys.exit(main())

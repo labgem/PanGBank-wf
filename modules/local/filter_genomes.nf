@@ -13,6 +13,7 @@ process FILTER_GENOMES {
     path "genome_quality_filtering.info", emit: genome_quality_filtering_info
     path "input_genomes.filtered.tsv", emit: filtered_genome_input
     path "genome_metadata.filtered.tsv", emit: filtered_genome_metadata
+    path "genome_quality_filtering_summary.tsv", emit: genome_quality_filtering_summary
     path "versions.yml", emit: versions
 
     script:

@@ -83,6 +83,7 @@ workflow PANGBANK {
         )
         ch_input_genomes = FILTER_GENOMES.out.filtered_genome_input
 
+        ch_multiqc_files = ch_multiqc_files.mix(FILTER_GENOMES.out.genome_quality_filtering_summary)
         ch_versions = ch_versions.mix(FILTER_GENOMES.out.versions)
 
     }
@@ -109,6 +110,7 @@ workflow PANGBANK {
 
         ch_versions = ch_versions.mix(GTDB_SPLIT_SPECIES.out.versions)
         ch_gtdb_cluster = GTDB_SPLIT_SPECIES.out.split_clusters
+        ch_multiqc_files = ch_multiqc_files.mix(GTDB_SPLIT_SPECIES.out.multiqc_files)
 
     }
 

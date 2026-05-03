@@ -11,6 +11,7 @@ workflow GTDB_SPLIT_SPECIES {
 
     main:
     ch_versions = channel.empty()
+    ch_multiqc_files = channel.empty()
 
     FIND_GTDB_SPLIT_SPECIES(
         input_genomes,
@@ -28,11 +29,18 @@ workflow GTDB_SPLIT_SPECIES {
     )
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES.out.versions)
 
-    split_clusters = MERGE_GTDB_SPLIT_SPECIES.out.split_clusters.collectFile(name: 'split_clusters.tsv').ifEmpty(file("$projectDir/assets/NO_FILE_3"))
+    split_clusters = MERGE_GTDB_SPLIT_SPECIES.out.split_clusters.collectFile(name: 'split_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/").ifEmpty(file("$projectDir/assets/NO_FILE_3"))
+
+    MERGE_GTDB_SPLIT_SPECIES.out.genome_clusters.collectFile(name: 'genome_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/")
+
+    ch_gtdb_merge_summary = MERGE_GTDB_SPLIT_SPECIES.out.merge_summary
+        .collectFile(skip: 1, keepHeader: true, name: 'gtdb_merge_summary.tsv')
+    ch_multiqc_files = ch_multiqc_files.mix(ch_gtdb_merge_summary)
 
     emit:
     split_clusters = split_clusters
     genome_clusters = MERGE_GTDB_SPLIT_SPECIES.out.genome_clusters
+    multiqc_files = ch_multiqc_files
     versions = ch_versions
 
 }
