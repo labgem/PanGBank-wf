@@ -11,4 +11,3 @@ RUN micromamba create -y -n skani_env \
     micromamba clean -a -y
 
 ENV PATH=/opt/conda/envs/skani_env/bin:$PATH
-
