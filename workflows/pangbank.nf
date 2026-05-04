@@ -104,7 +104,7 @@ workflow PANGBANK {
             ch_genome_fasta = manage_input_genomes(file(params.genome_fasta)).first()
         }
     } else {
-        ch_genome_fasta = ch_input_genomes  //.first()
+        ch_genome_fasta = ch_input_genomes.first()
     }
 
     if (params.merge_gtdb_splits) {
