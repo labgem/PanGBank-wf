@@ -90,18 +90,24 @@ workflow PANGBANK {
 
     ch_gtdb_cluster = channel.of(file("$projectDir/assets/NO_FILE_3"))
 
-    if (params.merge_gtdb_splits) {
-
-        if (isAnnotationInputGenomes(file(params.genomes))) {
-            if (file(params.genome_fasta).name == 'NO_FILE') {
+    // Define ch_genome_fasta once; used for both merge_gtdb_splits and dereplication.
+    if (isAnnotationInputGenomes(file(params.genomes))) {
+        if (file(params.genome_fasta).name == 'NO_FILE') {
+            if (params.merge_gtdb_splits) {
                 error "merge_gtdb_splits is enabled with annotation input genomes (GFF/GBFF) but no --genome_fasta file was provided."
             }
-            log.info "merge_gtdb_splits is enabled with annotation input genomes. Using --genome_fasta to get the paths to the genome fasta files."
-            ch_genome_fasta = manage_input_genomes(file(params.genome_fasta))
+            // Neither feature needs fasta (merge_gtdb_splits is off); use placeholder
+            ch_genome_fasta = channel.of(file("$projectDir/assets/NO_FILE_2"))
         } else {
-            log.info "merge_gtdb_splits is enabled with genome fasta input genomes."
-            ch_genome_fasta = ch_input_genomes
+            // .first() converts the queue channel to a value channel so it broadcasts
+            // to all consumers (GTDB_SPLIT_SPECIES, GENOME_DEREPLICATION) simultaneously.
+            ch_genome_fasta = manage_input_genomes(file(params.genome_fasta)).first()
         }
+    } else {
+        ch_genome_fasta = ch_input_genomes
+    }
+
+    if (params.merge_gtdb_splits) {
 
         GTDB_SPLIT_SPECIES(ch_input_genomes,
                             ch_genome_fasta,
@@ -143,7 +149,7 @@ workflow PANGBANK {
             other: true
         }
 
-        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate, ch_species_to_metadata)
+        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate, ch_species_to_metadata, ch_genome_fasta)
 
         ch_ppanggo_inputs_meta = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
         ch_versions = ch_versions.mix(GENOME_DEREPLICATION.out.versions)
