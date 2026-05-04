@@ -11,8 +11,9 @@ include { MASH_DIST_TO_PHYLIP } from '../../modules/local/mash_distance_in_phyli
 
 include { QUICKTREE } from '../../modules/local/quicktree'
 include { GENOME_SELECTION_FROM_TREE } from '../../modules/local/genome_selection_from_tree'
-include { ANY2FASTA } from '../../modules/local/any2fasta'
 
+include { ANY2FASTA } from '../../modules/local/any2fasta'
+include { FASTA_PATH_FROM_INDEX } from '../../modules/local/fasta_path_from_index'
 include { FORMAT_INPUT_GENOMES } from '../../modules/local/format_input_genomes'
 include { CLUSTER_STAT } from '../../modules/local/cluster_stat.nf'
 include { CLUSTER_PLOT } from '../../modules/local/cluster_plot.nf'
@@ -21,6 +22,7 @@ workflow GENOME_DEREPLICATION {
     take:
     ch_species_to_dereplicate // Channel with species metadata and genome path files.
     ch_genome_metadata // Channel with genome metadata files for each species (optional).
+    genome_fasta // Single file mapping all genome names to their fasta paths.
 
     main:
     ch_versions = channel.empty()
@@ -40,20 +42,29 @@ workflow GENOME_DEREPLICATION {
         fasta_input: true
     }
 
-    ch_sp_annotation_input_split = ch_species_branched.annotation_input.splitText(elem: 1, by: 500, file: true)
 
+    if (file(params.genome_fasta).name != 'NO_FILE' ) {
+        FASTA_PATH_FROM_INDEX(ch_species_branched.annotation_input, genome_fasta)
+        ch_versions = ch_versions.mix(FASTA_PATH_FROM_INDEX.out.versions)
+        ch_sp_and_genome_path_fasta = FASTA_PATH_FROM_INDEX.out.genome_path_fasta
+            .map { meta, f -> [["id": meta.species], f] }
+        ch_sp_and_fasta_to_original_path = FASTA_PATH_FROM_INDEX.out.fasta_to_orginal_path
+            .map { meta, f -> [["id": meta.species], f] }
 
-    // Convert annotation files to FASTA format if required.
-    ANY2FASTA(ch_sp_annotation_input_split)
-    ch_versions = ch_versions.mix(ANY2FASTA.out.versions)
+    } else {
+        // No genome_fasta provided: convert annotation files to fasta on-the-fly with ANY2FASTA.
+        ch_sp_annotation_input_split = ch_species_branched.annotation_input
+            .splitText(elem: 1, by: 500, file: true)
+        ANY2FASTA(ch_sp_annotation_input_split)
+        ch_versions = ch_versions.mix(ANY2FASTA.out.versions)
+        ch_sp_and_genome_path_fasta = ANY2FASTA.out.genome_path_fasta
+            .collectFile { meta, f -> ["${meta.species}.fasta_input_file", f.text] }
+            .map { path_file -> [["id": path_file.baseName], path_file] }
+        ch_sp_and_fasta_to_original_path = ANY2FASTA.out.fasta_to_orginal_path
+            .collectFile { meta, f -> ["${meta.species}.fasta_to_orginal_path", f.text] }
+            .map { path_file -> [["id": path_file.baseName], path_file] }
 
-    ch_sp_and_fasta_to_original_path = ANY2FASTA.out.fasta_to_orginal_path
-        .collectFile(newLine: false) { meta, content -> ["${meta.species}.fasta_to_orginal_path", content] }
-        .map { path_file -> [["id": path_file.baseName], path_file] }
-
-    ch_sp_and_genome_path_fasta = ANY2FASTA.out.genome_path_fasta
-        .collectFile(newLine: false) { meta, content -> ["${meta.species}.fasta_input_file", content] }
-        .map { path_file -> [["id": path_file.baseName], path_file] }
+    }
 
 
     // Combine fasta input files from both branches (direct and converted).

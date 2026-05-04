@@ -15,11 +15,12 @@
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplication'
-
+include { GTDB_SPLIT_SPECIES } from '../subworkflows/local/gtdb_split'
 //
 // MODULE: Local modules
 //
-include { PARSE_GENOMES_AND_TAXONOMY } from '../modules/local/parse_genomes_and_taxonomy'
+include { FILTER_GENOMES } from '../modules/local/filter_genomes'
+include { PREPARE_PPANGGOLIN_INPUTS } from '../modules/local/prepare_ppanggolin_inputs'
 include { PUBLISH_INPUT_GENOMES } from '../modules/local/publish_input_genomes'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_LARGE } from '../modules/local/ppanggolin/all'
 include { PPANGGOLIN_ALL as PPANGGOLIN_ALL_MEDIUM } from '../modules/local/ppanggolin/all'
@@ -30,6 +31,10 @@ include { SUMMARIZE_GENOME_STATS } from '../modules/local/summarize_genome_stats
 include { GATHER_PANGENOME_INFO } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
 include { MASH_SKETCH } from '../modules/local/mash_sketch'
+include { FIND_GTDB_SPLIT_SPECIES } from '../modules/local/find_gtdb_split_species'
+include { MERGE_GTDB_SPLIT_SPECIES } from '../modules/local/merge_gtdb_split_species'
+
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -63,26 +68,79 @@ workflow PANGBANK {
 
     ch_input_genomes = manage_input_genomes(file(params.genomes))
 
+    if (params.genome_quality_filtering) {
+
+        if (file(params.genome_metadata).name == 'NO_FILE') {
+            error "genome_quality_filtering is enabled but no genome_metadata file was provided. Please set --genome_metadata."
+        }
+        log.info "genome_quality_filtering is enabled. Filtering input genomes based on completeness thresholds and metadata provided in --genome_metadata."
+
+        FILTER_GENOMES(
+            file(params.genome_metadata),
+            ch_input_genomes,
+            params.genome_min_completeness,
+            params.representative_min_completeness
+        )
+        ch_input_genomes = FILTER_GENOMES.out.filtered_genome_input
+
+        ch_multiqc_files = ch_multiqc_files.mix(FILTER_GENOMES.out.genome_quality_filtering_summary)
+        ch_versions = ch_versions.mix(FILTER_GENOMES.out.versions)
+
+    }
+
+    ch_gtdb_cluster = channel.of(file("$projectDir/assets/NO_FILE_3"))
+
+    // Define ch_genome_fasta once; used for both merge_gtdb_splits and dereplication.
+    if (isAnnotationInputGenomes(file(params.genomes))) {
+        if (file(params.genome_fasta).name == 'NO_FILE') {
+            if (params.merge_gtdb_splits) {
+                error "merge_gtdb_splits is enabled with annotation input genomes (GFF/GBFF) but no --genome_fasta file was provided."
+            }
+            // Neither feature needs fasta (merge_gtdb_splits is off); use placeholder
+            ch_genome_fasta = channel.of(file("$projectDir/assets/NO_FILE_2"))
+        } else {
+            // .first() converts the queue channel to a value channel so it broadcasts
+            // to all consumers (GTDB_SPLIT_SPECIES, GENOME_DEREPLICATION) simultaneously.
+            ch_genome_fasta = manage_input_genomes(file(params.genome_fasta)).first()
+        }
+    } else {
+        ch_genome_fasta = ch_input_genomes.first()
+    }
+
+    if (params.merge_gtdb_splits) {
+
+        GTDB_SPLIT_SPECIES(ch_input_genomes,
+                            ch_genome_fasta,
+                            file(params.taxonomy),
+                            ch_min_genomes)
+
+        ch_versions = ch_versions.mix(GTDB_SPLIT_SPECIES.out.versions)
+        ch_gtdb_cluster = GTDB_SPLIT_SPECIES.out.split_clusters
+        ch_multiqc_files = ch_multiqc_files.mix(GTDB_SPLIT_SPECIES.out.multiqc_files)
+
+    }
+
     // PREPARE SPECIES: Check species that have enough genome to build a pangenome
-    PARSE_GENOMES_AND_TAXONOMY(
+    PREPARE_PPANGGOLIN_INPUTS(
         ch_input_genomes,
         file(params.taxonomy),
         file(params.genome_metadata),
         file(params.translation_tables),
+        ch_gtdb_cluster,
         ch_min_genomes,
     )
-    ch_versions = ch_versions.mix(PARSE_GENOMES_AND_TAXONOMY.out.versions)
+    ch_versions = ch_versions.mix(PREPARE_PPANGGOLIN_INPUTS.out.versions)
 
-    ch_ppanggo_inputs_meta = PARSE_GENOMES_AND_TAXONOMY.out.ppanggo_inputs
+    ch_ppanggo_inputs_meta = PREPARE_PPANGGOLIN_INPUTS.out.ppanggo_inputs
         .flatten()
         .map {it -> create_ppanggo_input_channel(it) }
 
-    ch_species_to_metadata = PARSE_GENOMES_AND_TAXONOMY.out.genome_metadata
+    ch_species_to_metadata = PREPARE_PPANGGOLIN_INPUTS.out.genome_metadata
         .flatten()
         .map { genome_metadata_file -> [[id: genome_metadata_file.parent.baseName], genome_metadata_file] }
 
 
-    ch_ppanggo_inputs_meta = addTranslationTable(ch_ppanggo_inputs_meta, PARSE_GENOMES_AND_TAXONOMY.out.species_translation_tables)
+    ch_ppanggo_inputs_meta = addTranslationTable(ch_ppanggo_inputs_meta, PREPARE_PPANGGOLIN_INPUTS.out.species_translation_tables)
 
     if (!params.skip_dereplication) {
 
@@ -91,7 +149,7 @@ workflow PANGBANK {
             other: true
         }
 
-        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate, ch_species_to_metadata)
+        GENOME_DEREPLICATION(ch_species_branched.to_dereplicate, ch_species_to_metadata, ch_genome_fasta)
 
         ch_ppanggo_inputs_meta = GENOME_DEREPLICATION.out.dereplicated_genomes.concat(ch_species_branched.other)
         ch_versions = ch_versions.mix(GENOME_DEREPLICATION.out.versions)
@@ -240,6 +298,18 @@ workflow PANGBANK {
     emit:
     multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
     versions = ch_versions // channel: [ path(versions.yml) ]
+}
+
+def isAnnotationInputGenomes(genomes_file) {
+    def first_line = ""
+    genomes_file.eachLine { line ->
+        first_line = line
+        return false
+    }
+    def first_genome_path = first_line.split('\t')[1]
+    def extension_pattern = ~/.*(\.[a-yA-Y]+)(\.gz)?$/
+    def genome_extension = (first_genome_path =~ extension_pattern)[0][1].toLowerCase()
+    return params.annotation_extensions.split(';').contains(genome_extension)
 }
 
 def manage_input_genomes(input_genomes_file) {

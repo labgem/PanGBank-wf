@@ -114,6 +114,43 @@ custom_data:
       title: "Genome Distribution After Dereplication"
       ylab: "Genomes"
 
+  genome_quality_filtering:
+    description: "Genome counts before and after quality filtering based on CheckM/CheckM2 completeness thresholds. 'representative_filtered' genomes were removed because their GTDB cluster representative was below the representative completeness threshold. 'genome_quality_filtered' genomes were removed because their own completeness score was below the genome completeness threshold."
+    plot_type: "bargraph"
+    file_format: "tsv"
+    section_name: "Genome Quality Filtering"
+    categories:
+      retained_genomes:
+        name: "Retained"
+        color: "#1E88E5"
+      representative_filtered:
+        name: "Filtered (representative quality)"
+        color: "#FFC107"
+      genome_quality_filtered:
+        name: "Filtered (genome quality)"
+        color: "#D81B60"
+    pconfig:
+      id: "genome_quality_filtering_bargraph"
+      title: "Genome Distribution After Quality Filtering"
+      ylab: "Genomes"
+
+  gtdb_merge:
+    description: "Per-metaspecies summary of GTDB split species merging. 'merged_splits' is the number of GTDB split species that were merged together into a single pangenome cluster. 'singleton_splits' is the number of splits that could not be merged with any other split (retained as individual clusters)."
+    plot_type: "bargraph"
+    file_format: "tsv"
+    section_name: "GTDB Split Species Merging"
+    categories:
+      merged_splits:
+        name: "Merged Splits"
+        color: "#1E88E5"
+      singleton_splits:
+        name: "Singleton Splits"
+        color: "#D81B60"
+    pconfig:
+      id: "gtdb_merge_bargraph"
+      title: "GTDB Split Species Merged Per Metaspecies"
+      ylab: "Splits"
+
 sp:
   summary_pangenome:
     fn: "pangenome_summary.tsv"
@@ -132,3 +169,7 @@ sp:
     shared: true
   dereplication:
     fn: "dereplication_summary.tsv"
+  genome_quality_filtering:
+    fn: "genome_quality_filtering_summary.tsv"
+  gtdb_merge:
+    fn: "gtdb_merge_summary.tsv"
