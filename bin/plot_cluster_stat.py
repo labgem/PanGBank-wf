@@ -197,6 +197,12 @@ def build_density_table_per_sp_and_type(df_count: pd.DataFrame) -> pd.DataFrame:
             df_density_list.append(df_density_type)
 
     # Combine density tables for all species and types
+    if not df_density_list:
+        logging.warning(
+            "No species had enough data points (> 50) for density estimation. "
+            "Density plots will be skipped."
+        )
+        return pd.DataFrame()
     return pd.concat(df_density_list)
 
 
@@ -362,21 +368,24 @@ def main(argv: Optional[list[str]] = None) -> None:
     logging.info("Generating density tables for each species and distance type.")
     df_density = build_density_table_per_sp_and_type(df_count)
 
-    # Generate and save density plots per species
-    logging.info("Creating density plots for each species.")
-    sp_to_figures = make_cluster_distance_density_plots_per_sp(df_density)
-    for sp, figure in sp_to_figures.items():
-        html_fig_path = output_dir / f"{sp}_cluster_distances_density_plot.html"
-        figure.write_html(html_fig_path)
-        logging.info(f"Density plot for {sp} saved to {html_fig_path}")
+    if df_density.empty:
+        logging.info("Skipping density plots: insufficient data for all species.")
+    else:
+        # Generate and save density plots per species
+        logging.info("Creating density plots for each species.")
+        sp_to_figures = make_cluster_distance_density_plots_per_sp(df_density)
+        for sp, figure in sp_to_figures.items():
+            html_fig_path = output_dir / f"{sp}_cluster_distances_density_plot.html"
+            figure.write_html(html_fig_path)
+            logging.info(f"Density plot for {sp} saved to {html_fig_path}")
 
-    # Generate and save combined density plots
-    logging.info("Creating combined density plots.")
-    name_to_fig = make_distance_density_plots(df_density, sorted_species)
-    for name, figure in name_to_fig.items():
-        html_fig_path = output_dir / name
-        figure.write_html(html_fig_path)
-        logging.info(f"Combined density plot saved to {html_fig_path}")
+        # Generate and save combined density plots
+        logging.info("Creating combined density plots.")
+        name_to_fig = make_distance_density_plots(df_density, sorted_species)
+        for name, figure in name_to_fig.items():
+            html_fig_path = output_dir / name
+            figure.write_html(html_fig_path)
+            logging.info(f"Combined density plot saved to {html_fig_path}")
 
     logging.info("Program completed successfully.")
 

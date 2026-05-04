@@ -40,6 +40,60 @@ To add metadata, provide a **TSV file** with:
 
 Specify the file with `--genome_metadata`
 
+## Genome Quality Filtering
+
+PanGBank can filter input genomes based on completeness scores from CheckM or CheckM2. This step is **disabled by default** and must be activated with `--genome_quality_filtering`.
+
+Completeness scores are read from the `--genome_metadata` file. The columns `checkm2_completeness` and `checkm_completeness` are used; the maximum of the two is taken.
+
+Two thresholds are available:
+
+| Parameter                           | Default | Description                                                                                    |
+| ----------------------------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| `--genome_min_completeness`         | 70      | Minimum completeness (%) for a genome to be kept as input                                      |
+| `--representative_min_completeness` | 85      | Minimum completeness (%) for a genome to be eligible as a dereplication cluster representative |
+
+Genomes that do not pass `--genome_min_completeness` are excluded entirely. Genomes that pass `--genome_min_completeness` but not `--representative_min_completeness` are kept as non-representative members of a dereplication cluster but cannot be chosen as the cluster representative.
+
+**Example:**
+
+```bash
+nextflow run labgem/pangbank \
+  --genomes input_genomes.tsv \
+  --taxonomy genome_taxonomy.tsv \
+  --genome_metadata genome_metadata.tsv \
+  --genome_quality_filtering \
+  --genome_min_completeness 70 \
+  --representative_min_completeness 85 \
+  --outdir ./results \
+  -profile docker
+```
+
+## GTDB Split Species Merging
+
+GTDB occasionally splits a single biological species into several distinct named species. PanGBank can detect these splits and merge the affected genomes into a single **metaspecies** pangenome. This step is **disabled by default** and must be activated with `--merge_gtdb_splits`.
+
+The merging is performed by clustering genomes from candidate split species using Average Nucleotide Identity (ANI). Groups exceeding the ANI threshold are merged.
+
+| Parameter                    | Default | Description                                                               |
+| ---------------------------- | ------- | ------------------------------------------------------------------------- |
+| `--merge_gtdb_splits`        | false   | Enable GTDB split species detection and merging                           |
+| `--gtdb_merge_ani_threshold` | 95      | ANI threshold (%) above which split species are merged into a metaspecies |
+
+When species are merged, all their genomes are pooled into a single pangenome directory named after the metaspecies. A `pangenome_taxonomy.txt` file is written in each pangenome directory recording the pangenome-level taxonomy — for merged species this is the one of the "metaspecies" with the letter suffixes.
+
+**Example:**
+
+```bash
+nextflow run labgem/pangbank \
+  --genomes input_genomes.tsv \
+  --taxonomy genome_taxonomy.tsv \
+  --merge_gtdb_splits \
+  --gtdb_merge_ani_threshold 95 \
+  --outdir ./results \
+  -profile docker
+```
+
 ## Specifying Translation Tables
 
 You can specify the translation table to use for gene calling and protein translation when building the pangenome. This ensures that gene prediction and protein sequences are correct for each species.

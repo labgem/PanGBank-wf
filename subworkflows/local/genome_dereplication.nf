@@ -11,8 +11,9 @@ include { MASH_DIST_TO_PHYLIP } from '../../modules/local/mash_distance_in_phyli
 
 include { QUICKTREE } from '../../modules/local/quicktree'
 include { GENOME_SELECTION_FROM_TREE } from '../../modules/local/genome_selection_from_tree'
-include { ANY2FASTA } from '../../modules/local/any2fasta'
 
+include { ANY2FASTA } from '../../modules/local/any2fasta'
+include { FASTA_PATH_FROM_INDEX } from '../../modules/local/fasta_path_from_index'
 include { FORMAT_INPUT_GENOMES } from '../../modules/local/format_input_genomes'
 include { CLUSTER_STAT } from '../../modules/local/cluster_stat.nf'
 include { CLUSTER_PLOT } from '../../modules/local/cluster_plot.nf'
@@ -20,11 +21,13 @@ include { CLUSTER_PLOT } from '../../modules/local/cluster_plot.nf'
 workflow GENOME_DEREPLICATION {
     take:
     ch_species_to_dereplicate // Channel with species metadata and genome path files.
+    ch_genome_metadata // Channel with genome metadata files for each species (optional).
+    genome_fasta // Single file mapping all genome names to their fasta paths.
 
     main:
-    ch_versions = Channel.empty()
-    ch_genome_count_cutoff = Channel.value(params.dereplication_threshold)
-    ch_multiqc_files = Channel.empty()
+    ch_versions = channel.empty()
+    ch_genome_count_cutoff = channel.value(params.dereplication_threshold)
+    ch_multiqc_files = channel.empty()
 
     if (params.reference_genomes) {
         ch_reference_genomes = file(params.reference_genomes, checkIfExists: true)
@@ -34,25 +37,34 @@ workflow GENOME_DEREPLICATION {
     }
 
     // Branch the input channel based on the type of input file (annotation or fasta).
-    ch_species_branched = ch_species_to_dereplicate.branch { meta, genome_file ->
+    ch_species_branched = ch_species_to_dereplicate.branch { meta, _genome_file ->
         annotation_input: meta.file_type == "annotation"
         fasta_input: true
     }
 
-    ch_sp_annotation_input_split = ch_species_branched.annotation_input.splitText(elem: 1, by: 500, file: true)
 
+    if (file(params.genome_fasta).name != 'NO_FILE' ) {
+        FASTA_PATH_FROM_INDEX(ch_species_branched.annotation_input, genome_fasta)
+        ch_versions = ch_versions.mix(FASTA_PATH_FROM_INDEX.out.versions)
+        ch_sp_and_genome_path_fasta = FASTA_PATH_FROM_INDEX.out.genome_path_fasta
+            .map { meta, f -> [["id": meta.species], f] }
+        ch_sp_and_fasta_to_original_path = FASTA_PATH_FROM_INDEX.out.fasta_to_orginal_path
+            .map { meta, f -> [["id": meta.species], f] }
 
-    // Convert annotation files to FASTA format if required.
-    ANY2FASTA(ch_sp_annotation_input_split)
-    ch_versions = ch_versions.mix(ANY2FASTA.out.versions)
+    } else {
+        // No genome_fasta provided: convert annotation files to fasta on-the-fly with ANY2FASTA.
+        ch_sp_annotation_input_split = ch_species_branched.annotation_input
+            .splitText(elem: 1, by: 500, file: true)
+        ANY2FASTA(ch_sp_annotation_input_split)
+        ch_versions = ch_versions.mix(ANY2FASTA.out.versions)
+        ch_sp_and_genome_path_fasta = ANY2FASTA.out.genome_path_fasta
+            .collectFile { meta, f -> ["${meta.species}.fasta_input_file", f.text] }
+            .map { path_file -> [["id": path_file.baseName], path_file] }
+        ch_sp_and_fasta_to_original_path = ANY2FASTA.out.fasta_to_orginal_path
+            .collectFile { meta, f -> ["${meta.species}.fasta_to_orginal_path", f.text] }
+            .map { path_file -> [["id": path_file.baseName], path_file] }
 
-    ch_sp_and_fasta_to_original_path = ANY2FASTA.out.fasta_to_orginal_path
-        .collectFile(newLine: false) { meta, content -> ["${meta.species}.fasta_to_orginal_path", content] }
-        .map { path_file -> [["id": path_file.baseName], path_file] }
-
-    ch_sp_and_genome_path_fasta = ANY2FASTA.out.genome_path_fasta
-        .collectFile(newLine: false) { meta, content -> ["${meta.species}.fasta_input_file", content] }
-        .map { path_file -> [["id": path_file.baseName], path_file] }
+    }
 
 
     // Combine fasta input files from both branches (direct and converted).
@@ -67,13 +79,13 @@ workflow GENOME_DEREPLICATION {
         .map { path_file -> [["id": path_file.baseName], path_file] }
 
 
-
     // Calculate genome sequence metrics using seqfu.
     SEQFU_STATS_FROM_FILE(ch_species_to_path_file)
     ch_versions = ch_versions.mix(SEQFU_STATS_FROM_FILE.out.versions)
 
+    ch_stat_and_metadata = group_stat_and_metadata(ch_species_to_fasta_input_files, SEQFU_STATS_FROM_FILE.out.stats, ch_genome_metadata)
     // Sort genomes based on calculated metrics for quality prioritization.
-    SORT_GENOMES(SEQFU_STATS_FROM_FILE.out.stats)
+    SORT_GENOMES(ch_stat_and_metadata)
     ch_versions = ch_versions.mix(SORT_GENOMES.out.versions)
 
     // Compute pairwise Mash distances for all genomes.
@@ -120,7 +132,7 @@ workflow GENOME_DEREPLICATION {
         .map { meta, files ->
             def selected_genomes = files[0]
             def genome_name_to_path = files[1]
-            def fasta_to_original_input = files.size() <= 2 ? file("NO_FILE") : files[2]
+            def fasta_to_original_input = files.size() <= 2 ?  file("${projectDir}/assets/NO_FILE") : files[2]
             [meta, selected_genomes, genome_name_to_path, fasta_to_original_input]
         }
     FORMAT_INPUT_GENOMES(ch_sp_selected_genome_to_name_and_original_path, ch_reference_genomes)
@@ -142,10 +154,10 @@ workflow GENOME_DEREPLICATION {
 
     // Generate plots from cluster statistics.
     ch_cluster_stat = CLUSTER_STAT.out.cluster_stat
-        .map { meta, cluster_stat -> cluster_stat }
+        .map { _meta, cluster_stat -> cluster_stat }
         .collectFile(skip: 1, keepHeader: true, name: 'cluster_stat.tsv')
     ch_distance_count = CLUSTER_STAT.out.distance_count
-        .map { meta, distance_count -> distance_count }
+        .map { _meta, distance_count -> distance_count }
         .collectFile(skip: 1, keepHeader: true, name: 'distance_count.tsv')
 
     CLUSTER_PLOT(ch_cluster_stat, ch_distance_count)
@@ -153,7 +165,7 @@ workflow GENOME_DEREPLICATION {
 
 
     // Merge updated metadata with the selected genomes and finalize output.
-    ch_sp_to_original_meta = ch_species_to_dereplicate.map { meta, genome_file -> [["id": meta.species], meta] }
+    ch_sp_to_original_meta = ch_species_to_dereplicate.map { meta, _genome_file -> [["id": meta.species], meta] }
     ch_meta_and_selected_genomes = ch_sp_to_original_meta
         .concat(FORMAT_INPUT_GENOMES.out.genome_selection_ppanggo_input)
         .groupTuple(size: 2)
@@ -168,4 +180,16 @@ workflow GENOME_DEREPLICATION {
     dereplicated_genomes = ch_meta_and_selected_genomes
     versions = ch_versions
     multiqc_files = ch_multiqc_files
+}
+
+def group_stat_and_metadata(ch_species_to_path_file, ch_genome_stat, ch_genome_metadata) {
+    return ch_genome_stat.map { meta, stat_file -> [meta.id, meta, stat_file] }
+        .join(
+            ch_genome_metadata.map { meta, metadata_file -> [meta.id, metadata_file] },
+            remainder: true
+        )
+        .join(ch_species_to_path_file.map { meta, path_file -> [meta.id, path_file] })
+        .map { _id, meta, stat_file, metadata_file, path_file ->
+            [meta, path_file, stat_file, metadata_file ?: file("${projectDir}/assets/NO_FILE")]
+        }
 }
