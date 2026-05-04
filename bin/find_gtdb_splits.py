@@ -103,7 +103,7 @@ def filter_input_genome(genome_df: pd.DataFrame, genomes: set[str]) -> pd.DataFr
     filtered = genome_df[genome_df["genomes"].isin(genomes)]
     print(
         f"Restricting taxonomy to input genomes: {len(filtered)}/{len(genome_df)} entries retained "
-        f"({len(genome_df) - len(filtered)} not found in taxonomy)"
+        f"({len(genome_df) - len(filtered)} not found in input genomes)"
     )
     return filtered
 
