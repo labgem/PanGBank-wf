@@ -61,7 +61,7 @@
                     "python": "3.12.13"
                 },
                 "Workflow": {
-                    "labgem/pangbank": "v0.0.3"
+                    "labgem/pangbank": "v0.1.0"
                 }
             },
             [
@@ -252,7 +252,7 @@
                     "python": "3.12.13"
                 },
                 "Workflow": {
-                    "labgem/pangbank": "v0.0.3"
+                    "labgem/pangbank": "v0.1.0"
                 }
             },
             [
@@ -426,7 +426,7 @@
                     "python": "3.12.13"
                 },
                 "Workflow": {
-                    "labgem/pangbank": "v0.0.3"
+                    "labgem/pangbank": "v0.1.0"
                 }
             },
             [
