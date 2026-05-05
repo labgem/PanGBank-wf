@@ -7,7 +7,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
     input:
     tuple val(meta), path(genome_list)
     path genome_to_fna_paths
-    val threshold
+    val ani_threshold
 
     output:
     path "${genome_list.baseName}.clusters", emit: split_clusters
@@ -16,7 +16,11 @@ process MERGE_GTDB_SPLIT_SPECIES {
     path "versions.yml", emit: versions
 
     script:
+    skani_ani_threshold = ani_threshold - 5
     """
+
+    # TODO: the logic could be handle in a python script using pyskani to simplify the process.
+
     # Get unique species from genome list
     cut -f1 ${genome_list} | sort -u | grep -v '^\$' > species.list
 
@@ -44,12 +48,13 @@ process MERGE_GTDB_SPLIT_SPECIES {
         for (( j=i+1; j<n_species; j++ )); do
             sp_a=\$(echo "\${species_array[i]}" | tr ' /' '__')
             sp_b=\$(echo "\${species_array[j]}" | tr ' /' '__')
+            echo "Calculating distances between \${sp_a} and \${sp_b}"
             if [ "\$header_written" -eq 0 ]; then
-                skani dist -t ${task.cpus} --ql "\${sp_a}.sketch.list" --rl "\${sp_b}.sketch.list" \\
+                skani dist -s $skani_ani_threshold -t ${task.cpus} --ql "\${sp_a}.sketch.list" --rl "\${sp_b}.sketch.list" \\
                     > ${genome_list.baseName}.dist.tsv
                 header_written=1
             else
-                skani dist -t ${task.cpus} --ql "\${sp_a}.sketch.list" --rl "\${sp_b}.sketch.list" \\
+                skani dist -s $skani_ani_threshold -t ${task.cpus} --ql "\${sp_a}.sketch.list" --rl "\${sp_b}.sketch.list" \\
                     | tail -n +2 >> ${genome_list.baseName}.dist.tsv
             fi
         done
@@ -58,7 +63,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
     merge_gtdb_splits.py --genome-list ${genome_list} \\
                          --skani-dist ${genome_list.baseName}.dist.tsv \\
                          --genome-fna-paths ${genome_to_fna_paths} \\
-                         --threshold ${threshold} \\
+                         --threshold ${ani_threshold} \\
                          --prefix ${genome_list.baseName}
 
     cat <<-END_VERSIONS > versions.yml
