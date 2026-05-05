@@ -17,36 +17,49 @@ process MERGE_GTDB_SPLIT_SPECIES {
 
     script:
     """
-    awk 'NR==FNR { ids[\$NF]; next } \$1 in ids { print \$2 }' \
-           $genome_list $genome_to_fna_paths > skani_input.list
+    # Get unique species from genome list
+    cut -f1 ${genome_list} | sort -u | grep -v '^\$' > species.list
 
-    skani triangle -t $task.cpus -l ./skani_input.list --medium -o ${genome_list.baseName}.tsv
+    mkdir -p sketches
 
-    awk '
-       NR==FNR {
-           path_to_id[\$2] = \$1
-           next
-       }
-       NR==1 {
-           for (i=2; i<=NF; i++) {
-               if (\$i in path_to_id) {
-                   \$i = path_to_id[\$i]
-               }
-           }
-       }
-       {
-           if (\$1 in path_to_id) {
-               \$1 = path_to_id[\$1]
-           }
-           print
-       }
-    ' OFS='\\t' $genome_to_fna_paths ${genome_list.baseName}.tsv > ${genome_list.baseName}.clean.tsv
+    # For each species, extract genome fna paths and create per-species sketches
+    while IFS= read -r species; do
+        safe_species=\$(echo "\$species" | tr ' /' '__')
+        awk -F'\\t' -v sp="\$species" \\
+            'NR==FNR { if (\$1==sp) ids[\$2]=1; next } \$1 in ids { print \$2 }' \\
+            ${genome_list} ${genome_to_fna_paths} > "\${safe_species}.fna_paths.list"
 
+        skani sketch --medium -t ${task.cpus} \\
+            -l "\${safe_species}.fna_paths.list" \\
+            -o "sketches/\${safe_species}" \\
+            --separate-sketches
+        ls "sketches/\${safe_species}"/*.sketch > "\${safe_species}.sketch.list"
+    done < species.list
 
-    merge_gtdb_splits.py --genome-list $genome_list \
-                         --skani-triangle ${genome_list.baseName}.clean.tsv \
-                         --threshold $threshold \
-                         --prefix $genome_list.baseName
+    # Run skani dist for each inter-species pair
+    mapfile -t species_array < species.list
+    n_species=\${#species_array[@]}
+    header_written=0
+    for (( i=0; i<n_species; i++ )); do
+        for (( j=i+1; j<n_species; j++ )); do
+            sp_a=\$(echo "\${species_array[i]}" | tr ' /' '__')
+            sp_b=\$(echo "\${species_array[j]}" | tr ' /' '__')
+            if [ "\$header_written" -eq 0 ]; then
+                skani dist -t ${task.cpus} --ql "\${sp_a}.sketch.list" --rl "\${sp_b}.sketch.list" \\
+                    > ${genome_list.baseName}.dist.tsv
+                header_written=1
+            else
+                skani dist -t ${task.cpus} --ql "\${sp_a}.sketch.list" --rl "\${sp_b}.sketch.list" \\
+                    | tail -n +2 >> ${genome_list.baseName}.dist.tsv
+            fi
+        done
+    done
+
+    merge_gtdb_splits.py --genome-list ${genome_list} \\
+                         --skani-dist ${genome_list.baseName}.dist.tsv \\
+                         --genome-fna-paths ${genome_to_fna_paths} \\
+                         --threshold ${threshold} \\
+                         --prefix ${genome_list.baseName}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

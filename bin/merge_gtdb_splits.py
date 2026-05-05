@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-import re
 import sys
 import argparse
 import pandas as pd
@@ -28,6 +26,44 @@ def parse_skani_triangle(path):
                 vals[i, j] = float(v)
 
     return labels, vals
+
+
+def build_sketch_to_id(fna_paths_file: Path) -> dict:
+    """Map fna path to genome ID from a genome_id<TAB>fna_path file."""
+    fna_to_id = {}
+    with open(fna_paths_file) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            genome_id, fna_path = line.split("\t", 1)
+            fna_to_id[fna_path] = genome_id
+    return fna_to_id
+
+
+def parse_skani_dist(path: Path, fna_paths_file: Path = None):
+    df = pd.read_csv(path, sep="\t")
+    if fna_paths_file is not None:
+        fna_to_id = build_sketch_to_id(fna_paths_file)
+
+        def map_id(fna_path):
+            return fna_to_id.get(fna_path, fna_path)
+
+        df["Ref_file"] = df["Ref_file"].apply(map_id)
+        df["Query_file"] = df["Query_file"].apply(map_id)
+    all_genomes = sorted(set(df["Ref_file"]).union(set(df["Query_file"])))
+    n = len(all_genomes)
+    idx = {g: i for i, g in enumerate(all_genomes)}
+    matrix = np.full((n, n), np.nan)
+    for _, row in df.iterrows():
+        ref, query = row["Ref_file"], row["Query_file"]
+        ani = float(row["ANI"])
+        if not np.isnan(ani):
+            i, j = idx[ref], idx[query]
+            matrix[j, i] = ani
+            matrix[i, j] = ani
+    return all_genomes, matrix
+
 
 def construct_df(labels: list[str], matrix, accession_to_species: dict[str, str]):
     n = len(labels)
@@ -96,11 +132,15 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
-        "--skani-triangle",
+        "--skani-dist", type=Path, required=True, metavar="FILE", help=""
+    )
+
+    parser.add_argument(
+        "--genome-fna-paths",
         type=Path,
         required=True,
         metavar="FILE",
-        help=""
+        help="Two-column TSV: genome_id<TAB>fna_path; used to map sketch paths back to genome IDs",
     )
 
     parser.add_argument(
@@ -126,7 +166,7 @@ def parse_gtdb_metadata(path: Path) -> pd.DataFrame:
 def main():
     args = parse_args()
 
-    labels, matrix = parse_skani_triangle(args.skani_triangle)
+    labels, matrix = parse_skani_dist(args.skani_dist, args.genome_fna_paths)
 
     acc_to_species = {}
     species_to_acc = defaultdict(list)
