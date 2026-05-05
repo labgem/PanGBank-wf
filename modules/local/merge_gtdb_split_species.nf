@@ -33,7 +33,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
             'NR==FNR { if (\$1==sp) ids[\$2]=1; next } \$1 in ids { print \$2 }' \\
             ${genome_list} ${genome_to_fna_paths} > "\${safe_species}.fna_paths.list"
 
-        skani sketch --medium -t ${task.cpus} \\
+        skani sketch -t ${task.cpus} \\
             -l "\${safe_species}.fna_paths.list" \\
             -o "sketches/\${safe_species}" \\
             --separate-sketches
