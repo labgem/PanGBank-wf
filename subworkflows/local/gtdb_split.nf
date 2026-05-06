@@ -32,8 +32,8 @@ workflow GTDB_SPLIT_SPECIES {
 
 
     ch_split_species_branched = ch_split_species.branch { meta, _genome_file ->
-        large: meta.genomes_count >= params.large_pangenome_cutoff
-        medium: meta.genomes_count >= params.large_pangenome_cutoff / 10
+        large: meta.genomes_count >= params.large_pangenome_cutoff * 4
+        medium: meta.genomes_count >= params.large_pangenome_cutoff / 5
         small: true
     }
 
