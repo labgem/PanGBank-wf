@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## dev
+
+### `Changed`
+
+- `MERGE_GTDB_SPLIT_SPECIES`: replaced `skani triangle` (all-vs-all) with per-species `skani sketch` followed by inter-species `skani dist` to only compute ANI across species boundaries, avoiding redundant within-species comparisons.
+- `MERGE_GTDB_SPLIT_SPECIES` is now run as three separate instances (`_SMALL`, `_MEDIUM`, `_LARGE`) so that each can be assigned different CPU/memory resources depending on the number of genomes to process.
+
 ## 0.1.0 - [2025-05-04]
 
 ### `Added`

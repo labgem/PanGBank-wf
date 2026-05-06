@@ -1,5 +1,7 @@
 include { FIND_GTDB_SPLIT_SPECIES } from '../../modules/local/find_gtdb_split_species.nf'
-include { MERGE_GTDB_SPLIT_SPECIES } from '../../modules/local/merge_gtdb_split_species.nf'
+include { MERGE_GTDB_SPLIT_SPECIES as MERGE_GTDB_SPLIT_SPECIES_SMALL } from '../../modules/local/merge_gtdb_split_species.nf'
+include { MERGE_GTDB_SPLIT_SPECIES as MERGE_GTDB_SPLIT_SPECIES_MEDIUM } from '../../modules/local/merge_gtdb_split_species.nf'
+include { MERGE_GTDB_SPLIT_SPECIES as MERGE_GTDB_SPLIT_SPECIES_LARGE } from '../../modules/local/merge_gtdb_split_species.nf'
 
 workflow GTDB_SPLIT_SPECIES {
     take:
@@ -21,25 +23,57 @@ workflow GTDB_SPLIT_SPECIES {
     ch_versions = ch_versions.mix(FIND_GTDB_SPLIT_SPECIES.out.versions)
 
     ch_split_species = FIND_GTDB_SPLIT_SPECIES.out.genome_list_files
+                                                .flatten()
+                                                .map { genome_list_file -> tuple([id: genome_list_file.baseName,
+                                                                                  genomes_count: genome_list_file.countLines()],
+                                                                                  genome_list_file) }
 
-    MERGE_GTDB_SPLIT_SPECIES(
-        ch_split_species.flatten().map { f -> tuple([id: f.baseName], f) },
-        genome_fasta,
-        params.gtdb_merge_ani_threshold
-    )
-    ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES.out.versions)
 
-    split_clusters = MERGE_GTDB_SPLIT_SPECIES.out.split_clusters.collectFile(name: 'split_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/").ifEmpty(file("$projectDir/assets/NO_FILE_3"))
 
-    MERGE_GTDB_SPLIT_SPECIES.out.genome_clusters.collectFile(name: 'genome_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/")
 
-    ch_gtdb_merge_summary = MERGE_GTDB_SPLIT_SPECIES.out.merge_summary
-        .collectFile(skip: 1, keepHeader: true, name: 'gtdb_merge_summary.tsv')
+    ch_split_species_branched = ch_split_species.branch { meta, _genome_file ->
+        large: meta.genomes_count >= params.large_pangenome_cutoff
+        medium: meta.genomes_count >= params.large_pangenome_cutoff / 10
+        small: true
+    }
+
+
+    MERGE_GTDB_SPLIT_SPECIES_LARGE(ch_split_species_branched.large,
+                                    genome_fasta,
+                                    params.gtdb_merge_ani_threshold)
+    MERGE_GTDB_SPLIT_SPECIES_MEDIUM(ch_split_species_branched.medium,
+                                    genome_fasta,
+                                    params.gtdb_merge_ani_threshold)
+    MERGE_GTDB_SPLIT_SPECIES_SMALL(ch_split_species_branched.small,
+                                    genome_fasta,
+                                    params.gtdb_merge_ani_threshold)
+
+    ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES_SMALL.out.versions)
+    ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.versions)
+    ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES_LARGE.out.versions)
+
+    split_clusters = MERGE_GTDB_SPLIT_SPECIES_SMALL.out.split_clusters
+                        .concat(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.split_clusters,
+                                MERGE_GTDB_SPLIT_SPECIES_LARGE.out.split_clusters)
+
+    genome_clusters = MERGE_GTDB_SPLIT_SPECIES_SMALL.out.genome_clusters
+                        .concat(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.genome_clusters,
+                                MERGE_GTDB_SPLIT_SPECIES_LARGE.out.genome_clusters)
+
+
+    ch_split_clusters = split_clusters.collectFile(name: 'split_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/").ifEmpty(file("$projectDir/assets/NO_FILE_3"))
+    ch_genome_clusters = genome_clusters.collectFile(name: 'genome_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/")
+
+    ch_gtdb_merge_summary = MERGE_GTDB_SPLIT_SPECIES_SMALL.out.merge_summary
+                            .concat(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.merge_summary,
+                                    MERGE_GTDB_SPLIT_SPECIES_LARGE.out.merge_summary)
+                            .collectFile(skip: 1, keepHeader: true, name: 'gtdb_merge_summary.tsv')
+
     ch_multiqc_files = ch_multiqc_files.mix(ch_gtdb_merge_summary)
 
     emit:
-    split_clusters = split_clusters
-    genome_clusters = MERGE_GTDB_SPLIT_SPECIES.out.genome_clusters
+    split_clusters = ch_split_clusters
+    genome_clusters = ch_genome_clusters
     multiqc_files = ch_multiqc_files
     versions = ch_versions
 
