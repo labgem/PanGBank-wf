@@ -96,6 +96,7 @@ def associate_genomes_and_taxonomy(
     )
 
     matched_df = merged[["name", "path", "taxonomy", "sp_dir_name"]].copy()
+    matched_df["original_taxonomy"] = matched_df["taxonomy"]
 
     # Ensure no species maps to more than one taxonomy string
     species_col = matched_df["taxonomy"].str.split(";").str[-1]
@@ -140,6 +141,7 @@ def apply_species_merging(
             f"Merging species {species_to_merge} into {meta_sp_dir_name} (metaspecies)"
         )
         for sp in species_to_merge.split(";"):
+
             filt = result["taxonomy"].str.endswith(f";{sp}")
             result.loc[filt, "taxonomy"] = pangenome_taxonomy
             result.loc[filt, "sp_dir_name"] = meta_sp_dir_name
@@ -156,34 +158,91 @@ def write_species_summary(
     taxonomy_df: pd.DataFrame,
     min_genome_count: int,
 ):
+
     """Build a per-taxonomy summary and write it to species_summary_file."""
+
+    def get_species(taxonomies):
+        species = []
+        for taxonomy in taxonomies:
+            if not pd.isna(taxonomy):
+                species.append(taxonomy.split(";")[-1].strip())
+        return ";".join(species)
+
     logging.info(f"Writing species summary in {species_summary_file}")
 
-    sp_total = (
-        taxonomy_df.groupby("taxonomy")["accession"]
-        .nunique()
-        .rename("sp_genome_in_taxonomy")
-    )
-    sp_input = (
-        matched_df.groupby("taxonomy")["name"].nunique().rename("input_sp_genome")
+    matched_df = matched_df.rename(columns={"taxonomy": "pangenome_taxonomy"})
+
+    original_taxonomy_to_pangenome_taxonomy = dict(
+        zip(matched_df["original_taxonomy"], matched_df["pangenome_taxonomy"])
     )
 
-    summary_df = sp_total.reset_index().merge(
-        sp_input.reset_index(), on="taxonomy", how="left"
+    original_taxonomy_to_sp_dir_name = dict(
+        zip(matched_df["original_taxonomy"], matched_df["sp_dir_name"])
     )
-    summary_df["input_sp_genome"] = summary_df["input_sp_genome"].fillna(0).astype(int)
-    summary_df["species"] = summary_df["taxonomy"].str.split(";").str[-1]
-    summary_df["build_pangenome"] = summary_df["input_sp_genome"] >= min_genome_count
+
+    taxonomy_df = taxonomy_df.copy()
+    taxonomy_df["acc_no_version"] = taxonomy_df["accession"].str.rsplit(".", n=1).str[0]
+    matched_df = matched_df.copy()
+    matched_df["acc_no_version"] = matched_df["name"].str.rsplit(".", n=1).str[0]
+    df = taxonomy_df.merge(matched_df, on="acc_no_version", how="left")
+
+    df["pangenome_taxonomy"] = df["taxonomy"].map(
+        original_taxonomy_to_pangenome_taxonomy
+    )
+    df["sp_dir_name"] = df["taxonomy"].map(original_taxonomy_to_sp_dir_name)
+
+    df.loc[df["sp_dir_name"].isna(), "sp_dir_name"] = (
+        df.loc[df["sp_dir_name"].isna(), "taxonomy"]
+        .str.split(";")
+        .str[-1]
+        .str.strip()
+        .str.replace(" ", "_")
+    )
+
+    df.loc[df["original_taxonomy"].isna(), "original_taxonomy"] = df.loc[
+        df["original_taxonomy"].isna(), "taxonomy"
+    ]
+
+    df.loc[df["pangenome_taxonomy"].isna(), "pangenome_taxonomy"] = df.loc[
+        df["pangenome_taxonomy"].isna(), "taxonomy"
+    ]
+
+    summary_df = (
+        df.groupby(["sp_dir_name", "pangenome_taxonomy"])
+        .agg(
+            genomes_in_taxonomy=("accession", "count"),
+            input_genomes=("path", "count"),
+            original_taxonomies=("original_taxonomy", "unique"),
+            species_count=("original_taxonomy", "nunique"),
+        )
+        .reset_index()
+    )
+
+    summary_df["species_composition"] = summary_df["original_taxonomies"].apply(
+        get_species
+    )
+
+    summary_df["build_pangenome"] = summary_df["input_genomes"] >= min_genome_count
+
+    summary_df = summary_df.rename(
+        columns={"sp_dir_name": "pangenome_name", "pangenome_taxonomy": "taxonomy"}
+    )
+
+    summary_df["is_merged"] = summary_df["species_count"].apply(lambda x: x > 1)
+
     summary_df = summary_df[
         [
-            "species",
-            "sp_genome_in_taxonomy",
-            "input_sp_genome",
+            "pangenome_name",
+            "genomes_in_taxonomy",
+            "input_genomes",
             "build_pangenome",
+            "species_composition",
+            "species_count",
+            "is_merged",
             "taxonomy",
         ]
     ].sort_values(
-        ["build_pangenome", "input_sp_genome", "species"],
+        ["build_pangenome", "input_genomes", "pangenome_name"],
         ascending=[False, False, True],
     )
 
@@ -194,7 +253,7 @@ def filter_genomes_for_pangenome(
     matched_df: pd.DataFrame, min_genome_count: int, uninformative_species: set[str]
 ) -> pd.DataFrame:
     """Return genomes belonging to species with enough genomes and an informative taxonomy."""
-    sp_counts = matched_df.groupby("taxonomy")["name"].transform("count")
+    sp_counts = matched_df.groupby("sp_dir_name")["name"].transform("count")
     filtered_df = matched_df[
         (sp_counts >= min_genome_count)
         & ~matched_df["taxonomy"].str.split(";").str[-1].isin(uninformative_species)
@@ -203,16 +262,27 @@ def filter_genomes_for_pangenome(
     logging.info(
         f"{filtered_df['taxonomy'].nunique()} species have enough genomes to build a pangenome."
     )
+
     return filtered_df
 
 
-def write_ppanggolin_input_files(outdir, filtered_df: pd.DataFrame):
+def write_ppanggolin_input_files(
+    outdir, filtered_df: pd.DataFrame, min_genome_count: int
+):
     logging.info(f"Writing ppanggolin input files in {outdir}")
+
+    sp_genome_counts = filtered_df.groupby("sp_dir_name")["name"].count()
+    below_threshold = sp_genome_counts[sp_genome_counts < min_genome_count]
+    if not below_threshold.empty:
+        details = ", ".join(f"{sp}({count})" for sp, count in below_threshold.items())
+        raise ValueError(
+            f"The following species in filtered_df have fewer than {min_genome_count} genomes: {details}"
+        )
+
     for (sp_dir_name, taxonomy), group in filtered_df.groupby(
         ["sp_dir_name", "taxonomy"]
     ):
         sp_outdir = outdir / sp_dir_name
-        print(">>>>", taxonomy, "||||", sp_dir_name, len(group))
         sp_outdir.mkdir(parents=True, exist_ok=True)
         group[["name", "path"]].sort_values("name").to_csv(
             sp_outdir / "input_genomes.tsv.gz",
@@ -319,6 +389,9 @@ def compute_pangenome_taxonomy(
             full_taxonomies = [species_to_tax[s] for s in species_list]
         except KeyError as e:
             raise ValueError(f"Species {e} not found in taxonomy file") from e
+
+        if len(species_list) == 1:
+            return full_taxonomies[0]
 
         # Strip GTDB letter suffix from each rank of each taxonomy, then verify consensus
         pangenome_taxonomies = {rm_suffix(tax) for tax in full_taxonomies}
@@ -492,7 +565,7 @@ def main(argv=None):
     filtered_df = filter_genomes_for_pangenome(
         matched_df, args.min_genomes, uninformative_species
     )
-    write_ppanggolin_input_files(args.outdir, filtered_df)
+    write_ppanggolin_input_files(args.outdir, filtered_df, args.min_genomes)
 
     if args.genome_metadata:
         metadata_df = parse_metadata_file(args.genome_metadata, filtered_df)
