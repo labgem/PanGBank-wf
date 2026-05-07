@@ -3,6 +3,16 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.2 - [2026-05-07]
+
+### `Fixed`
+
+- `PREPARE_PPANGGOLIN_INPUTS`: fixed wrong genome grouping in `filter_genomes_for_pangenome` — was grouping by `taxonomy` instead of `sp_dir_name`, producing incorrect group sizes after species merging.
+
+### `Changed`
+
+- `PREPARE_PPANGGOLIN_INPUTS`: `write_species_summary` now outputs `pangenome_name`, `is_merged`, `species_composition`, and `species_count` columns. Accession matching is now version-tolerant.
+
 ## 0.1.1 - [2025-05-06]
 
 ### `Changed`
