@@ -91,6 +91,45 @@
                 "merge_gtdb_splits": { "type": "boolean", "description": "", "default": false }
             }
         },
+        "metapang_options": {
+            "title": "MetaPang options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "metapang_build_bank_index": {
+                    "type": "boolean",
+                    "description": "Build a search index for the pangenome database using MetaPang.",
+                    "default": false
+                },
+                "metapang_bank_kmer_size": {
+                    "type": "integer",
+                    "description": "K-mer size to use for bank indexing.",
+                    "default": 31
+                },
+                "metapang_bank_scaled": {
+                    "type": "integer",
+                    "description": "",
+                    "default": 1000
+                },
+                "metapang_build_pangenome_index": {
+                    "type": "boolean",
+                    "description": "Build a de Bruijn graph (DBG) representation of the pangenomes using MetaPang.",
+                    "default": false
+                },
+                "metapang_pangenome_kmer_size": {
+                    "type": "integer",
+                    "description": "K-mer size to use for pangenome indexing.",
+                    "default": 31
+                },
+                "metapang_pangenome_annotation": {
+                    "type": "string",
+                    "description": "Type of annotation to use for pangenome construction.",
+                    "default": "rd_brwt",
+                    "enum": ["rainbowfish", "rd_brwt", "rd_sparse"]
+                }
+            }
+        },
         "ressources_options": {
             "title": "Ressources options",
             "type": "object",
@@ -281,6 +320,9 @@
         },
         {
             "$ref": "#/$defs/pangbank_options"
+        },
+        {
+            "$ref": "#/$defs/metapang_options"
         },
         {
             "$ref": "#/$defs/ressources_options"
