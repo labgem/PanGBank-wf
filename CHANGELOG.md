@@ -3,14 +3,18 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## dev - [2026-06-05]
+## 0.1.3 - [2026-07-08]
 
 ### `Added`
 
 - MetaPanG subworkflow (construction of sketches, dbg, and graph_tool representation)
+    - Can be run independently based on the output of a previous run using `subworkflows/local/metapang.nf`
+    - Can be run from the main workflow, see `metapang_*` parameters in `nextflow.config`.
+
+- MetaPanG subworkflow (construction of sketches, dbg, and graph_tool representation)
   - Can be run independently based on the output of a previous run using `subworkflows/local/metapang.nf`
   - Can be run from the main workflow, see `metapang_*` parameters in `nextflow.config`.
-## dev
+
 
 ### `Fixed`
 
