@@ -353,7 +353,9 @@ def main():
     species_ani_df.to_csv(f"{args.prefix}.species_ani.tsv", sep="\t")
 
     log.info(f"Saving species pair summary to {args.prefix}.species_pair_summary.tsv")
-    pair_info_df.to_csv(
+    columns = pair_info_df.columns
+    pair_info_df["main_species"] = args.prefix
+    pair_info_df[["main_species"] + list(columns)].to_csv(
         f"{args.prefix}.species_pair_summary.tsv", sep="\t", index=False
     )
 
