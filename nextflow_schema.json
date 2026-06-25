@@ -80,16 +80,45 @@
                     "type": "string",
                     "description": "TSV file with two columns: genome name and translation tables."
                 },
-                "genome_quality_filtering": { "type": "boolean", "description": "", "default": false },
-                "genome_min_completeness": { "type": "integer", "description": "", "default": 70 },
-                "representative_min_completeness": { "type": "integer", "description": "", "default": 85 },
-                "gtdb_merge_ani_threshold": { "type": "integer", "description": "", "default": 95 },
-                "gtdb_merge_af_threshold": { "type": "integer", "description": "", "default": 50 },
+                "genome_quality_filtering": {
+                    "type": "boolean",
+                    "description": "Enable genome quality filtering based on completeness metric.",
+                    "default": false
+                },
+                "genome_min_completeness": {
+                    "type": "integer",
+                    "description": "Minimum completeness percentage required for a genome to be considered in the pangenome construction.",
+                    "default": 70
+                },
+                "representative_min_completeness": {
+                    "type": "integer",
+                    "description": "Minimum completeness percentage required for a representative genome in the pangenome construction.",
+                    "default": 85
+                },
+                "gtdb_merge_ani_threshold": {
+                    "type": "integer",
+                    "description": "Average Nucleotide Identity (ANI) threshold for merging GTDB splits.",
+                    "default": 95
+                },
+                "gtdb_merge_af_threshold": {
+                    "type": "integer",
+                    "description": "Alignment Fraction (AF) threshold for merging GTDB splits.",
+                    "default": 50
+                },
                 "genome_fasta": {
                     "type": "string",
                     "description": "A file like 'genomes' but containing only fasta files. Used in the merge GTDB splits process to avoid having to re-parse annotation files for GTDB genomes that are being merged."
                 },
-                "merge_gtdb_splits": { "type": "boolean", "description": "", "default": false }
+                "merge_gtdb_splits": {
+                    "type": "boolean",
+                    "description": "Merge GTDB splits during the pangenome construction process.",
+                    "default": false
+                },
+                "skip_pangenome": {
+                    "type": "boolean",
+                    "description": "Skip the pangenome construction step (PPanGGOLiN).",
+                    "default": false
+                }
             }
         },
         "metapang_options": {
