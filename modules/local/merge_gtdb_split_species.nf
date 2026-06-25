@@ -15,6 +15,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
     path "${genome_list.baseName}.genomes.clusters", emit: genome_clusters
     path "${genome_list.baseName}.merge_summary.tsv", emit: merge_summary
     path "${genome_list.baseName}.species_ani.tsv", emit: species_ani
+    path "${genome_list.baseName}.species_pair_summary.tsv", emit: species_pair_summary
     path "versions.yml", emit: versions
 
     script:
