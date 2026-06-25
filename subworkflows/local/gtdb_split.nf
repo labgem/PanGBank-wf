@@ -40,13 +40,16 @@ workflow GTDB_SPLIT_SPECIES {
 
     MERGE_GTDB_SPLIT_SPECIES_LARGE(ch_split_species_branched.large,
                                     genome_fasta,
-                                    params.gtdb_merge_ani_threshold)
+                                    params.gtdb_merge_ani_threshold,
+                                    params.gtdb_merge_af_threshold)
     MERGE_GTDB_SPLIT_SPECIES_MEDIUM(ch_split_species_branched.medium,
                                     genome_fasta,
-                                    params.gtdb_merge_ani_threshold)
+                                    params.gtdb_merge_ani_threshold,
+                                    params.gtdb_merge_af_threshold)
     MERGE_GTDB_SPLIT_SPECIES_SMALL(ch_split_species_branched.small,
                                     genome_fasta,
-                                    params.gtdb_merge_ani_threshold)
+                                    params.gtdb_merge_ani_threshold,
+                                    params.gtdb_merge_af_threshold)
 
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES_SMALL.out.versions)
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.versions)
