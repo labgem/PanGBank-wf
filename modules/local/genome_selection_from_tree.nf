@@ -32,7 +32,7 @@ process GENOME_SELECTION_FROM_TREE {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        treeswift: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('treeswift').version)")
+        treeswift: \$(python -c "import importlib.metadata; print(importlib.metadata.version('treeswift'))")
     END_VERSIONS
     """
 
