@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Added`
 
 - MetaPanG subworkflow (construction of sketches, dbg, and graph_tool representation)
-    - Can be run independently based on the output of a previous run using `subworkflows/local/metapang.nf`
-    - Can be run from the main workflow, see `metapang_*` parameters in `nextflow.config`.
+  - Can be run independently based on the output of a previous run using `subworkflows/local/metapang.nf`
+  - Can be run from the main workflow, see `metapang_*` parameters in `nextflow.config`.
 
 ## 0.1.2 - [2026-05-07]
 
