@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MetaPanG subworkflow (construction of sketches, dbg, and graph_tool representation)
   - Can be run independently based on the output of a previous run using `subworkflows/local/metapang.nf`
   - Can be run from the main workflow, see `metapang_*` parameters in `nextflow.config`.
+## dev
+
+### `Fixed`
+
+- `GENOME_SELECTION_FROM_TREE`: replaced `pkg_resources` with `importlib.metadata` to retrieve the treeswift version.
 
 ## 0.1.2 - [2026-05-07]
 
