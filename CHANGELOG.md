@@ -15,6 +15,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `GENOME_SELECTION_FROM_TREE`: replaced `pkg_resources` with `importlib.metadata` to retrieve the treeswift version.
 
+- `--gtdb_merge_af_threshold` (default: 50): minimum alignment fraction for a genome pair
+  to contribute its ANI value during GTDB split species merging; pairs below are treated as ANI=0.
+- `MERGE_GTDB_SPLIT_SPECIES`: now outputs `<species>_species_pair_summary.tsv` per species,
+  reporting observed, passing, below-AF, and missing genome pair counts for QC.
+- `--skip_pangenome`: new flag to stop the workflow after genome preprocessing.
+
+### `Changed`
+
+- `MERGE_GTDB_SPLIT_SPECIES`: genome pairs absent from the skani output (too divergent) and
+  pairs below `--gtdb_merge_af_threshold` are now both treated as ANI=0 and included in the
+  mean ANI denominator. Previously, absent pairs were ignored and no AF filtering was applied.
+
+### `Fixed`
+
+- `GENOME_SELECTION_FROM_TREE`: replaced `pkg_resources` with `importlib.metadata` to retrieve the treeswift version.
+
+
 ## 0.1.2 - [2026-05-07]
 
 ### `Fixed`
