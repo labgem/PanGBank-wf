@@ -8,6 +8,7 @@ import numpy as np
 import networkx as nx
 from pathlib import Path
 from collections import defaultdict
+from itertools import combinations
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,7 +30,6 @@ def build_sketch_to_id(fna_paths_file: Path) -> dict:
             fna_to_id[fna_path] = genome_id
     return fna_to_id
 
-
 def build_species_ani_df(
     skani_dist_path: Path,
     accession_to_species: dict[str, str],
@@ -39,6 +39,7 @@ def build_species_ani_df(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Build a species-level mean ANI matrix by streaming a skani dist TSV file.
 
+    All possible species pairs are inferred from ``species_to_accessions``.
     Pairs absent from the file are assumed to be too divergent and treated as
     ANI=0, AF=0. Pairs present but below ``af_threshold`` are also treated as
     ANI=0, AF=0. In both cases the pair still contributes to the denominator
@@ -47,9 +48,13 @@ def build_species_ani_df(
 
     Args:
         skani_dist_path: Path to the tab-separated skani dist output file.
+            May be empty (header only), in which case all pairs are treated
+            as ANI=0.
         accession_to_species: Mapping from genome accession to species label.
-        species_to_accessions: Mapping from species label to its list of accessions.
-        fna_paths_file: File listing sketch paths used to build the accession lookup.
+        species_to_accessions: Mapping from species label to its list of
+            accessions. Used to enumerate all theoretical species pairs.
+        fna_paths_file: File listing sketch paths used to build the accession
+            lookup.
         af_threshold: Minimum alignment fraction for a pair to contribute a
             non-zero ANI/AF value. Pairs below this threshold are treated as
             ANI=0, AF=0 (same as missing pairs).
@@ -77,9 +82,24 @@ def build_species_ani_df(
         f"Mapped {len(sketch_path_to_accession)} sketch paths to genome accessions"
     )
 
-    # Keyed by sorted (species_A, species_B) tuple to ensure symmetry.
+    # Pre-populate all theoretical species pairs from species_to_accessions so
+    # that pairs entirely absent from the skani file are still represented.
+    all_species = sorted(species_to_accessions.keys())
     species_pair_stats: dict[tuple[str, str], dict[str, Any]] = {}
-    observed_species: set[str] = set()
+    for sp_a, sp_b in combinations(all_species, 2):
+        species_pair: tuple[str, str] = tuple(sorted((sp_a, sp_b)))  # type: ignore[assignment]
+        species_pair_stats[species_pair] = {
+            "ani_sum": 0.0,
+            "af_sum": 0.0,
+            "observed_count": 0,
+            "passing_af_count": 0,
+            "below_af_count": 0,
+        }
+
+    log.info(
+        f"Initialized {len(species_pair_stats)} theoretical species pairs "
+        f"across {len(all_species)} species"
+    )
 
     log.info(f"Streaming skani dist file: {skani_dist_path}")
     n_lines = 0
@@ -122,23 +142,18 @@ def build_species_ani_df(
                     f"to a species in line: {line!r}"
                 )
 
-            species_pair: tuple[str, str] = tuple(sorted((sp_ref, sp_query)))  # type: ignore[assignment]
+            species_pair = tuple(sorted((sp_ref, sp_query)))  # type: ignore[assignment]
 
             if species_pair not in species_pair_stats:
-                species_pair_stats[species_pair] = {
-                    "ani_sum": 0.0,
-                    "af_sum": 0.0,
-                    "observed_count": 0,
-                    "passing_af_count": 0,
-                    "below_af_count": 0,
-                }
+                raise ValueError(
+                    f"Species pair {species_pair} found in skani output but not in theoretical pairs. "
+                    f"This likely means accession '{ref_accession}' or '{query_accession}' "
+                    f"is missing from species_to_accessions. Line: {line!r}"
+                )
 
             species_pair_stats[species_pair]["observed_count"] += 1
-            observed_species.update([sp_ref, sp_query])
 
             if pair_af < af_threshold:
-                # Treated as ANI=0, AF=0 — contributes nothing to sums but
-                # is counted in the denominator via theoretical_pair_count.
                 n_below_af += 1
                 species_pair_stats[species_pair]["below_af_count"] += 1
             else:
@@ -149,11 +164,10 @@ def build_species_ani_df(
     log.info(
         f"Finished streaming {n_lines} data lines — "
         f"{n_skipped_nan} skipped (NaN ANI), "
-        f"{n_below_af} treated as zero-ANI (AF < {af_threshold}), "
-        f"{len(species_pair_stats)} unique species pairs observed"
+        f"{n_below_af} treated as zero-ANI (AF < {af_threshold})"
     )
 
-    sorted_species = sorted(observed_species)
+    sorted_species = all_species
     log.info(
         f"Building {len(sorted_species)} × {len(sorted_species)} species ANI matrix"
     )
@@ -197,14 +211,16 @@ def build_species_ani_df(
     species_ani_df = species_ani_df.fillna(0)
     pair_summary_df = pd.DataFrame(pair_summary_records)
 
+    total_missing = (
+        pair_summary_df["missing_count"].sum() if not pair_summary_df.empty else 0
+    )
     log.info(
         f"Species ANI matrix built — "
-        f"{pair_summary_df['missing_count'].sum():.0f} missing pairs across all species pairs "
+        f"{total_missing:.0f} missing genome pairs across all species pairs "
         f"(treated as ANI=0)"
     )
 
     return species_ani_df, pair_summary_df
-
 
 def construct_graph(df: pd.DataFrame, ani_threshold: float):
     log.info(f"Building ANI graph with threshold {ani_threshold:.4f}")
