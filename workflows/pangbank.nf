@@ -32,8 +32,6 @@ include { SUMMARIZE_GENOME_STATS } from '../modules/local/summarize_genome_stats
 include { GATHER_PANGENOME_INFO } from '../modules/local/gather_pangenome_infos'
 include { MD5SUM_ON_FILES } from '../modules/local/md5sum_on_list_of_files'
 include { MASH_SKETCH } from '../modules/local/mash_sketch'
-include { FIND_GTDB_SPLIT_SPECIES } from '../modules/local/find_gtdb_split_species'
-include { MERGE_GTDB_SPLIT_SPECIES } from '../modules/local/merge_gtdb_split_species'
 
 
 /*

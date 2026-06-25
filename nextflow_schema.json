@@ -84,6 +84,7 @@
                 "genome_min_completeness": { "type": "integer", "description": "", "default": 70 },
                 "representative_min_completeness": { "type": "integer", "description": "", "default": 85 },
                 "gtdb_merge_ani_threshold": { "type": "integer", "description": "", "default": 95 },
+                "gtdb_merge_af_threshold": { "type": "integer", "description": "", "default": 50 },
                 "genome_fasta": {
                     "type": "string",
                     "description": "A file like 'genomes' but containing only fasta files. Used in the merge GTDB splits process to avoid having to re-parse annotation files for GTDB genomes that are being merged."
