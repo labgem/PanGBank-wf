@@ -23,7 +23,7 @@
                 },
                 "GENOME_SELECTION_FROM_TREE": {
                     "python": "3.13.0",
-                    "treeswift": null
+                    "treeswift": "1.1.45"
                 },
                 "MASH_DIST_TO_PHYLIP": {
                     "mash": 2.3,
