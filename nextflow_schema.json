@@ -105,6 +105,12 @@
                     "description": "Alignment Fraction (AF) threshold for merging GTDB splits.",
                     "default": 50
                 },
+                "gtdb_merge_species_ani_stat": {
+                    "type": "string",
+                    "description": "Summary statistic used to populate the species ANI matrix for GTDB split merging.",
+                    "default": "median",
+                    "enum": ["mean", "median"]
+                },
                 "genome_fasta": {
                     "type": "string",
                     "description": "A file like 'genomes' but containing only fasta files. Used in the merge GTDB splits process to avoid having to re-parse annotation files for GTDB genomes that are being merged."

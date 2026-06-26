@@ -9,6 +9,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
     path genome_to_fna_paths
     val ani_threshold
     val af_threshold
+    val species_ani_stat
 
     output:
     path "${genome_list.baseName}.clusters", emit: split_clusters
@@ -68,6 +69,7 @@ process MERGE_GTDB_SPLIT_SPECIES {
                          --genome-fna-paths ${genome_to_fna_paths} \\
                          --ani_threshold ${ani_threshold} \\
                          --af_threshold ${af_threshold} \\
+                         --species-ani-stat ${species_ani_stat} \
                          --prefix ${genome_list.baseName}
 
     cat <<-END_VERSIONS > versions.yml

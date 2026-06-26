@@ -30,12 +30,32 @@ def build_sketch_to_id(fna_paths_file: Path) -> dict:
             fna_to_id[fna_path] = genome_id
     return fna_to_id
 
+
+def compute_zero_inclusive_median(values: list[float], zero_count: int) -> float:
+    """Return the median of positive ANI values plus an implicit number of zeros."""
+    total_count = zero_count + len(values)
+    if total_count == 0:
+        return 0.0
+
+    sorted_values = sorted(values)
+    left_index = (total_count - 1) // 2
+    right_index = total_count // 2
+
+    def value_at(index: int) -> float:
+        if index < zero_count:
+            return 0.0
+        return sorted_values[index - zero_count]
+
+    return (value_at(left_index) + value_at(right_index)) / 2
+
+
 def build_species_ani_df(
     skani_dist_path: Path,
     accession_to_species: dict[str, str],
     species_to_accessions: dict[str, list[str]],
     fna_paths_file: Path,
     af_threshold: float,
+    matrix_ani_stat: str = "mean",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Build a species-level mean ANI matrix by streaming a skani dist TSV file.
 
@@ -58,16 +78,21 @@ def build_species_ani_df(
         af_threshold: Minimum alignment fraction for a pair to contribute a
             non-zero ANI/AF value. Pairs below this threshold are treated as
             ANI=0, AF=0 (same as missing pairs).
+        matrix_ani_stat: Summary statistic stored in species_ani_df. Must be
+            either "mean" or "median".
 
     Returns:
-        species_ani_df: Square DataFrame (species × species) of mean ANI values
-            averaged over all theoretical pairs (missing and low-AF pairs
-            contribute 0). Diagonal and cells with no observed pairs are 0.
+        species_ani_df: Square DataFrame (species × species) of ANI summary
+            values averaged over all theoretical pairs (missing and low-AF
+            pairs contribute 0 for both mean and median calculations).
+            Diagonal and cells with no observed pairs are 0.
         pair_summary_df: Long-form DataFrame with one row per species pair,
-            containing mean ANI, mean AF, and per-category pair counts for QC.
+            containing mean ANI, median ANI, mean AF, and per-category pair
+            counts for QC.
             Columns:
                 species_A, species_B        : species labels (sorted)
                 mean_ani                    : mean ANI over theoretical_pair_count
+                median_ani                  : median ANI over theoretical_pair_count
                 mean_af                     : mean AF over theoretical_pair_count
                 theoretical_pair_count      : total possible genome pairs
                 observed_count              : pairs present in the skani file
@@ -75,6 +100,12 @@ def build_species_ani_df(
                 below_af_count              : observed pairs below af_threshold
                 missing_count               : theoretical pairs absent from file
     """
+
+    if matrix_ani_stat not in {"mean", "median"}:
+        raise ValueError(
+            f"Unsupported ANI matrix summary statistic: {matrix_ani_stat!r}. "
+            "Expected 'mean' or 'median'."
+        )
 
     log.info(f"Building sketch-path-to-accession map from: {fna_paths_file}")
     sketch_path_to_accession = build_sketch_to_id(fna_paths_file)
@@ -91,6 +122,7 @@ def build_species_ani_df(
         species_pair_stats[species_pair] = {
             "ani_sum": 0.0,
             "af_sum": 0.0,
+            "passing_ani_values": [],
             "observed_count": 0,
             "passing_af_count": 0,
             "below_af_count": 0,
@@ -159,6 +191,7 @@ def build_species_ani_df(
             else:
                 species_pair_stats[species_pair]["ani_sum"] += ani
                 species_pair_stats[species_pair]["af_sum"] += pair_af
+                species_pair_stats[species_pair]["passing_ani_values"].append(ani)
                 species_pair_stats[species_pair]["passing_af_count"] += 1
 
     log.info(
@@ -189,6 +222,10 @@ def build_species_ani_df(
         # passing pairs (full ANI/AF), below-AF pairs (0), missing pairs (0).
         mean_ani = stats["ani_sum"] / theoretical_pair_count
         mean_af = stats["af_sum"] / theoretical_pair_count
+        zero_ani_count = theoretical_pair_count - stats["passing_af_count"]
+        median_ani = compute_zero_inclusive_median(
+            stats["passing_ani_values"], zero_ani_count
+        )
         missing_count = theoretical_pair_count - stats["observed_count"]
 
         pair_summary_records.append(
@@ -196,6 +233,7 @@ def build_species_ani_df(
                 "species_A": sp_a,
                 "species_B": sp_b,
                 "mean_ani": mean_ani,
+                "median_ani": median_ani,
                 "mean_af": mean_af,
                 "theoretical_pair_count": theoretical_pair_count,
                 "observed_count": stats["observed_count"],
@@ -205,8 +243,9 @@ def build_species_ani_df(
             }
         )
 
-        species_ani_df.loc[sp_a, sp_b] = mean_ani
-        species_ani_df.loc[sp_b, sp_a] = mean_ani
+        matrix_ani_value = mean_ani if matrix_ani_stat == "mean" else median_ani
+        species_ani_df.loc[sp_a, sp_b] = matrix_ani_value
+        species_ani_df.loc[sp_b, sp_a] = matrix_ani_value
 
     species_ani_df = species_ani_df.fillna(0)
     pair_summary_df = pd.DataFrame(pair_summary_records)
@@ -221,6 +260,7 @@ def build_species_ani_df(
     )
 
     return species_ani_df, pair_summary_df
+
 
 def construct_graph(df: pd.DataFrame, ani_threshold: float):
     log.info(f"Building ANI graph with threshold {ani_threshold:.4f}")
@@ -347,6 +387,15 @@ def parse_args(argv=None):
         "--af_threshold", type=float, required=True, metavar="FLOAT", help=""
     )
 
+    parser.add_argument(
+        "--species-ani-stat",
+        type=str,
+        default="mean",
+        choices=("mean", "median"),
+        metavar="{mean,median}",
+        help="Summary statistic used to populate the species ANI matrix.",
+    )
+
     parser.add_argument("--prefix", type=str, required=True, metavar="STR", help="")
 
     return parser.parse_args(argv)
@@ -363,9 +412,13 @@ def main():
         species_to_acc,
         args.genome_fna_paths,
         args.af_threshold,
+        args.species_ani_stat,
     )
 
-    log.info(f"Saving species ANI matrix to {args.prefix}.species_ani.tsv")
+    log.info(
+        f"Saving species ANI matrix ({args.species_ani_stat}) to "
+        f"{args.prefix}.species_ani.tsv"
+    )
     species_ani_df.to_csv(f"{args.prefix}.species_ani.tsv", sep="\t")
 
     log.info(f"Saving species pair summary to {args.prefix}.species_pair_summary.tsv")
