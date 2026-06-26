@@ -1,4 +1,18 @@
 {
+    "test from GBFF with made up species split and skip pangenomes creation": {
+        "content": [
+            0,
+            null,
+            [
+                "pipeline_info"
+            ]
+        ],
+        "timestamp": "2026-06-25T22:27:24.739540184",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    },
     "test from fna and dereplication": {
         "content": [
             44,
@@ -222,6 +236,20 @@
             ]
         ],
         "timestamp": "2026-04-30T16:55:46.396722514",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    },
+    "test from fna with made up species split": {
+        "content": [
+            0,
+            null,
+            [
+                "pipeline_info"
+            ]
+        ],
+        "timestamp": "2026-06-25T22:26:40.52070387",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

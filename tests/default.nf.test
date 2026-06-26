@@ -108,4 +108,79 @@ nextflow_pipeline {
             )
         }
     }
+
+    test("test from fna with made up species split") {
+        tag "gtdb_merge"
+
+        when {
+            params {
+                outdir = "$outputDir"
+
+                // Input data
+
+                genomes = 'https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/made_up_species_splits/genome_to_fna_path.tsv'
+                taxonomy = 'https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/refs/heads/main/input_files/made_up_species_splits/genome_to_taxonomy.tsv'
+                merge_gtdb_splits = true
+
+            }
+        }
+
+        then {
+            // stable_name: All files + folders in ${params.outdir}/ with a stable name
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', "*.{html}"])
+            // stable_path: All files in ${params.outdir}/ with stable content
+            // def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success},
+                { assert snapshot(
+                    // Number of successful tasks
+                    workflow.trace.succeeded().size(),
+                    // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                    removeNextflowVersion("$outputDir/pipeline_info/pangbank_software_mqc_versions.yml"),
+                    // All stable path name, with a relative path
+                    stable_name,
+                    // All files with stable contents
+                    // stable_path
+                ).match() }
+            )
+        }
+    }
+
+    test("test from GBFF with made up species split and skip pangenomes creation") {
+        tag "gtdb_merge"
+        when {
+            params {
+                outdir = "$outputDir"
+
+                // Input data
+                genomes = 'https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/made_up_species_splits/genome_to_gbff_path.tsv'
+                taxonomy = 'https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/refs/heads/main/input_files/made_up_species_splits/genome_to_taxonomy.tsv'
+                genome_metadata = 'https://raw.githubusercontent.com/labgem/PanGBank-test-datasets/main/input_files/made_up_species_splits/genome_metadata_fake_split.tsv'
+                merge_gtdb_splits = true
+                skip_pangenomes = true
+                genomes_quality_filtering = true
+
+            }
+        }
+
+        then {
+            // stable_name: All files + folders in ${params.outdir}/ with a stable name
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}', "*.{html}"])
+            // stable_path: All files in ${params.outdir}/ with stable content
+            // def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success},
+                { assert snapshot(
+                    // Number of successful tasks
+                    workflow.trace.succeeded().size(),
+                    // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                    removeNextflowVersion("$outputDir/pipeline_info/pangbank_software_mqc_versions.yml"),
+                    // All stable path name, with a relative path
+                    stable_name,
+                    // All files with stable contents
+                    // stable_path
+                ).match() }
+            )
+        }
+    }
 }
