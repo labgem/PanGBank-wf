@@ -108,7 +108,7 @@
                 "gtdb_merge_species_ani_stat": {
                     "type": "string",
                     "description": "Summary statistic used to populate the species ANI matrix for GTDB split merging.",
-                    "default": "median",
+                    "default": "mean",
                     "enum": ["mean", "median"]
                 },
                 "genome_fasta": {
