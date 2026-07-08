@@ -16,6 +16,7 @@
 //
 include { GENOME_DEREPLICATION } from '../subworkflows/local/genome_dereplication'
 include { GTDB_SPLIT_SPECIES } from '../subworkflows/local/gtdb_split'
+include { METAPANG } from '../subworkflows/local/metapang'
 //
 // MODULE: Local modules
 //
@@ -177,6 +178,10 @@ workflow PANGBANK {
     ch_versions = ch_versions.mix(PPANGGOLIN_ALL_LARGE.out.versions)
 
     ch_pangenomes = PPANGGOLIN_ALL_SMALL.out.pangenome.concat(PPANGGOLIN_ALL_MEDIUM.out.pangenome, PPANGGOLIN_ALL_LARGE.out.pangenome)
+
+    if (params.metapang_build_bank_index || params.metapang_build_pangenome_index) {
+        METAPANG(ch_pangenomes)
+    }
 
     PPANGGOLIN_FASTA(ch_pangenomes)
     ch_versions = ch_versions.mix(PPANGGOLIN_FASTA.out.versions)
