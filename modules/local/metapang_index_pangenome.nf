@@ -28,6 +28,7 @@ process METAPANG_INDEX_PANGENOME {
                              --annotation-type ${annotation_type} \
                              --threads ${task.cpus} \
                              --tmp ${meta.species}_tmp \
+                             --genome-name-from-parent-dir \
                              --construct-graph \
                              ${genomes}
 
