@@ -92,8 +92,11 @@ workflow {
     ch_pangenomes = channel
         .fromPath(params.pangenomes + '/*/input_genomes.tsv.gz')
         .map { f ->
-            def n = 0
-            new java.util.zip.GZIPInputStream(f.newInputStream()).eachLine { n++ }
+            def n = f.withInputStream { stream ->
+                new java.util.zip.GZIPInputStream(stream).withReader('UTF-8') { reader ->
+                    reader.readLines().size()
+                }
+            }
             def meta = [
                 species     : f.parent.name,
                 genome_count: n
@@ -101,6 +104,9 @@ workflow {
             def h5 = f.resolveSibling('pangenome.h5')
             tuple(meta, h5, f)
         }
+
+    // debug print of the channel
+    ch_pangenomes.view()
 
     METAPANG(ch_pangenomes)
 }
