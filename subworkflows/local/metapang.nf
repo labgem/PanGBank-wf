@@ -11,6 +11,11 @@ workflow METAPANG {
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
 
+    pangenomes = pangenomes.map { row ->
+        def (meta, pangenome) = row
+        def genome_file = row.size() > 2 ? row[2] :  pangenome.parent.parent.resolve('input_genomes.tsv.gz')
+        tuple(meta, pangenome, genome_file)
+    }
 
     if (params.metapang_build_bank_index) {
 
