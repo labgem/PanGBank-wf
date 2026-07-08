@@ -105,8 +105,5 @@ workflow {
             tuple(meta, h5, f)
         }
 
-    // debug print of the channel
-    ch_pangenomes.view()
-
     METAPANG(ch_pangenomes)
 }
