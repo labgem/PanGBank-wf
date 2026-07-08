@@ -27,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `GENOME_SELECTION_FROM_TREE`: replaced `pkg_resources` with `importlib.metadata` to retrieve the treeswift version.
 
-
 ## 0.1.2 - [2026-05-07]
 
 ### `Fixed`

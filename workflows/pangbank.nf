@@ -200,7 +200,7 @@ workflow PANGBANK {
         ch_fasta_list_file = PPANGGOLIN_FASTA.out.persistent_families_fasta
             .collect { _meta, fasta -> fasta }
             .map { fasta -> [[id: "families_persistent_all.msh"], fasta] }
-    
+
 
         MASH_SKETCH(ch_fasta_list_file)
         ch_versions = ch_versions.mix(MASH_SKETCH.out.versions)
