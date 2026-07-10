@@ -71,16 +71,28 @@ nextflow run labgem/pangbank \
 
 ## GTDB Split Species Merging
 
-GTDB occasionally splits a single biological species into several distinct named species. PanGBank can detect these splits and merge the affected genomes into a single **metaspecies** pangenome. This step is **disabled by default** and must be activated with `--merge_gtdb_splits`.
+GTDB occasionally splits a single biological species into several distinct named species.
+PanGBank can detect these splits and merge the affected genomes into a single **metaspecies**
+pangenome. This step is **disabled by default** and must be activated with `--merge_gtdb_splits`.
 
-The merging is performed by clustering genomes from candidate split species using Average Nucleotide Identity (ANI). Groups exceeding the ANI threshold are merged.
+The merging is performed by clustering genomes from candidate split species using Average
+Nucleotide Identity (ANI). A genome pair contributes its ANI value only if its alignment
+fraction meets `--gtdb_merge_af_threshold`; pairs below this threshold or absent from the
+skani output are treated as ANI=0. Groups exceeding `--gtdb_merge_ani_threshold` are merged.
+The per-species ANI matrix written by this step can use either the mean or median ANI via
+`--gtdb_merge_species_ani_stat`.
 
-| Parameter                    | Default | Description                                                               |
-| ---------------------------- | ------- | ------------------------------------------------------------------------- |
-| `--merge_gtdb_splits`        | false   | Enable GTDB split species detection and merging                           |
-| `--gtdb_merge_ani_threshold` | 95      | ANI threshold (%) above which split species are merged into a metaspecies |
+| Parameter                       | Default | Description                                                                                                  |
+| ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
+| `--merge_gtdb_splits`           | false   | Enable GTDB split species detection and merging                                                              |
+| `--gtdb_merge_ani_threshold`    | 95      | ANI threshold (%) above which split species are merged into a metaspecies                                    |
+| `--gtdb_merge_af_threshold`     | 50      | Minimum alignment fraction (%) required for a genome pair to contribute its ANI value; pairs below are ANI=0 |
+| `--gtdb_merge_species_ani_stat` | mean    | Summary statistic used in `*.species_ani.tsv`; choose `mean` or `median`                                     |
 
-When species are merged, all their genomes are pooled into a single pangenome directory named after the metaspecies. A `pangenome_taxonomy.txt` file is written in each pangenome directory recording the pangenome-level taxonomy — for merged species this is the one of the "metaspecies" with the letter suffixes.
+When species are merged, all their genomes are pooled into a single pangenome directory named
+after the metaspecies. A `pangenome_taxonomy.txt` file is written in each pangenome directory
+recording the pangenome-level taxonomy — for merged species this is the one of the
+"metaspecies" with the letter suffixes removed.
 
 **Example:**
 
@@ -90,6 +102,8 @@ nextflow run labgem/pangbank \
   --taxonomy genome_taxonomy.tsv \
   --merge_gtdb_splits \
   --gtdb_merge_ani_threshold 95 \
+  --gtdb_merge_af_threshold 50 \
+  --gtdb_merge_species_ani_stat median \
   --outdir ./results \
   -profile docker
 ```

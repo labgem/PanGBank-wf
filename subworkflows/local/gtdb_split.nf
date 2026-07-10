@@ -40,13 +40,19 @@ workflow GTDB_SPLIT_SPECIES {
 
     MERGE_GTDB_SPLIT_SPECIES_LARGE(ch_split_species_branched.large,
                                     genome_fasta,
-                                    params.gtdb_merge_ani_threshold)
+                                    params.gtdb_merge_ani_threshold,
+                                    params.gtdb_merge_af_threshold,
+                                    params.gtdb_merge_species_ani_stat)
     MERGE_GTDB_SPLIT_SPECIES_MEDIUM(ch_split_species_branched.medium,
                                     genome_fasta,
-                                    params.gtdb_merge_ani_threshold)
+                                    params.gtdb_merge_ani_threshold,
+                                    params.gtdb_merge_af_threshold,
+                                    params.gtdb_merge_species_ani_stat)
     MERGE_GTDB_SPLIT_SPECIES_SMALL(ch_split_species_branched.small,
                                     genome_fasta,
-                                    params.gtdb_merge_ani_threshold)
+                                    params.gtdb_merge_ani_threshold,
+                                    params.gtdb_merge_af_threshold,
+                                    params.gtdb_merge_species_ani_stat)
 
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES_SMALL.out.versions)
     ch_versions = ch_versions.mix(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.versions)
@@ -60,9 +66,15 @@ workflow GTDB_SPLIT_SPECIES {
                         .concat(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.genome_clusters,
                                 MERGE_GTDB_SPLIT_SPECIES_LARGE.out.genome_clusters)
 
+    species_pair_summary = MERGE_GTDB_SPLIT_SPECIES_SMALL.out.species_pair_summary
+                        .concat(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.species_pair_summary,
+                                MERGE_GTDB_SPLIT_SPECIES_LARGE.out.species_pair_summary)
+
 
     ch_split_clusters = split_clusters.collectFile(name: 'split_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/").ifEmpty(file("$projectDir/assets/NO_FILE_3"))
     ch_genome_clusters = genome_clusters.collectFile(name: 'genome_clusters.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/")
+
+    _ch_species_pair_summary = species_pair_summary.collectFile(name: 'species_pair_summary.tsv', storeDir: "${params.outdir}/genome_preprocessing/merge_gtdb_split/", keepHeader: true)
 
     ch_gtdb_merge_summary = MERGE_GTDB_SPLIT_SPECIES_SMALL.out.merge_summary
                             .concat(MERGE_GTDB_SPLIT_SPECIES_MEDIUM.out.merge_summary,

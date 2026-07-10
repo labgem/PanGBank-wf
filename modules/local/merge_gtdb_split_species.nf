@@ -8,12 +8,15 @@ process MERGE_GTDB_SPLIT_SPECIES {
     tuple val(meta), path(genome_list)
     path genome_to_fna_paths
     val ani_threshold
+    val af_threshold
+    val species_ani_stat
 
     output:
     path "${genome_list.baseName}.clusters", emit: split_clusters
     path "${genome_list.baseName}.genomes.clusters", emit: genome_clusters
     path "${genome_list.baseName}.merge_summary.tsv", emit: merge_summary
     path "${genome_list.baseName}.species_ani.tsv", emit: species_ani
+    path "${genome_list.baseName}.species_pair_summary.tsv", emit: species_pair_summary
     path "versions.yml", emit: versions
 
     script:
@@ -64,7 +67,9 @@ process MERGE_GTDB_SPLIT_SPECIES {
     merge_gtdb_splits.py --genome-list ${genome_list} \\
                          --skani-dist ${genome_list.baseName}.dist.tsv \\
                          --genome-fna-paths ${genome_to_fna_paths} \\
-                         --threshold ${ani_threshold} \\
+                         --ani_threshold ${ani_threshold} \\
+                         --af_threshold ${af_threshold} \\
+                         --species-ani-stat ${species_ani_stat} \
                          --prefix ${genome_list.baseName}
 
     cat <<-END_VERSIONS > versions.yml
