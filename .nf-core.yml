@@ -34,5 +34,5 @@ template:
   org: labgem
   outdir: .
   skip_features: []
-  version: 0.1.3
+  version: 0.1.4
 update: null
